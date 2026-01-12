@@ -1,0 +1,55 @@
+apiVersion: cordum.io/v1alpha1
+kind: Pack
+
+metadata:
+  id: mcp-bridge
+  version: 0.1.0
+  title: MCP Bridge
+  description: MCP stdio bridge for Cordum tools and flight-recorder resources.
+
+compatibility:
+  protocolVersion: 1
+  minCoreVersion: 0.1.0
+
+topics:
+  - name: job.mcp-bridge.tool
+    requires: ["network:egress"]
+    riskTags: ["write"]
+    capability: cordum.mcp.bridge
+
+resources:
+  schemas:
+    - id: mcp-bridge/ToolCall
+      path: schemas/tool_call.json
+
+overlays:
+  config:
+    - name: pools
+      scope: system
+      key: pools
+      strategy: json_merge_patch
+      path: overlays/pools.patch.yaml
+    - name: timeouts
+      scope: system
+      key: timeouts
+      strategy: json_merge_patch
+      path: overlays/timeouts.patch.yaml
+  policy:
+    - name: safety
+      strategy: bundle_fragment
+      path: overlays/policy.fragment.yaml
+
+tests:
+  policySimulations:
+    - name: allow_read_tools
+      request:
+        tenantId: default
+        topic: job.mcp-bridge.tool
+        riskTags: ["read"]
+      expectDecision: ALLOW
+    - name: write_requires_approval
+      request:
+        tenantId: default
+        topic: job.mcp-bridge.tool
+        riskTags: ["write"]
+      expectDecision: REQUIRE_APPROVAL

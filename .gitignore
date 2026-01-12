@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+*.pyc
+public/
+dist/
+.DS_Store
+packs/*/bin/
+packs/*/dist/
+packs/*/logs/

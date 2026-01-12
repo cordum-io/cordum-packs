@@ -1,0 +1,3 @@
+topics:
+  "job.mcp-bridge.*":
+    timeout_seconds: 120

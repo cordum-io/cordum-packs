@@ -1,0 +1,17 @@
+version: v1
+rules:
+  - id: mcp-bridge-read
+    match:
+      topics:
+        - job.mcp-bridge.*
+      risk_tags:
+        - read
+    decision: allow
+  - id: mcp-bridge-write
+    match:
+      topics:
+        - job.mcp-bridge.*
+      risk_tags:
+        - write
+    decision: require_approval
+    reason: "MCP bridge write actions require approval"
