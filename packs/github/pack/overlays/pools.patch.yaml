@@ -1,0 +1,6 @@
+topics:
+  job.github.read: github
+  job.github.write: github
+pools:
+  github:
+    requires: ["network:egress"]

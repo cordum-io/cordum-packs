@@ -1,0 +1,16 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "GitHub Issue Create Input",
+  "type": "object",
+  "properties": {
+    "profile": {"type": "string"},
+    "owner": {"type": "string"},
+    "repo": {"type": "string"},
+    "repository": {"type": "string"},
+    "title": {"type": "string"},
+    "body": {"type": "string"},
+    "labels": {"type": "array", "items": {"type": "string"}},
+    "assignees": {"type": "array", "items": {"type": "string"}}
+  },
+  "required": ["title"]
+}
