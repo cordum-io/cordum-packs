@@ -1,0 +1,16 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "MCP Client Call Result",
+  "type": "object",
+  "properties": {
+    "job_id": {"type": "string"},
+    "server": {"type": "string"},
+    "transport": {"type": "string"},
+    "method": {"type": "string"},
+    "request_id": {"type": ["string", "number"]},
+    "duration_ms": {"type": "number"},
+    "result": {"type": ["object", "array", "string", "number", "boolean", "null"]},
+    "error": {"type": "string"},
+    "server_info": {"type": "object"}
+  }
+}
