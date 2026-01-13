@@ -90,7 +90,7 @@ func New(cfg Config) (*Bridge, error) {
 		cfg.ServerName = "cordum-mcp-bridge"
 	}
 	if cfg.ServerVersion == "" {
-		cfg.ServerVersion = "0.2.0"
+		cfg.ServerVersion = "0.2.1"
 	}
 	if cfg.CallTimeout <= 0 {
 		cfg.CallTimeout = 30 * time.Second
@@ -271,6 +271,9 @@ func (b *Bridge) submitToolJob(ctx context.Context, name string, args map[string
 		case <-timeout.C:
 			return nil, fmt.Errorf("tool call timed out after %s", b.cfg.CallTimeout)
 		case <-ctx.Done():
+			cancelCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			_ = b.client.CancelJob(cancelCtx, resp.JobID)
+			cancel()
 			return nil, ctx.Err()
 		}
 	}
@@ -398,6 +401,12 @@ func (b *Bridge) executeTool(ctx context.Context, name string, args map[string]a
 		}
 		remediationID := stringArg(args, "remediation_id")
 		return b.client.RemediateJob(ctx, jobID, remediationID)
+	case "cordum.job.cancel":
+		jobID := stringArg(args, "job_id")
+		if jobID == "" {
+			return nil, fmt.Errorf("job_id required")
+		}
+		return b.client.CancelJob(ctx, jobID)
 	case "cordum.dlq.retry":
 		jobID := stringArg(args, "job_id")
 		if jobID == "" {
@@ -557,7 +566,7 @@ func buildJobRequest(toolName string, args map[string]any, cfg Config) jobSubmit
 
 func toolRiskTags(name string) []string {
 	switch name {
-	case "cordum.workflow.run", "cordum.workflow.rerun", "cordum.workflow.cancel", "cordum.job.approve", "cordum.job.reject", "cordum.job.remediate", "cordum.dlq.retry":
+	case "cordum.workflow.run", "cordum.workflow.rerun", "cordum.workflow.cancel", "cordum.job.approve", "cordum.job.reject", "cordum.job.remediate", "cordum.job.cancel", "cordum.dlq.retry":
 		return []string{"write"}
 	default:
 		return []string{"read"}
@@ -639,6 +648,17 @@ func (b *Bridge) buildTools() []mcp.Tool {
 				"properties": map[string]any{
 					"job_id":         map[string]any{"type": "string"},
 					"remediation_id": map[string]any{"type": "string"},
+				},
+				"required": []string{"job_id"},
+			},
+		},
+		{
+			Name:        "cordum.job.cancel",
+			Description: "Cancel a queued or running job.",
+			InputSchema: map[string]any{
+				"type": "object",
+				"properties": map[string]any{
+					"job_id": map[string]any{"type": "string"},
 				},
 				"required": []string{"job_id"},
 			},
@@ -808,6 +828,15 @@ func (c *gatewayClient) RemediateJob(ctx context.Context, jobID, remediationID s
 
 func (c *gatewayClient) RetryDLQ(ctx context.Context, jobID string) (map[string]any, error) {
 	path := "/api/v1/dlq/" + url.PathEscape(jobID) + "/retry"
+	var resp map[string]any
+	if err := c.doJSON(ctx, http.MethodPost, path, nil, &resp); err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
+func (c *gatewayClient) CancelJob(ctx context.Context, jobID string) (map[string]any, error) {
+	path := "/api/v1/jobs/" + url.PathEscape(jobID) + "/cancel"
 	var resp map[string]any
 	if err := c.doJSON(ctx, http.MethodPost, path, nil, &resp); err != nil {
 		return nil, err

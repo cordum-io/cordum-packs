@@ -5,7 +5,7 @@ Part of the `cordum-packs` monorepo.
 
 ## What you get
 
-- **MCP tools**: start/rerun/cancel workflows, approve/reject/remediate jobs, retry DLQ.
+- **MCP tools**: start/rerun/cancel workflows, approve/reject/remediate/cancel jobs, retry DLQ.
 - **MCP resource templates**: job detail + decisions, run detail + timeline, artifacts, pointers.
 - **Cursor-friendly list endpoints**: list methods accept `cursor` and respond with `nextCursor` when relevant.
 - **Safety Kernel integration**: each tool call becomes a Cordum job and is evaluated before dispatch.
@@ -13,7 +13,7 @@ Part of the `cordum-packs` monorepo.
 ## MCP compatibility
 
 - Protocol versions: `2025-11-25` (default), `2025-06-18` (negotiated).
-- Notifications: expects `notifications/initialized` (accepts legacy `initialized`).
+- Notifications: expects `notifications/initialized` (accepts legacy `initialized`), `notifications/cancelled` cancels Cordum jobs.
 - Resources: templates in `resources/templates/list`, concrete resources via `resources/read`.
 
 ## Quickstart
@@ -54,12 +54,12 @@ The bridge runs as a stdio MCP server (reads JSON‑RPC from stdin, writes to st
 - `CORDUM_MCP_JOB_TOPIC` (default `job.mcp-bridge.tool`)
 - `CORDUM_MCP_PACK_ID` (default `mcp-bridge`)
 - `CORDUM_MCP_SERVER_NAME` (default `cordum-mcp-bridge`)
-- `CORDUM_MCP_SERVER_VERSION` (default `0.2.0`)
+- `CORDUM_MCP_SERVER_VERSION` (default `0.2.1`)
 - `CORDUM_MCP_CALL_TIMEOUT` (default `30s`)
 - `CORDUM_MCP_POLL_INTERVAL` (default `750ms`)
 - `CORDUM_MCP_MAX_PARALLEL` (default `0` = unlimited)
 
-## MCP tools (v0.2)
+## MCP tools (v0.2.1)
 
 - `cordum.workflow.run`
 - `cordum.workflow.rerun`
@@ -67,13 +67,14 @@ The bridge runs as a stdio MCP server (reads JSON‑RPC from stdin, writes to st
 - `cordum.job.approve`
 - `cordum.job.reject`
 - `cordum.job.remediate`
+- `cordum.job.cancel`
 - `cordum.dlq.retry`
 
 All tool calls are submitted as Cordum jobs on `job.mcp-bridge.tool` with labels:
 `mcp.server`, `mcp.tool`, `mcp.action=call`. The job capability is set to the tool
 name for fine-grained policy (the pack topic capability remains `cordum.mcp.bridge`).
 
-## MCP resource templates (v0.2)
+## MCP resource templates (v0.2.1)
 
 Discover via `resources/templates/list`:
 

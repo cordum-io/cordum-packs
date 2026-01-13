@@ -3,7 +3,7 @@ kind: Pack
 
 metadata:
   id: mcp-bridge
-  version: 0.2.0
+  version: 0.2.1
   title: MCP Bridge
   description: MCP stdio bridge for Cordum tools and flight-recorder resource templates.
 

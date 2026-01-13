@@ -50,7 +50,7 @@ func loadConfig() bridge.Config {
 		JobTopic:      envOr("CORDUM_MCP_JOB_TOPIC", "job.mcp-bridge.tool"),
 		PackID:        envOr("CORDUM_MCP_PACK_ID", "mcp-bridge"),
 		ServerName:    envOr("CORDUM_MCP_SERVER_NAME", "cordum-mcp-bridge"),
-		ServerVersion: envOr("CORDUM_MCP_SERVER_VERSION", "0.2.0"),
+		ServerVersion: envOr("CORDUM_MCP_SERVER_VERSION", "0.2.1"),
 	}
 
 	if raw := strings.TrimSpace(os.Getenv("CORDUM_MCP_SUBJECTS")); raw != "" {
