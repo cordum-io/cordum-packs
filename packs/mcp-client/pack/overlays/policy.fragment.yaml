@@ -1,0 +1,25 @@
+version: v1
+rules:
+  - id: mcp-client-read
+    match:
+      topics:
+        - job.mcp-client.*
+      risk_tags:
+        - read
+    decision: allow
+  - id: mcp-client-write
+    match:
+      topics:
+        - job.mcp-client.*
+      risk_tags:
+        - write
+    decision: require_approval
+    reason: "MCP client write actions require approval"
+  - id: mcp-client-secrets
+    match:
+      topics:
+        - job.mcp-client.*
+      risk_tags:
+        - secrets
+    decision: require_approval
+    reason: "MCP client secret access requires approval"
