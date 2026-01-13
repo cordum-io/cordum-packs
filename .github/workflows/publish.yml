@@ -9,9 +9,6 @@ on:
       - ".github/workflows/publish.yml"
   workflow_dispatch: {}
 
-env:
-  ALLOWED_DISPATCHERS: ${{ vars.ALLOWED_DISPATCHERS || '[]' }}
-
 permissions:
   contents: read
   pages: write
@@ -22,8 +19,50 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  guard:
+    runs-on: ubuntu-latest
+    outputs:
+      allowed: ${{ steps.check.outputs.allowed }}
+    steps:
+      - id: check
+        env:
+          ALLOWED_DISPATCHERS: ${{ vars.ALLOWED_DISPATCHERS || secrets.ALLOWED_DISPATCHERS || '' }}
+          ACTOR: ${{ github.actor }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT_NAME" != "workflow_dispatch" ]; then
+            echo "allowed=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [ -z "$ALLOWED_DISPATCHERS" ]; then
+            echo "ALLOWED_DISPATCHERS is not set; refusing manual run." >&2
+            exit 1
+          fi
+          python3 - <<'PY'
+          import json
+          import os
+          import sys
+
+          allowed = os.environ["ALLOWED_DISPATCHERS"]
+          actor = os.environ["ACTOR"]
+          try:
+              entries = json.loads(allowed)
+          except Exception:
+              print(f"ALLOWED_DISPATCHERS must be a JSON array, got: {allowed!r}", file=sys.stderr)
+              sys.exit(1)
+          if not isinstance(entries, list):
+              print("ALLOWED_DISPATCHERS must be a JSON array", file=sys.stderr)
+              sys.exit(1)
+          if actor not in entries:
+              print(f"Actor {actor!r} is not allowed to run this workflow", file=sys.stderr)
+              sys.exit(1)
+          PY
+          echo "allowed=true" >> "$GITHUB_OUTPUT"
+
   lint_security:
-    if: ${{ github.event_name != 'workflow_dispatch' || contains(fromJson(env.ALLOWED_DISPATCHERS), github.actor) }}
+    needs: guard
+    if: ${{ needs.guard.outputs.allowed == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -126,7 +165,7 @@ jobs:
 
   build:
     needs: lint_security
-    if: ${{ github.event_name != 'workflow_dispatch' || contains(fromJson(env.ALLOWED_DISPATCHERS), github.actor) }}
+    if: ${{ needs.guard.outputs.allowed == 'true' }}
     runs-on: ubuntu-latest
     env:
       PACKS_BASE_URL: ${{ secrets.PACKS_BASE_URL }}
@@ -159,7 +198,7 @@ jobs:
 
   deploy_pages:
     needs: build
-    if: ${{ github.event_name != 'workflow_dispatch' || contains(fromJson(env.ALLOWED_DISPATCHERS), github.actor) }}
+    if: ${{ needs.guard.outputs.allowed == 'true' }}
     runs-on: ubuntu-latest
     environment:
       name: github-pages
@@ -171,7 +210,7 @@ jobs:
   deploy_server:
     needs: build
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    if: ${{ needs.guard.outputs.allowed == 'true' && github.ref == 'refs/heads/main' }}
     environment:
       name: production
     steps:
