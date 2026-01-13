@@ -1,0 +1,34 @@
+id: mcp-client.call
+name: MCP Client Call
+description: Call a configured MCP server and return the result.
+version: "0.1.0"
+timeout_sec: 120
+steps:
+  call:
+    id: call
+    name: Call MCP server
+    type: worker
+    topic: job.mcp-client.call
+    input:
+      server: ${input.server}
+      transport: ${input.transport}
+      command: ${input.command}
+      args: ${input.args}
+      url: ${input.url}
+      method: ${input.method}
+      tool: ${input.tool}
+      arguments: ${input.arguments}
+      uri: ${input.uri}
+      params: ${input.params}
+      headers: ${input.headers}
+      env: ${input.env}
+      auth: ${input.auth}
+      timeout_seconds: ${input.timeout_seconds}
+      protocol_version: ${input.protocol_version}
+    input_schema_id: mcp-client/McpCallInput
+    output_schema_id: mcp-client/McpCallResult
+    meta:
+      pack_id: mcp-client
+      capability: mcp.client.call
+      risk_tags: ["read", "network"]
+      requires: ["network:egress"]

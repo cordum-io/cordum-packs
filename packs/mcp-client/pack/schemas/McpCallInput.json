@@ -1,0 +1,50 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "MCP Client Call Input",
+  "type": "object",
+  "properties": {
+    "server": {"type": "string", "description": "Named server from worker config."},
+    "transport": {"type": "string", "enum": ["stdio", "http"]},
+    "command": {"type": "string"},
+    "args": {"type": "array", "items": {"type": "string"}},
+    "url": {"type": "string"},
+    "method": {"type": "string"},
+    "tool": {"type": "string"},
+    "arguments": {"type": "object"},
+    "uri": {"type": "string"},
+    "params": {"type": "object"},
+    "headers": {"type": "object", "additionalProperties": {"type": "string"}},
+    "env": {"type": "object", "additionalProperties": {"type": "string"}},
+    "auth": {
+      "type": "object",
+      "properties": {
+        "api_key": {"type": "string"},
+        "api_key_env": {"type": "string"},
+        "api_key_header": {"type": "string"},
+        "bearer": {"type": "string"},
+        "bearer_env": {"type": "string"},
+        "basic_username": {"type": "string"},
+        "basic_password": {"type": "string"},
+        "basic_password_env": {"type": "string"},
+        "oauth": {
+          "type": "object",
+          "properties": {
+            "token_url": {"type": "string"},
+            "client_id": {"type": "string"},
+            "client_secret": {"type": "string"},
+            "client_secret_env": {"type": "string"},
+            "scopes": {"type": "array", "items": {"type": "string"}},
+            "audience": {"type": "string"}
+          }
+        }
+      }
+    },
+    "timeout_seconds": {"type": "integer", "minimum": 1},
+    "protocol_version": {"type": "string"}
+  },
+  "required": ["method"],
+  "anyOf": [
+    {"required": ["server"]},
+    {"required": ["transport"]}
+  ]
+}

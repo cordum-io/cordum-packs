@@ -1,0 +1,4 @@
+topics:
+  job.mcp-client.call:
+    timeout_seconds: 120
+    max_retries: 2
