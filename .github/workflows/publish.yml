@@ -59,6 +59,48 @@ jobs:
             fi
           fi
 
+      - name: Gitleaks scan
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          args: --no-git --redact
+
+      - name: Trivy filesystem scan
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          severity: CRITICAL,HIGH
+          exit-code: "1"
+          ignore-unfixed: true
+
+      - name: Checkout Go dependency sources
+        uses: actions/checkout@v4
+        with:
+          repository: cordum-io/cap
+          path: .deps/cap
+          fetch-depth: 1
+          token: ${{ secrets.CORDUM_DEPS_TOKEN || github.token }}
+
+      - name: Checkout Cordum SDK source
+        uses: actions/checkout@v4
+        with:
+          repository: cordum/cordum
+          path: .deps/cordum
+          fetch-depth: 1
+          token: ${{ secrets.CORDUM_DEPS_TOKEN || github.token }}
+
+      - name: Link local replaces
+        run: |
+          set -euo pipefail
+          if [ ! -e packs/cap ]; then
+            ln -s "$GITHUB_WORKSPACE/.deps/cap" packs/cap
+          fi
+          if [ ! -e packs/cordum ]; then
+            ln -s "$GITHUB_WORKSPACE/.deps/cordum" packs/cordum
+          fi
+
       - name: Go tests
         run: |
           set -euo pipefail
@@ -77,22 +119,6 @@ jobs:
             echo "Scanning $dir"
             (cd "$dir" && gosec ./...)
           done < <(find packs -maxdepth 3 -name go.mod)
-
-      - name: Gitleaks scan
-        uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          args: --no-git --redact
-
-      - name: Trivy filesystem scan
-        uses: aquasecurity/trivy-action@0.28.0
-        with:
-          scan-type: fs
-          scan-ref: .
-          severity: CRITICAL,HIGH
-          exit-code: "1"
-          ignore-unfixed: true
 
   build:
     needs: lint_security
