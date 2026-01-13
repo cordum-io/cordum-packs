@@ -21,8 +21,14 @@ import (
 )
 
 const (
-	defaultProtocolVersion = "2025-06-18"
+	defaultProtocolVersion = "2025-11-25"
+	legacyProtocolVersion  = "2025-06-18"
 )
+
+var supportedProtocolVersions = []string{
+	defaultProtocolVersion,
+	legacyProtocolVersion,
+}
 
 type Config struct {
 	GatewayURL    string
@@ -49,7 +55,7 @@ type Bridge struct {
 	pending   map[string]chan callResult
 	mu        sync.Mutex
 	tools     []mcp.Tool
-	resources []mcp.Resource
+	templates []mcp.ResourceTemplate
 }
 
 type callResult struct {
@@ -84,7 +90,7 @@ func New(cfg Config) (*Bridge, error) {
 		cfg.ServerName = "cordum-mcp-bridge"
 	}
 	if cfg.ServerVersion == "" {
-		cfg.ServerVersion = "0.1.0"
+		cfg.ServerVersion = "0.2.0"
 	}
 	if cfg.CallTimeout <= 0 {
 		cfg.CallTimeout = 30 * time.Second
@@ -121,7 +127,7 @@ func New(cfg Config) (*Bridge, error) {
 		pending: map[string]chan callResult{},
 	}
 	b.tools = b.buildTools()
-	b.resources = b.buildResources()
+	b.templates = b.buildResourceTemplates()
 	return b, nil
 }
 
@@ -139,9 +145,13 @@ func (b *Bridge) RunWorker(ctx context.Context) error {
 	return b.worker.Run(ctx, b.handleJob)
 }
 
-func (b *Bridge) Initialize(ctx context.Context, _ map[string]any) (mcp.InitializeResult, error) {
+func (b *Bridge) Initialize(ctx context.Context, params map[string]any) (mcp.InitializeResult, error) {
+	protocolVersion, err := negotiateProtocolVersion(stringArg(params, "protocolVersion"))
+	if err != nil {
+		return mcp.InitializeResult{}, err
+	}
 	return mcp.InitializeResult{
-		ProtocolVersion: defaultProtocolVersion,
+		ProtocolVersion: protocolVersion,
 		ServerInfo: mcp.ServerInfo{
 			Name:    b.cfg.ServerName,
 			Version: b.cfg.ServerVersion,
@@ -153,8 +163,9 @@ func (b *Bridge) Initialize(ctx context.Context, _ map[string]any) (mcp.Initiali
 	}, nil
 }
 
-func (b *Bridge) ListTools(ctx context.Context) ([]mcp.Tool, error) {
-	return b.tools, nil
+func (b *Bridge) ListTools(ctx context.Context, cursor string) (mcp.ToolListResult, error) {
+	_ = cursor
+	return mcp.ToolListResult{Tools: b.tools}, nil
 }
 
 func (b *Bridge) CallTool(ctx context.Context, name string, args map[string]any) (mcp.ToolCallResult, error) {
@@ -169,8 +180,14 @@ func (b *Bridge) CallTool(ctx context.Context, name string, args map[string]any)
 	return mcp.ToolCallResult{Content: []mcp.ContentItem{{Type: "text", MimeType: "application/json", Text: string(payload)}}}, nil
 }
 
-func (b *Bridge) ListResources(ctx context.Context) ([]mcp.Resource, error) {
-	return b.resources, nil
+func (b *Bridge) ListResources(ctx context.Context, cursor string) (mcp.ResourceListResult, error) {
+	_ = cursor
+	return mcp.ResourceListResult{Resources: []mcp.Resource{}}, nil
+}
+
+func (b *Bridge) ListResourceTemplates(ctx context.Context, cursor string) (mcp.ResourceTemplateListResult, error) {
+	_ = cursor
+	return mcp.ResourceTemplateListResult{ResourceTemplates: b.templates}, nil
 }
 
 func (b *Bridge) ReadResource(ctx context.Context, uri string) (mcp.ResourceReadResult, error) {
@@ -640,15 +657,27 @@ func (b *Bridge) buildTools() []mcp.Tool {
 	}
 }
 
-func (b *Bridge) buildResources() []mcp.Resource {
-	return []mcp.Resource{
-		{URI: "cordum://jobs/{job_id}", Name: "Job", Description: "Job details", MimeType: "application/json"},
-		{URI: "cordum://jobs/{job_id}/decisions", Name: "Job Decisions", Description: "Safety decision history", MimeType: "application/json"},
-		{URI: "cordum://runs/{run_id}", Name: "Run", Description: "Workflow run details", MimeType: "application/json"},
-		{URI: "cordum://runs/{run_id}/timeline", Name: "Run Timeline", Description: "Workflow run timeline", MimeType: "application/json"},
-		{URI: "cordum://artifacts/{artifact_ptr}", Name: "Artifact", Description: "Artifact payload", MimeType: "application/json"},
-		{URI: "cordum://memory?ptr=redis://ctx:<job_id>", Name: "Memory", Description: "Context/result pointers", MimeType: "application/json"},
+func (b *Bridge) buildResourceTemplates() []mcp.ResourceTemplate {
+	return []mcp.ResourceTemplate{
+		{URITemplate: "cordum://jobs/{job_id}", Name: "Job", Description: "Job details", MimeType: "application/json"},
+		{URITemplate: "cordum://jobs/{job_id}/decisions", Name: "Job Decisions", Description: "Safety decision history", MimeType: "application/json"},
+		{URITemplate: "cordum://runs/{run_id}", Name: "Run", Description: "Workflow run details", MimeType: "application/json"},
+		{URITemplate: "cordum://runs/{run_id}/timeline", Name: "Run Timeline", Description: "Workflow run timeline", MimeType: "application/json"},
+		{URITemplate: "cordum://artifacts/{artifact_ptr}", Name: "Artifact", Description: "Artifact payload", MimeType: "application/json"},
+		{URITemplate: "cordum://memory?ptr=redis://ctx:<job_id>", Name: "Memory", Description: "Context/result pointers", MimeType: "application/json"},
 	}
+}
+
+func negotiateProtocolVersion(requested string) (string, error) {
+	if requested == "" {
+		return defaultProtocolVersion, nil
+	}
+	for _, version := range supportedProtocolVersions {
+		if requested == version {
+			return version, nil
+		}
+	}
+	return "", mcp.NewInvalidParamsError(fmt.Sprintf("unsupported protocolVersion %q", requested))
 }
 
 type jobSubmitRequest struct {
@@ -914,8 +943,9 @@ func (j *jobDetail) IsTerminal() bool {
 
 func (j *jobDetail) AsResult() any {
 	out := map[string]any{
-		"job_id": j.ID,
-		"state":  j.State,
+		"job_id":  j.ID,
+		"state":   j.State,
+		"job_uri": fmt.Sprintf("cordum://jobs/%s", j.ID),
 	}
 	if j.Result != nil {
 		out["result"] = j.Result
@@ -924,6 +954,7 @@ func (j *jobDetail) AsResult() any {
 		out["approval_required"] = true
 		out["approval_ref"] = j.ApprovalRef
 		out["remediations"] = j.SafetyRemediations
+		out["decisions_uri"] = fmt.Sprintf("cordum://jobs/%s/decisions", j.ID)
 	}
 	if j.SafetyReason != "" {
 		out["reason"] = j.SafetyReason

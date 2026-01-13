@@ -43,7 +43,8 @@ type Tool struct {
 }
 
 type ToolListResult struct {
-	Tools []Tool `json:"tools"`
+	Tools      []Tool `json:"tools"`
+	NextCursor string `json:"nextCursor,omitempty"`
 }
 
 type ToolCallParams struct {
@@ -70,7 +71,20 @@ type Resource struct {
 }
 
 type ResourceListResult struct {
-	Resources []Resource `json:"resources"`
+	Resources  []Resource `json:"resources"`
+	NextCursor string     `json:"nextCursor,omitempty"`
+}
+
+type ResourceTemplate struct {
+	URITemplate string `json:"uriTemplate"`
+	Name        string `json:"name"`
+	Description string `json:"description,omitempty"`
+	MimeType    string `json:"mimeType,omitempty"`
+}
+
+type ResourceTemplateListResult struct {
+	ResourceTemplates []ResourceTemplate `json:"resourceTemplates"`
+	NextCursor        string             `json:"nextCursor,omitempty"`
 }
 
 type ResourceReadParams struct {
@@ -95,3 +109,15 @@ const (
 	ErrorInvalidParams  = -32602
 	ErrorInternal       = -32603
 )
+
+type InvalidParamsError struct {
+	Message string
+}
+
+func (e *InvalidParamsError) Error() string {
+	return e.Message
+}
+
+func NewInvalidParamsError(message string) error {
+	return &InvalidParamsError{Message: message}
+}
