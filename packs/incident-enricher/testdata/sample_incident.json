@@ -1,0 +1,15 @@
+{
+  "incident_id": "inc-001",
+  "title": "Example incident",
+  "severity": "high",
+  "source": {
+    "system": "mock",
+    "url": "https://example.local/incidents/inc-001"
+  },
+  "raw": {
+    "message": "Example incident payload"
+  },
+  "destination": {
+    "mode": "artifact"
+  }
+}

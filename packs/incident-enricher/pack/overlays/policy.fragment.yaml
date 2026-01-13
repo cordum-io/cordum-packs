@@ -1,0 +1,14 @@
+version: "1"
+default_tenant: default
+
+rules:
+  - id: incident-enricher-require-approval-post
+    match:
+      topics: ["job.incident-enricher.post"]
+    decision: require_approval
+    reason: "Posting externally requires explicit approval"
+
+  - id: incident-enricher-allow
+    match:
+      topics: ["job.incident-enricher.*"]
+    decision: allow

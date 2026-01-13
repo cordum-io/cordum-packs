@@ -1,0 +1,8 @@
+{
+  "incident_id": "inc-002",
+  "title": "Payments latency",
+  "severity": "high",
+  "summary": "API latency elevated",
+  "service": "payments",
+  "source": "mock"
+}

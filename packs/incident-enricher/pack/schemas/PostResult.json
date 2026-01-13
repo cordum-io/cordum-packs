@@ -1,0 +1,33 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": ["incident_id", "mode"],
+  "properties": {
+    "incident_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "mode": {
+      "type": "string",
+      "enum": ["slack", "artifact"]
+    },
+    "slack": {
+      "type": "object",
+      "properties": {
+        "ok": {"type": "boolean"},
+        "channel": {"type": "string"},
+        "ts": {"type": "string"},
+        "permalink": {"type": "string"}
+      },
+      "additionalProperties": true
+    },
+    "artifact_ptr": {
+      "type": "string"
+    },
+    "posted_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "additionalProperties": false
+}

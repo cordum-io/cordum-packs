@@ -1,0 +1,82 @@
+apiVersion: cordum.io/v1alpha1
+kind: Pack
+
+metadata:
+  id: incident-enricher
+  version: 0.1.0
+  title: Incident Enricher
+  description: Fetch context, summarize, require approval before posting.
+
+compatibility:
+  protocolVersion: 1
+  minCoreVersion: 0.6.0
+
+topics:
+  - name: job.incident-enricher.fetch
+    capability: incident.fetch
+    riskTags: ["network"]
+    requires: ["network:egress"]
+
+  - name: job.incident-enricher.summarize
+    capability: incident.summarize
+    riskTags: ["network"]
+    requires: ["llm"]
+
+  - name: job.incident-enricher.post
+    capability: incident.post
+    riskTags: ["network", "write"]
+    requires: ["slack:webhook"]
+
+resources:
+  schemas:
+    - id: incident-enricher/IncidentInput
+      path: schemas/IncidentInput.json
+    - id: incident-enricher/EvidenceBundle
+      path: schemas/EvidenceBundle.json
+    - id: incident-enricher/Summary
+      path: schemas/Summary.json
+    - id: incident-enricher/PostResult
+      path: schemas/PostResult.json
+
+  workflows:
+    - id: incident-enricher.enrich
+      path: workflows/incident_enrich.yaml
+
+overlays:
+  config:
+    - name: pools
+      scope: system
+      scope_id: default
+      key: pools
+      strategy: json_merge_patch
+      path: overlays/pools.patch.yaml
+
+    - name: timeouts
+      scope: system
+      scope_id: default
+      key: timeouts
+      strategy: json_merge_patch
+      path: overlays/timeouts.patch.yaml
+
+  policy:
+    - name: safety
+      strategy: bundle_fragment
+      path: overlays/policy.fragment.yaml
+
+tests:
+  policySimulations:
+    - name: allow_fetch
+      request:
+        tenantId: default
+        topic: job.incident-enricher.fetch
+        capability: incident.fetch
+        riskTags: ["network"]
+      expectDecision: ALLOW
+
+    - name: require_approval_post
+      request:
+        tenantId: default
+        topic: job.incident-enricher.post
+        capability: incident.post
+        riskTags: ["network", "write"]
+      expectDecision: REQUIRE_APPROVAL

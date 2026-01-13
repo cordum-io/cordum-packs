@@ -1,0 +1,12 @@
+pools:
+  incident-enricher-fetch:
+    requires: ["network:egress"]
+  incident-enricher-summarize:
+    requires: ["llm"]
+  incident-enricher-post:
+    requires: ["slack:webhook"]
+
+topics:
+  job.incident-enricher.fetch: incident-enricher-fetch
+  job.incident-enricher.summarize: incident-enricher-summarize
+  job.incident-enricher.post: incident-enricher-post

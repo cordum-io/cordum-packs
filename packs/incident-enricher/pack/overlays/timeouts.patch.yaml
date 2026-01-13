@@ -1,0 +1,10 @@
+topics:
+  job.incident-enricher.fetch:
+    timeout_seconds: 30
+    max_retries: 2
+  job.incident-enricher.summarize:
+    timeout_seconds: 90
+    max_retries: 1
+  job.incident-enricher.post:
+    timeout_seconds: 20
+    max_retries: 1
