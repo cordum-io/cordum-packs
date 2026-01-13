@@ -9,6 +9,9 @@ on:
       - ".github/workflows/publish.yml"
   workflow_dispatch: {}
 
+env:
+  ALLOWED_DISPATCHERS: ${{ vars.ALLOWED_DISPATCHERS || '[]' }}
+
 permissions:
   contents: read
   pages: write
@@ -20,6 +23,7 @@ concurrency:
 
 jobs:
   lint_security:
+    if: ${{ github.event_name != 'workflow_dispatch' || contains(fromJson(env.ALLOWED_DISPATCHERS), github.actor) }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -122,6 +126,7 @@ jobs:
 
   build:
     needs: lint_security
+    if: ${{ github.event_name != 'workflow_dispatch' || contains(fromJson(env.ALLOWED_DISPATCHERS), github.actor) }}
     runs-on: ubuntu-latest
     env:
       PACKS_BASE_URL: ${{ secrets.PACKS_BASE_URL }}
@@ -154,6 +159,7 @@ jobs:
 
   deploy_pages:
     needs: build
+    if: ${{ github.event_name != 'workflow_dispatch' || contains(fromJson(env.ALLOWED_DISPATCHERS), github.actor) }}
     runs-on: ubuntu-latest
     environment:
       name: github-pages
@@ -166,6 +172,8 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
+    environment:
+      name: production
     steps:
       - name: Download public artifact
         uses: actions/download-artifact@v4
