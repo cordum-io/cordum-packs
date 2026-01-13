@@ -1,0 +1,28 @@
+id: github.issue.create
+name: GitHub Issue Create
+description: Create a GitHub issue with Cordum policy approvals.
+version: "0.1.0"
+timeout_sec: 120
+steps:
+  create:
+    id: create
+    name: Create issue
+    type: worker
+    topic: job.github.write
+    input:
+      profile: ${input.profile}
+      action: issues.create
+      owner: ${input.owner}
+      repo: ${input.repo}
+      repository: ${input.repository}
+      title: ${input.title}
+      body: ${input.body}
+      labels: ${input.labels}
+      assignees: ${input.assignees}
+    input_schema_id: github/GitHubIssueCreateInput
+    output_schema_id: github/GitHubActionResult
+    meta:
+      pack_id: github
+      capability: github.issues.create
+      risk_tags: ["write", "network"]
+      requires: ["network:egress"]

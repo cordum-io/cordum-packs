@@ -1,0 +1,17 @@
+version: v1
+rules:
+  - id: github-read
+    match:
+      topics:
+        - job.github.read
+      risk_tags:
+        - read
+    decision: allow
+  - id: github-write
+    match:
+      topics:
+        - job.github.write
+      risk_tags:
+        - write
+    decision: require_approval
+    reason: "GitHub write actions require approval"
