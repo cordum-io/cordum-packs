@@ -17,7 +17,7 @@ func MockEvidence(ctx context.Context, gw *gatewayclient.Client, input types.Inc
 		return types.EvidenceBundle{}, nil, err
 	}
 	ptr, size, err := gw.PutArtifact(ctx, payload, "application/json", "audit", map[string]string{
-		"kind":       "incident",
+		"kind":        "incident",
 		"incident_id": input.IncidentID,
 	}, maxArtifactBytes)
 	if err != nil {

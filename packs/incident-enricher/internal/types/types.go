@@ -2,12 +2,12 @@ package types
 
 // IncidentInput is the workflow input schema.
 type IncidentInput struct {
-	IncidentID  string      `json:"incident_id"`
-	Title       string      `json:"title,omitempty"`
-	Severity    string      `json:"severity,omitempty"`
-	Source      SourceInfo  `json:"source"`
+	IncidentID  string         `json:"incident_id"`
+	Title       string         `json:"title,omitempty"`
+	Severity    string         `json:"severity,omitempty"`
+	Source      SourceInfo     `json:"source"`
 	Raw         map[string]any `json:"raw,omitempty"`
-	Destination Destination `json:"destination"`
+	Destination Destination    `json:"destination"`
 }
 
 type SourceInfo struct {

@@ -108,7 +108,7 @@ func main() {
 			}
 			result.Slack = slackResult
 			artifactPtr, _, err := artifacts.UploadText(ctx, gw, message, "text/plain", "audit", map[string]string{
-				"kind":       "post_payload",
+				"kind":        "post_payload",
 				"incident_id": input.Incident.IncidentID,
 			}, maxBytes)
 			if err != nil {
@@ -121,7 +121,7 @@ func main() {
 				"summary":  input.Summary,
 			}
 			artifactPtr, _, err := artifacts.UploadJSON(ctx, gw, payload, "audit", map[string]string{
-				"kind":       "post_payload",
+				"kind":        "post_payload",
 				"incident_id": input.Incident.IncidentID,
 			}, maxBytes)
 			if err != nil {
