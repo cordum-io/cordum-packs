@@ -1,0 +1,5 @@
+topics:
+  job.mcp-client.call: mcp-client
+pools:
+  mcp-client:
+    requires: ["network:egress"]
