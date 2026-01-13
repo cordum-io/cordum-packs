@@ -19,8 +19,87 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  build:
+  lint_security:
     runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Python tooling
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r tools/requirements.txt ruff bandit
+
+      - name: Lint Python
+        run: ruff check tools
+
+      - name: Bandit scan
+        run: bandit -r tools
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+
+      - name: Go format check
+        run: |
+          set -euo pipefail
+          files="$(find packs -name '*.go' -type f -not -path '*/vendor/*')"
+          if [ -n "$files" ]; then
+            unformatted="$(gofmt -l $files)"
+            if [ -n "$unformatted" ]; then
+              echo "gofmt required for:"
+              echo "$unformatted"
+              exit 1
+            fi
+          fi
+
+      - name: Go tests
+        run: |
+          set -euo pipefail
+          while IFS= read -r mod; do
+            dir="$(dirname "$mod")"
+            echo "Testing $dir"
+            (cd "$dir" && go test ./...)
+          done < <(find packs -maxdepth 3 -name go.mod)
+
+      - name: Gosec scan
+        run: |
+          set -euo pipefail
+          go install github.com/securego/gosec/v2/cmd/gosec@latest
+          while IFS= read -r mod; do
+            dir="$(dirname "$mod")"
+            echo "Scanning $dir"
+            (cd "$dir" && gosec ./...)
+          done < <(find packs -maxdepth 3 -name go.mod)
+
+      - name: Gitleaks scan
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          args: --no-git --redact
+
+      - name: Trivy filesystem scan
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          severity: CRITICAL,HIGH
+          exit-code: "1"
+          ignore-unfixed: true
+
+  build:
+    needs: lint_security
+    runs-on: ubuntu-latest
+    env:
+      PACKS_BASE_URL: ${{ secrets.PACKS_BASE_URL }}
+      PACKS_DOMAIN: ${{ secrets.PACKS_DOMAIN }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -41,7 +120,13 @@ jobs:
         with:
           path: public
 
-  deploy:
+      - name: Upload public artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: public
+          path: public
+
+  deploy_pages:
     needs: build
     runs-on: ubuntu-latest
     environment:
@@ -50,3 +135,58 @@ jobs:
     steps:
       - id: deployment
         uses: actions/deploy-pages@v4
+
+  deploy_server:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Download public artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: public
+          path: public
+
+      - name: Configure SSH
+        env:
+          PACKS_DEPLOY_KEY: ${{ secrets.PACKS_DEPLOY_KEY }}
+          DEPLOY_HOST: ${{ secrets.PACKS_DEPLOY_HOST }}
+        run: |
+          set -euo pipefail
+          if [ -z "${PACKS_DEPLOY_KEY:-}" ]; then
+            echo "PACKS_DEPLOY_KEY secret is required" >&2
+            exit 1
+          fi
+          if [ -z "${DEPLOY_HOST:-}" ]; then
+            echo "PACKS_DEPLOY_HOST secret is required" >&2
+            exit 1
+          fi
+          mkdir -p ~/.ssh
+          printf '%s\n' "$PACKS_DEPLOY_KEY" > ~/.ssh/cordum_packs_deploy
+          chmod 600 ~/.ssh/cordum_packs_deploy
+          ssh-keyscan -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts
+
+      - name: Upload to server
+        env:
+          DEPLOY_HOST: ${{ secrets.PACKS_DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.PACKS_DEPLOY_USER }}
+          DEPLOY_ROOT: ${{ secrets.PACKS_DEPLOY_ROOT }}
+          DEPLOY_TMP: ${{ secrets.PACKS_DEPLOY_TMP }}
+          RELOAD_NGINX: ${{ secrets.PACKS_RELOAD_NGINX }}
+        run: |
+          set -euo pipefail
+          DEPLOY_HOST="${DEPLOY_HOST:-92.205.177.179}"
+          DEPLOY_USER="${DEPLOY_USER:-sysadmin}"
+          DEPLOY_ROOT="${DEPLOY_ROOT:-/var/www/packs.cordum.io}"
+          DEPLOY_TMP="${DEPLOY_TMP:-/tmp/cordum-packs-public}"
+          RELOAD_NGINX="${RELOAD_NGINX:-1}"
+
+          rsync -az --delete -e "ssh -i ~/.ssh/cordum_packs_deploy" public/ \
+            "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_TMP/"
+
+          ssh -i ~/.ssh/cordum_packs_deploy "$DEPLOY_USER@$DEPLOY_HOST" \
+            "sudo mkdir -p $DEPLOY_ROOT && sudo rsync -a --delete $DEPLOY_TMP/ $DEPLOY_ROOT/"
+
+          if [ "$RELOAD_NGINX" = "1" ]; then
+            ssh -i ~/.ssh/cordum_packs_deploy "$DEPLOY_USER@$DEPLOY_HOST" "sudo nginx -t && sudo systemctl reload nginx"
+          fi
