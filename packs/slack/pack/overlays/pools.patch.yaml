@@ -1,0 +1,6 @@
+topics:
+  job.slack.read: slack
+  job.slack.write: slack
+pools:
+  slack:
+    requires: ["network:egress"]

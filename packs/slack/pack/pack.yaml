@@ -1,0 +1,67 @@
+apiVersion: cordum.io/v1alpha1
+kind: Pack
+
+metadata:
+  id: slack
+  version: 0.1.0
+  title: Slack
+  description: Slack notifications and approvals for ChatOps.
+
+compatibility:
+  protocolVersion: 1
+  minCoreVersion: 0.1.0
+
+topics:
+  - name: job.slack.read
+    requires: ["network:egress"]
+    riskTags: ["read", "network"]
+    capability: slack.read
+
+  - name: job.slack.write
+    requires: ["network:egress"]
+    riskTags: ["write", "network"]
+    capability: slack.write
+
+resources:
+  schemas:
+    - id: slack/SlackActionInput
+      path: schemas/SlackActionInput.json
+    - id: slack/SlackActionResult
+      path: schemas/SlackActionResult.json
+  workflows:
+    - id: slack.read
+      path: workflows/slack_read.yaml
+    - id: slack.write
+      path: workflows/slack_write.yaml
+
+overlays:
+  config:
+    - name: pools
+      scope: system
+      key: pools
+      strategy: json_merge_patch
+      path: overlays/pools.patch.yaml
+    - name: timeouts
+      scope: system
+      key: timeouts
+      strategy: json_merge_patch
+      path: overlays/timeouts.patch.yaml
+  policy:
+    - name: safety
+      strategy: bundle_fragment
+      path: overlays/policy.fragment.yaml
+
+tests:
+  policySimulations:
+    - name: allow_read
+      request:
+        tenantId: default
+        topic: job.slack.read
+        riskTags: ["read", "network"]
+      expectDecision: ALLOW
+    - name: write_requires_approval
+      request:
+        tenantId: default
+        topic: job.slack.write
+        riskTags: ["write", "network"]
+      expectDecision: REQUIRE_APPROVAL
