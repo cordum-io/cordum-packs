@@ -1,0 +1,17 @@
+version: v1
+rules:
+  - id: pagerduty-read
+    match:
+      topics:
+        - job.pagerduty.read
+      risk_tags:
+        - read
+    decision: allow
+  - id: pagerduty-write
+    match:
+      topics:
+        - job.pagerduty.write
+      risk_tags:
+        - write
+    decision: require_approval
+    reason: "PagerDuty write actions require approval"

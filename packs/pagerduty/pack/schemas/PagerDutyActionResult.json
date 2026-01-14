@@ -1,0 +1,38 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "PagerDuty Action Result",
+  "type": "object",
+  "properties": {
+    "job_id": {
+      "type": "string"
+    },
+    "profile": {
+      "type": "string"
+    },
+    "action": {
+      "type": "string"
+    },
+    "status_code": {
+      "type": "integer"
+    },
+    "request_id": {
+      "type": "string"
+    },
+    "duration_ms": {
+      "type": "number"
+    },
+    "result": {
+      "type": [
+        "object",
+        "array",
+        "string",
+        "number",
+        "boolean",
+        "null"
+      ]
+    },
+    "error": {
+      "type": "string"
+    }
+  }
+}

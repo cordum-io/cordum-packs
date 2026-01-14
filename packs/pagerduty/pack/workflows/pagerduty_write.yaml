@@ -1,0 +1,23 @@
+id: pagerduty.write
+name: PagerDuty Write
+description: Acknowledge or resolve PagerDuty incidents.
+version: "0.1.0"
+timeout_sec: 120
+steps:
+  write:
+    id: write
+    name: PagerDuty Write action
+    type: worker
+    topic: job.pagerduty.write
+    input:
+      profile: ${input.profile}
+      action: ${input.action}
+      params: ${input.params}
+      request_id: ${input.request_id}
+    input_schema_id: pagerduty/PagerDutyActionInput
+    output_schema_id: pagerduty/PagerDutyActionResult
+    meta:
+      pack_id: pagerduty
+      capability: pagerduty.write
+      risk_tags: ["write", "network"]
+      requires: ["network:egress"]

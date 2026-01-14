@@ -1,0 +1,6 @@
+topics:
+  job.pagerduty.read: pagerduty
+  job.pagerduty.write: pagerduty
+pools:
+  pagerduty:
+    requires: ["network:egress"]
