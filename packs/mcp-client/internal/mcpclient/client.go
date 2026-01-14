@@ -128,6 +128,7 @@ func newStdioClient(ctx context.Context, server Server) (*stdioClient, error) {
 	if strings.TrimSpace(server.Command) == "" {
 		return nil, fmt.Errorf("stdio command required")
 	}
+	// #nosec G204 -- command comes from trusted config or inline server config gated by allow_inline_server.
 	cmd := exec.CommandContext(ctx, server.Command, server.Args...)
 	cmd.Env = append(os.Environ(), formatEnv(server.Env)...)
 	stdin, err := cmd.StdinPipe()
