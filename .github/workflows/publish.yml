@@ -77,6 +77,13 @@ jobs:
           ignore-unfixed: true
 
       - name: Verify dependency token
+        env:
+          CORDUM_DEPS_TOKEN: ${{ secrets.CORDUM_DEPS_TOKEN }}
+        run: |
+          if [ -z "${CORDUM_DEPS_TOKEN}" ]; then
+            echo "::error::Missing CORDUM_DEPS_TOKEN (needs read access to cordum-io/cap and cordum-io/cordum)."
+            exit 1
+          fi
         if: ${{ secrets.CORDUM_DEPS_TOKEN == '' }}
         run: |
           echo "::error::Missing CORDUM_DEPS_TOKEN (needs read access to cordum-io/cap and cordum-io/cordum)."
