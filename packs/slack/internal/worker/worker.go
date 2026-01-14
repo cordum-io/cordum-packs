@@ -57,14 +57,14 @@ type callResult struct {
 }
 
 type actionSpec struct {
-	Name          string
-	Method        string
-	Path          string
-	Intent        string
-	ParamsStyle   string
-	RequiredKeys  []string
-	ChannelKeys   []string
-	Description   string
+	Name         string
+	Method       string
+	Path         string
+	Intent       string
+	ParamsStyle  string
+	RequiredKeys []string
+	ChannelKeys  []string
+	Description  string
 }
 
 var actionSpecs = map[string]actionSpec{
