@@ -263,6 +263,7 @@ func (w *Worker) execute(ctx context.Context, profile config.Profile, spec actio
 	cmdCtx, cancel := context.WithTimeout(ctx, profile.CommandTimeout)
 	defer cancel()
 
+	// #nosec G204 -- kubectl path comes from profile config; args are built from allowlisted actions without shell.
 	cmd := exec.CommandContext(cmdCtx, profile.KubectlPath, args...)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
