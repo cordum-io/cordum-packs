@@ -1,0 +1,55 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "GitHub Action Input",
+  "type": "object",
+  "properties": {
+    "profile": {"type": "string"},
+    "action": {
+      "type": "string",
+      "enum": [
+        "repos.get",
+        "issues.get",
+        "issues.list",
+        "issues.create",
+        "issues.comment",
+        "pulls.get",
+        "pulls.create",
+        "search.issues",
+        "contents.get"
+      ]
+    },
+    "owner": {"type": "string"},
+    "repo": {"type": "string"},
+    "repository": {"type": "string", "description": "owner/repo"},
+    "issue_number": {"type": "integer", "minimum": 1},
+    "pull_number": {"type": "integer", "minimum": 1},
+    "title": {"type": "string"},
+    "body": {"type": "string"},
+    "labels": {"type": "array", "items": {"type": "string"}},
+    "assignees": {"type": "array", "items": {"type": "string"}},
+    "base": {"type": "string"},
+    "head": {"type": "string"},
+    "state": {"type": "string", "enum": ["open", "closed", "all"]},
+    "draft": {"type": "boolean"},
+    "query": {"type": "string"},
+    "per_page": {"type": "integer", "minimum": 1, "maximum": 100},
+    "page": {"type": "integer", "minimum": 1},
+    "comment_body": {"type": "string"},
+    "path": {"type": "string"},
+    "ref": {"type": "string"},
+    "auth": {
+      "type": "object",
+      "properties": {
+        "token": {"type": "string"},
+        "token_env": {"type": "string"},
+        "app_id": {"type": "string"},
+        "app_id_env": {"type": "string"},
+        "app_private_key": {"type": "string"},
+        "app_private_key_env": {"type": "string"},
+        "app_installation_id": {"type": "string"},
+        "app_installation_id_env": {"type": "string"}
+      }
+    }
+  },
+  "required": ["action"]
+}
