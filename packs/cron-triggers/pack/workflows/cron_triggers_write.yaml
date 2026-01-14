@@ -1,0 +1,23 @@
+id: cron-triggers.write
+name: Cron Triggers Write
+description: Create or update scheduled runs.
+version: "0.1.0"
+timeout_sec: 120
+steps:
+  write:
+    id: write
+    name: Cron Triggers Write action
+    type: worker
+    topic: job.cron-triggers.write
+    input:
+      profile: ${input.profile}
+      action: ${input.action}
+      params: ${input.params}
+      request_id: ${input.request_id}
+    input_schema_id: cron-triggers/CronTriggersActionInput
+    output_schema_id: cron-triggers/CronTriggersActionResult
+    meta:
+      pack_id: cron-triggers
+      capability: cron-triggers.write
+      risk_tags: ["write"]
+      requires: []
