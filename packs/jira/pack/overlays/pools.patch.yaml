@@ -1,0 +1,6 @@
+topics:
+  job.jira.read: jira
+  job.jira.write: jira
+pools:
+  jira:
+    requires: ["network:egress"]

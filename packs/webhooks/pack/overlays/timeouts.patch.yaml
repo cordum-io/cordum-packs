@@ -1,0 +1,7 @@
+topics:
+  job.webhooks.read:
+    timeout_seconds: 60
+    max_retries: 2
+  job.webhooks.write:
+    timeout_seconds: 120
+    max_retries: 1

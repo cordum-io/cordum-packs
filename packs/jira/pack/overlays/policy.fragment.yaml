@@ -1,0 +1,17 @@
+version: v1
+rules:
+  - id: jira-read
+    match:
+      topics:
+        - job.jira.read
+      risk_tags:
+        - read
+    decision: allow
+  - id: jira-write
+    match:
+      topics:
+        - job.jira.write
+      risk_tags:
+        - write
+    decision: require_approval
+    reason: "Jira write actions require approval"

@@ -1,0 +1,23 @@
+id: webhooks.write
+name: Webhooks Write
+description: Register or rotate webhook endpoints and secrets.
+version: "0.1.0"
+timeout_sec: 120
+steps:
+  write:
+    id: write
+    name: Webhooks Write action
+    type: worker
+    topic: job.webhooks.write
+    input:
+      profile: ${input.profile}
+      action: ${input.action}
+      params: ${input.params}
+      request_id: ${input.request_id}
+    input_schema_id: webhooks/WebhooksActionInput
+    output_schema_id: webhooks/WebhooksActionResult
+    meta:
+      pack_id: webhooks
+      capability: webhooks.write
+      risk_tags: ["write"]
+      requires: []

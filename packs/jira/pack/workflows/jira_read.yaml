@@ -1,0 +1,24 @@
+id: jira.read
+name: Jira Read
+description: Read Jira issues and project metadata.
+version: "0.1.0"
+timeout_sec: 60
+steps:
+  read:
+    id: read
+    name: Jira Read action
+    type: worker
+    topic: job.jira.read
+    input:
+      profile: ${input.profile}
+      action: ${input.action}
+      params: ${input.params}
+      request_id: ${input.request_id}
+      auth: ${input.auth}
+    input_schema_id: jira/JiraActionInput
+    output_schema_id: jira/JiraActionResult
+    meta:
+      pack_id: jira
+      capability: jira.read
+      risk_tags: ["read", "network"]
+      requires: ["network:egress"]
