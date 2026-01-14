@@ -9,6 +9,13 @@ Workers use `kubectl` to run read-only inspections or approved remediation comma
 - **Governed access**: read is allowed by default; write requires approval.
 - **Workflow templates**: generic read/write workflows for triage actions.
 
+## Runtime component
+
+The pack runtime is the `cordum-kubernetes-triage` worker in
+`cmd/cordum-kubernetes-triage`. Installing the pack only registers
+workflows/schemas; you must run or deploy the worker so `job.kubernetes-triage.*`
+jobs are executed.
+
 ## Quickstart
 
 ### 1) Install the pack

@@ -10,6 +10,12 @@ Part of the `cordum-packs` monorepo.
 - **Cursor-friendly list endpoints**: list methods accept `cursor` and respond with `nextCursor` when relevant.
 - **Safety Kernel integration**: each tool call becomes a Cordum job and is evaluated before dispatch.
 
+## Runtime component
+
+The pack runtime is the `cordum-mcp-bridge` stdio server in `cmd/cordum-mcp-bridge`.
+Installing the pack only registers workflows/schemas; you must run or deploy the
+bridge so `job.mcp-bridge.*` jobs are executed.
+
 ## MCP compatibility
 
 - Protocol versions: `2025-11-25` (default), `2025-06-18` (negotiated).

@@ -9,6 +9,12 @@ Workers are deployed separately and authenticated with GitHub tokens or GitHub A
 - **Governed access**: read is allowed by default; write requires approval.
 - **Workflow template**: create issues through `github.issue.create`.
 
+## Runtime component
+
+The pack runtime is the `cordum-github` worker in `cmd/cordum-github`. Installing
+the pack only registers workflows/schemas; you must run or deploy the worker so
+`job.github.*` jobs are executed.
+
 ## Quickstart
 
 ### 1) Install the pack

@@ -9,6 +9,12 @@ The receiver runs as a standalone HTTP service and calls the Cordum gateway to s
 - **Tenant-aware routing**: map routes to workflow IDs with optional org/team scoping.
 - **Audit-friendly payloads**: headers, query params, and body forwarded into workflow input.
 
+## Runtime component
+
+The pack runtime is the `cordum-webhooks` service in `cmd/cordum-webhooks`.
+Installing the pack only registers schemas and config overlays; you must run or
+deploy the receiver so webhook traffic can start workflows.
+
 ## Quickstart
 
 ### 1) Install the pack

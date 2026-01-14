@@ -9,6 +9,12 @@ Workers are deployed separately and authenticated with Jira API tokens.
 - **Governed access**: read is allowed by default; write requires approval.
 - **Workflow templates**: generic read/write workflows for Jira actions.
 
+## Runtime component
+
+The pack runtime is the `cordum-jira` worker in `cmd/cordum-jira`. Installing
+the pack only registers workflows/schemas; you must run or deploy the worker so
+`job.jira.*` jobs are executed.
+
 ## Quickstart
 
 ### 1) Install the pack

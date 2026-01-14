@@ -9,6 +9,12 @@ Workers are deployed separately and should be configured with named servers.
 - **Governed access**: read is allowed by default; write requires approval.
 - **Reusable workflow**: a minimal workflow template for production integrations.
 
+## Runtime component
+
+The pack runtime is the `cordum-mcp-client` worker in `cmd/cordum-mcp-client`.
+Installing the pack only registers workflows/schemas; you must run or deploy the
+worker so `job.mcp-client.*` jobs are executed.
+
 ## Quickstart
 
 ### 1) Install the pack

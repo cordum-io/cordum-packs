@@ -3,6 +3,12 @@
 This pack installs a single workflow that dispatches `job.hello-pack.echo` and
 validates input/output with JSON Schemas.
 
+## Runtime component
+
+The pack runtime is the hello worker in the Cordum core repo at
+`examples/hello-worker-go`. Installing the pack only registers workflows/schemas;
+you must run or deploy the worker so `job.hello-pack.echo` jobs are executed.
+
 ## Install
 
 From your Cordum core repo:
@@ -25,5 +31,3 @@ curl -sS -X POST http://localhost:8081/api/v1/workflows/hello-pack.echo/runs \
 ```bash
 go run ./cmd/cordumctl pack uninstall hello-pack
 ```
-
-> Note: The worker for `job.hello-pack.echo` lives in `examples/hello-worker-go`.
