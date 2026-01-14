@@ -1,0 +1,17 @@
+version: v1
+rules:
+  - id: slack-read
+    match:
+      topics:
+        - job.slack.read
+      risk_tags:
+        - read
+    decision: allow
+  - id: slack-write
+    match:
+      topics:
+        - job.slack.write
+      risk_tags:
+        - write
+    decision: require_approval
+    reason: "Slack write actions require approval"
