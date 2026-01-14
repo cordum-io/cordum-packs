@@ -22,9 +22,9 @@ import (
 )
 
 const (
-	httpMethodGet    = "GET"
-	httpMethodPost   = "POST"
-	httpMethodPut    = "PUT"
+	httpMethodGet  = "GET"
+	httpMethodPost = "POST"
+	httpMethodPut  = "PUT"
 )
 
 type Worker struct {
