@@ -1,0 +1,67 @@
+apiVersion: cordum.io/v1alpha1
+kind: Pack
+
+metadata:
+  id: kubernetes-triage
+  version: 0.1.0
+  title: Kubernetes Triage
+  description: Kubernetes diagnostics and remediation with approvals.
+
+compatibility:
+  protocolVersion: 1
+  minCoreVersion: 0.1.0
+
+topics:
+  - name: job.kubernetes-triage.read
+    requires: ["network:egress"]
+    riskTags: ["read", "network"]
+    capability: kubernetes-triage.read
+
+  - name: job.kubernetes-triage.write
+    requires: ["network:egress"]
+    riskTags: ["write", "network"]
+    capability: kubernetes-triage.write
+
+resources:
+  schemas:
+    - id: kubernetes-triage/KubernetesTriageActionInput
+      path: schemas/KubernetesTriageActionInput.json
+    - id: kubernetes-triage/KubernetesTriageActionResult
+      path: schemas/KubernetesTriageActionResult.json
+  workflows:
+    - id: kubernetes-triage.read
+      path: workflows/kubernetes_triage_read.yaml
+    - id: kubernetes-triage.write
+      path: workflows/kubernetes_triage_write.yaml
+
+overlays:
+  config:
+    - name: pools
+      scope: system
+      key: pools
+      strategy: json_merge_patch
+      path: overlays/pools.patch.yaml
+    - name: timeouts
+      scope: system
+      key: timeouts
+      strategy: json_merge_patch
+      path: overlays/timeouts.patch.yaml
+  policy:
+    - name: safety
+      strategy: bundle_fragment
+      path: overlays/policy.fragment.yaml
+
+tests:
+  policySimulations:
+    - name: allow_read
+      request:
+        tenantId: default
+        topic: job.kubernetes-triage.read
+        riskTags: ["read", "network"]
+      expectDecision: ALLOW
+    - name: write_requires_approval
+      request:
+        tenantId: default
+        topic: job.kubernetes-triage.write
+        riskTags: ["write", "network"]
+      expectDecision: REQUIRE_APPROVAL

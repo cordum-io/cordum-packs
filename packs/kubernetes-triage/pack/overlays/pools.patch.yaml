@@ -1,0 +1,6 @@
+topics:
+  job.kubernetes-triage.read: kubernetes-triage
+  job.kubernetes-triage.write: kubernetes-triage
+pools:
+  kubernetes-triage:
+    requires: ["network:egress"]

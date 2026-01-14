@@ -1,0 +1,17 @@
+version: v1
+rules:
+  - id: kubernetes-triage-read
+    match:
+      topics:
+        - job.kubernetes-triage.read
+      risk_tags:
+        - read
+    decision: allow
+  - id: kubernetes-triage-write
+    match:
+      topics:
+        - job.kubernetes-triage.write
+      risk_tags:
+        - write
+    decision: require_approval
+    reason: "Kubernetes Triage write actions require approval"

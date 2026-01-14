@@ -1,0 +1,67 @@
+apiVersion: cordum.io/v1alpha1
+kind: Pack
+
+metadata:
+  id: jira
+  version: 0.1.0
+  title: Jira
+  description: Jira issues, transitions, and comments with policy gating.
+
+compatibility:
+  protocolVersion: 1
+  minCoreVersion: 0.1.0
+
+topics:
+  - name: job.jira.read
+    requires: ["network:egress"]
+    riskTags: ["read", "network"]
+    capability: jira.read
+
+  - name: job.jira.write
+    requires: ["network:egress"]
+    riskTags: ["write", "network"]
+    capability: jira.write
+
+resources:
+  schemas:
+    - id: jira/JiraActionInput
+      path: schemas/JiraActionInput.json
+    - id: jira/JiraActionResult
+      path: schemas/JiraActionResult.json
+  workflows:
+    - id: jira.read
+      path: workflows/jira_read.yaml
+    - id: jira.write
+      path: workflows/jira_write.yaml
+
+overlays:
+  config:
+    - name: pools
+      scope: system
+      key: pools
+      strategy: json_merge_patch
+      path: overlays/pools.patch.yaml
+    - name: timeouts
+      scope: system
+      key: timeouts
+      strategy: json_merge_patch
+      path: overlays/timeouts.patch.yaml
+  policy:
+    - name: safety
+      strategy: bundle_fragment
+      path: overlays/policy.fragment.yaml
+
+tests:
+  policySimulations:
+    - name: allow_read
+      request:
+        tenantId: default
+        topic: job.jira.read
+        riskTags: ["read", "network"]
+      expectDecision: ALLOW
+    - name: write_requires_approval
+      request:
+        tenantId: default
+        topic: job.jira.write
+        riskTags: ["write", "network"]
+      expectDecision: REQUIRE_APPROVAL

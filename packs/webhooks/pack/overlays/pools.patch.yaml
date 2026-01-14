@@ -1,0 +1,6 @@
+topics:
+  job.webhooks.read: webhooks
+  job.webhooks.write: webhooks
+pools:
+  webhooks:
+    requires: []
