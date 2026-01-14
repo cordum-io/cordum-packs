@@ -1,60 +1,33 @@
 # Cordum Packs Roadmap
 
-This roadmap defines the next 20 "must-have" packs and the consistency pattern each pack must follow. Packs are installable overlays (workflows + schemas + config/policy patches). Workers are deployed separately and should be scoped, auditable, and policy-gated.
+## Purpose
+This roadmap defines the 20 priority packs and the contract every pack must follow. Packs are installable bundles (workflows + schemas + config/policy overlays). Workers run separately and must be scoped, auditable, and policy-gated.
 
 ## Guiding Principles
-
-1) Spec-first integration: clear topics, capabilities, risk tags, and requires.
+1) Spec-first integration: topics, capabilities, risk tags, and requires are explicit.
 2) Governable by default: read is allowed; write requires approval; destructive/prod/secrets are restricted.
-3) Observable: every pack emits useful metadata (labels, artifact pointers, logs) for audit.
-4) Consistent UX: common naming, schemas, and policy tests across packs.
+3) Observable: every pack emits labels, artifacts, and logs suitable for audit.
+4) Consistent UX: naming, schemas, and policy tests are uniform across packs.
 
-## Standard Pack Pattern (Required)
-
-Every pack must include:
-
-1) **Topics + capabilities + risk tags + requires** in `pack.yaml`
-2) **Policy fragment** with the same read/write split
-3) **Minimal workflow template** that proves the integration
-4) **Policy simulations** in `pack.yaml` for safe installs
-
-### Topic + Capability + Risk Tags
-
+## Pack Contract (Required)
+### Naming and metadata
 - Topic naming: `job.<pack>.<action>`
-- Capability naming: `<pack>.<action>` (or `<pack>.<resource>.<action>` for precision)
-- Risk tags:
-  - `read` for data fetch, inspection, discovery
-  - `write` for changes, mutations, creations
-  - Additional tags: `prod`, `destructive`, `secrets`, `network`
-- Requires:
-  - `network:egress` for external APIs
-  - `llm`, `slack:webhook`, `github:api`, etc. for specific capabilities
+- Capability naming: `<pack>.<action>` or `<pack>.<resource>.<action>`
+- Risk tags: `read`, `write`, plus `prod`, `destructive`, `secrets`, `network` as needed
+- Requires: `network:egress`, `slack:webhook`, `github:api`, `llm`, etc.
 
-### Default Policy Fragment (Baseline)
-
+### Policy baseline
 - `read`: `ALLOW`
 - `write`: `REQUIRE_APPROVAL`
-- `destructive` / `prod` / `secrets`: `DENY` or `REQUIRE_APPROVAL` + constraints
+- `destructive` / `prod` / `secrets`: `DENY` or `REQUIRE_APPROVAL` with constraints
 
-### Minimal Workflow Template (Proof Pack)
-
-Standard flow for each pack:
+### Minimal workflow template
 1) Collect evidence (read-only)
 2) Summarize (optional LLM)
-3) Approval (if action is write/destructive)
-4) Execute action
+3) Approval gate for write/destructive actions
+4) Execute action and emit artifacts
 
-### Policy Simulations
-
-Each pack should ship policy simulations verifying:
-- Read path is `ALLOW`
-- Write path is `REQUIRE_APPROVAL`
-- Sensitive actions are constrained or denied
-
-## Standard Artifacts
-
-Each pack should include:
-
+### Required artifacts
 - `pack/pack.yaml`
 - `pack/overlays/pools.patch.yaml`
 - `pack/overlays/timeouts.patch.yaml`
@@ -63,109 +36,60 @@ Each pack should include:
 - `pack/workflows/*.yaml`
 - `tests.policySimulations` in `pack.yaml`
 
-## Pack List (Must-Have 20)
+## Repository Layout (Quick Reference)
+- `packs/` pack projects (bundle assets and optional worker code)
+- `pack/` inside a pack holds bundle assets; some packs keep `pack.yaml` at the root
+- `cmd/` and `internal/` for Go-based workers
+- `tools/` build tooling; `public/` is generated output
 
-### 1) mcp-client
-- Purpose: Cordum as an MCP client (stdio + streamable HTTP).
-- Topics: `job.mcp-client.call`
-- Capabilities: `mcp.call.<server>.<tool>`
-- Risk: `read|write|network`
+## Definition of Done (Per Pack)
+- Topics/capabilities/risk tags/requires documented in `pack.yaml`
+- Policy fragment + policy simulations pass
+- Minimal workflow proves the integration end to end
+- Worker is deployable and audited separately from the pack
+- `python tools/build.py` produces bundle output in `public/`
 
-### 2) github
-- Purpose: repo read/search, issues, PRs, checks, releases.
-- Risk: read allow; PR creation/branch push approval.
+## Pack Roadmap (20 Must-Haves)
+Status legend: `in-repo` means a pack exists in this repository.
 
-### 3) gitlab
-- Purpose: repo read/search, merge requests, pipelines, issues.
-- Risk: read allow; branch push/MR creation approval.
+### Phase 1 (Foundation)
+- mcp-client: Cordum as an MCP client; `read|write|network` (status: in-repo)
+- github: repo read/search, issues, PRs, checks, releases (status: in-repo)
+- slack: notifications, approvals, incident channels
+- jira: issues, transitions, comments, attachments
+- webhooks: inbound events to start workflows; principal mapping required
+- kubernetes-triage: diagnostics, events, logs, rollout status
 
-### 4) slack
-- Purpose: notifications, approvals, incident channels.
-- Risk: post message allow; channel create/invite approval in regulated orgs.
+### Phase 2 (Ops and Observability)
+- prometheus-query: PromQL queries and alert state
+- datadog: metrics/logs/traces queries; monitor changes require approval
+- pagerduty: on-call schedules, incidents, escalations
+- servicenow: ITSM incidents/changes/CMDB; `prod` and `write` tagging
+- msteams: Teams-native notifications and approvals
+- sentry: issues, releases, suspect commits
+- opentelemetry: trace search and dependency graphs (read-only early)
 
-### 5) msteams
-- Purpose: Teams-native notifications and approvals.
-- Risk: similar to Slack.
-
-### 6) jira
-- Purpose: issues, transitions, comments, attachments.
-- Risk: read allow; issue create/priority change approval.
-
-### 7) servicenow
-- Purpose: ITSM incidents/changes/CMDB.
-- Risk: change create/approve tagged `prod` and `write`.
-
-### 8) pagerduty
-- Purpose: on-call schedules, incidents, escalations.
-- Risk: resolve/escalate approval.
-
-### 9) webhooks
-- Purpose: generic inbound events to start Cordum workflows.
-- Risk: map inbound principal + tenant and policy-check every run.
-
-### 10) cron-triggers
-- Purpose: scheduled runs for checks/summaries/compliance.
-
-### 11) kubernetes-triage
-- Purpose: diagnostics, events, logs, rollout status.
-- Risk: mutation actions require approval.
-
-### 12) prometheus-query
-- Purpose: PromQL queries, alert state, label discovery.
-- Risk: `read` + `network`.
-
-### 13) datadog
-- Purpose: metrics/logs/traces queries; monitor state.
-- Risk: mute/modify monitors require approval.
-
-### 14) opentelemetry
-- Purpose: trace search, dependency graphs.
-- Risk: read only in early versions.
-
-### 15) sentry
-- Purpose: issues, releases, suspect commits.
-- Risk: mute/route changes require approval.
-
-### 16) aws
-- Purpose: CloudWatch logs/metrics, ECS/EKS inspection, S3 evidence.
-- Risk: IAM and infra changes require approval.
-
-### 17) gcp
-- Purpose: Cloud Logging/Monitoring queries, GKE inspection.
-- Risk: infra changes require approval.
-
-### 18) azure
-- Purpose: Azure Monitor queries, AKS inspection.
-- Risk: infra changes require approval.
-
-### 19) terraform
-- Purpose: plan, drift detection, policy checks; optional apply with approval.
-- Risk: apply is high risk.
-
-### 20) vault
-- Purpose: secret resolution and dynamic credentials (no raw secrets in workflows).
-- Risk: `secrets` tag + strict policy constraints.
-
-## Recommended Build Order
-
-Phase 1: `mcp-client`, `github`, `slack`, `jira`, `webhooks`, `kubernetes-triage`  
-Phase 2: `prometheus-query`, `datadog`, `pagerduty`, `servicenow`  
-Phase 3: `aws`, `gcp`, `azure`, `terraform`, `vault`, then remaining packs
+### Phase 3 (Infra and Change)
+- aws: CloudWatch logs/metrics, ECS/EKS inspection, S3 evidence
+- gcp: Cloud Logging/Monitoring queries, GKE inspection
+- azure: Azure Monitor queries, AKS inspection
+- terraform: plan, drift detection, policy checks; apply requires approval
+- vault: secret resolution and dynamic credentials; no raw secrets in workflows
+- gitlab: repo read/search, merge requests, pipelines, issues
+- cron-triggers: scheduled runs for checks, summaries, compliance
 
 ## Governance Checklist (Per Pack)
-
 - Define topics and capabilities in `pack.yaml`
 - Annotate every action with risk tags and requires
-- Add policy fragment with read/write split
+- Add policy fragment with the read/write split
 - Add policy simulation tests
 - Provide a minimal, demonstrative workflow
 - Ensure workers are separate deployables
 
-## Next Steps
-
-When we start a pack:
-1) Confirm integration scope + auth model.
-2) Draft `pack.yaml` with topics, capabilities, risk tags, requires.
+## Kickoff Steps
+When starting a pack:
+1) Confirm integration scope and auth model.
+2) Draft `pack.yaml` with topics, capabilities, risk tags, and requires.
 3) Add policy fragment + simulations.
 4) Implement worker + SDK calls.
 5) Ship a minimal workflow for validation.

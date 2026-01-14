@@ -9,6 +9,12 @@ Workers are deployed separately and authenticated with Slack bot tokens.
 - **Governed access**: read is allowed by default; write requires approval.
 - **Workflow templates**: generic read/write workflows for Slack actions.
 
+## Runtime component
+
+The pack runtime is the `cordum-slack` worker in `cmd/cordum-slack`. Installing
+the pack only registers workflows/schemas; you must run or deploy the worker so
+`job.slack.*` jobs are executed.
+
 ## Quickstart
 
 ### 1) Install the pack

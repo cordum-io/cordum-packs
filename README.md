@@ -20,6 +20,18 @@ cordum-packs/
 Pack projects may include worker/bridge code alongside the bundle assets. The
 bundle itself lives at `pack/` (or the project root if `pack.yaml` is there).
 
+## How packs run
+
+A pack has two parts:
+- **Bundle assets** (`pack/` or `pack.yaml`): workflows, schemas, overlays, policy fragments.
+- **Runtime code** (`cmd/` + `internal/`): workers/bridges/receivers that execute jobs or
+  trigger workflows.
+
+`cordumctl pack install` only registers the bundle assets. To execute workflows,
+deploy the pack runtime(s) so the job topics they emit (for example `job.slack.*`)
+are actually handled. Workflows can compose multiple packs, so make sure every
+job topic used by a workflow has a running worker.
+
 ## Build the catalog + bundles
 
 ```bash
