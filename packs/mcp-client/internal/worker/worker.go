@@ -178,33 +178,39 @@ func (w *Worker) fetchInput(ctx context.Context, ptr string) (JobInput, error) {
 }
 
 func (w *Worker) resolveServer(input JobInput) (config.ServerConfig, error) {
+	inlineAllowed := w.cfg.AllowInlineServer
 	var base config.ServerConfig
 	if strings.TrimSpace(input.Server) != "" {
 		server, ok := w.cfg.Servers[input.Server]
 		if !ok {
 			return config.ServerConfig{}, fmt.Errorf("unknown server: %s", input.Server)
 		}
+		if !inlineAllowed && hasInlineServerOverrides(input) {
+			return config.ServerConfig{}, fmt.Errorf("inline server config disabled")
+		}
 		base = server
 		base.Name = input.Server
-	} else if !w.cfg.AllowInlineServer {
+	} else if !inlineAllowed {
 		return config.ServerConfig{}, fmt.Errorf("inline server config disabled")
 	}
 
 	server := base
-	if strings.TrimSpace(input.Transport) != "" {
-		server.Transport = input.Transport
+	if inlineAllowed {
+		if strings.TrimSpace(input.Transport) != "" {
+			server.Transport = input.Transport
+		}
+		if strings.TrimSpace(input.Command) != "" {
+			server.Command = input.Command
+		}
+		if strings.TrimSpace(input.URL) != "" {
+			server.URL = input.URL
+		}
+		if len(input.Args) > 0 {
+			server.Args = append([]string{}, input.Args...)
+		}
+		server.Env = mergeStringMap(server.Env, input.Env)
+		server.Headers = mergeStringMap(server.Headers, input.Headers)
 	}
-	if strings.TrimSpace(input.Command) != "" {
-		server.Command = input.Command
-	}
-	if strings.TrimSpace(input.URL) != "" {
-		server.URL = input.URL
-	}
-	if len(input.Args) > 0 {
-		server.Args = append([]string{}, input.Args...)
-	}
-	server.Env = mergeStringMap(server.Env, input.Env)
-	server.Headers = mergeStringMap(server.Headers, input.Headers)
 	server.Auth = mergeAuth(server.Auth, input.Auth)
 	if input.TimeoutSeconds > 0 {
 		server.TimeoutSeconds = input.TimeoutSeconds
@@ -239,6 +245,28 @@ func (w *Worker) resolveServer(input JobInput) (config.ServerConfig, error) {
 		return config.ServerConfig{}, fmt.Errorf("unsupported transport: %s", server.Transport)
 	}
 	return server, nil
+}
+
+func hasInlineServerOverrides(input JobInput) bool {
+	if strings.TrimSpace(input.Transport) != "" {
+		return true
+	}
+	if strings.TrimSpace(input.Command) != "" {
+		return true
+	}
+	if strings.TrimSpace(input.URL) != "" {
+		return true
+	}
+	if len(input.Args) > 0 {
+		return true
+	}
+	if len(input.Env) > 0 {
+		return true
+	}
+	if len(input.Headers) > 0 {
+		return true
+	}
+	return false
 }
 
 func resolveMethodParams(input JobInput, server config.ServerConfig) (string, map[string]any, error) {
