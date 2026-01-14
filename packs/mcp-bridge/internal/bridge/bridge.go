@@ -272,7 +272,7 @@ func (b *Bridge) submitToolJob(ctx context.Context, name string, args map[string
 			return nil, fmt.Errorf("tool call timed out after %s", b.cfg.CallTimeout)
 		case <-ctx.Done():
 			cancelCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-			_ = b.client.CancelJob(cancelCtx, resp.JobID)
+			_, _ = b.client.CancelJob(cancelCtx, resp.JobID)
 			cancel()
 			return nil, ctx.Err()
 		}
