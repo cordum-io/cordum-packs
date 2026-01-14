@@ -1,0 +1,67 @@
+apiVersion: cordum.io/v1alpha1
+kind: Pack
+
+metadata:
+  id: webhooks
+  version: 0.1.0
+  title: Webhooks
+  description: Inbound webhook events to start Cordum workflows.
+
+compatibility:
+  protocolVersion: 1
+  minCoreVersion: 0.1.0
+
+topics:
+  - name: job.webhooks.read
+    requires: []
+    riskTags: ["read"]
+    capability: webhooks.read
+
+  - name: job.webhooks.write
+    requires: []
+    riskTags: ["write"]
+    capability: webhooks.write
+
+resources:
+  schemas:
+    - id: webhooks/WebhooksActionInput
+      path: schemas/WebhooksActionInput.json
+    - id: webhooks/WebhooksActionResult
+      path: schemas/WebhooksActionResult.json
+  workflows:
+    - id: webhooks.read
+      path: workflows/webhooks_read.yaml
+    - id: webhooks.write
+      path: workflows/webhooks_write.yaml
+
+overlays:
+  config:
+    - name: pools
+      scope: system
+      key: pools
+      strategy: json_merge_patch
+      path: overlays/pools.patch.yaml
+    - name: timeouts
+      scope: system
+      key: timeouts
+      strategy: json_merge_patch
+      path: overlays/timeouts.patch.yaml
+  policy:
+    - name: safety
+      strategy: bundle_fragment
+      path: overlays/policy.fragment.yaml
+
+tests:
+  policySimulations:
+    - name: allow_read
+      request:
+        tenantId: default
+        topic: job.webhooks.read
+        riskTags: ["read"]
+      expectDecision: ALLOW
+    - name: write_requires_approval
+      request:
+        tenantId: default
+        topic: job.webhooks.write
+        riskTags: ["write"]
+      expectDecision: REQUIRE_APPROVAL

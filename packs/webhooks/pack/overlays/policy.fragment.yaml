@@ -1,0 +1,17 @@
+version: v1
+rules:
+  - id: webhooks-read
+    match:
+      topics:
+        - job.webhooks.read
+      risk_tags:
+        - read
+    decision: allow
+  - id: webhooks-write
+    match:
+      topics:
+        - job.webhooks.write
+      risk_tags:
+        - write
+    decision: require_approval
+    reason: "Webhooks write actions require approval"

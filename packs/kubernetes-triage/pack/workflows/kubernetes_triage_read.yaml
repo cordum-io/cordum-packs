@@ -1,0 +1,23 @@
+id: kubernetes-triage.read
+name: Kubernetes Triage Read
+description: Collect Kubernetes logs, events, and status.
+version: "0.1.0"
+timeout_sec: 60
+steps:
+  read:
+    id: read
+    name: Kubernetes Triage Read action
+    type: worker
+    topic: job.kubernetes-triage.read
+    input:
+      profile: ${input.profile}
+      action: ${input.action}
+      params: ${input.params}
+      request_id: ${input.request_id}
+    input_schema_id: kubernetes-triage/KubernetesTriageActionInput
+    output_schema_id: kubernetes-triage/KubernetesTriageActionResult
+    meta:
+      pack_id: kubernetes-triage
+      capability: kubernetes-triage.read
+      risk_tags: ["read", "network"]
+      requires: ["network:egress"]
