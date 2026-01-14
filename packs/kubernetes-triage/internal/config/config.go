@@ -22,20 +22,20 @@ const (
 )
 
 type Profile struct {
-	Name             string            `json:"name"`
-	Kubeconfig       string            `json:"kubeconfig"`
-	Context          string            `json:"context"`
-	Namespace        string            `json:"namespace"`
-	KubectlPath      string            `json:"kubectl_path"`
-	AllowedNamespaces []string         `json:"allowed_namespaces"`
-	DeniedNamespaces  []string         `json:"denied_namespaces"`
-	AllowActions     []string          `json:"allow_actions"`
-	DenyActions      []string          `json:"deny_actions"`
-	Headers          map[string]string `json:"headers"`
-	Timeout          time.Duration     `json:"-"`
-	TimeoutString    string            `json:"timeout"`
-	CommandTimeout   time.Duration     `json:"-"`
-	CommandTimeoutString string        `json:"command_timeout"`
+	Name                 string            `json:"name"`
+	Kubeconfig           string            `json:"kubeconfig"`
+	Context              string            `json:"context"`
+	Namespace            string            `json:"namespace"`
+	KubectlPath          string            `json:"kubectl_path"`
+	AllowedNamespaces    []string          `json:"allowed_namespaces"`
+	DeniedNamespaces     []string          `json:"denied_namespaces"`
+	AllowActions         []string          `json:"allow_actions"`
+	DenyActions          []string          `json:"deny_actions"`
+	Headers              map[string]string `json:"headers"`
+	Timeout              time.Duration     `json:"-"`
+	TimeoutString        string            `json:"timeout"`
+	CommandTimeout       time.Duration     `json:"-"`
+	CommandTimeoutString string            `json:"command_timeout"`
 }
 
 type Config struct {
