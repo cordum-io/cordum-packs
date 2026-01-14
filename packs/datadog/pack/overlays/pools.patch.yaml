@@ -1,0 +1,6 @@
+topics:
+  job.datadog.read: datadog
+  job.datadog.write: datadog
+pools:
+  datadog:
+    requires: ["network:egress"]

@@ -1,0 +1,23 @@
+id: datadog.write
+name: Datadog Write
+description: Mute or update Datadog monitors with approvals.
+version: "0.1.0"
+timeout_sec: 120
+steps:
+  write:
+    id: write
+    name: Datadog Write action
+    type: worker
+    topic: job.datadog.write
+    input:
+      profile: ${input.profile}
+      action: ${input.action}
+      params: ${input.params}
+      request_id: ${input.request_id}
+    input_schema_id: datadog/DatadogActionInput
+    output_schema_id: datadog/DatadogActionResult
+    meta:
+      pack_id: datadog
+      capability: datadog.write
+      risk_tags: ["write", "network"]
+      requires: ["network:egress"]

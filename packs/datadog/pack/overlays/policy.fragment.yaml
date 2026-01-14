@@ -1,0 +1,17 @@
+version: v1
+rules:
+  - id: datadog-read
+    match:
+      topics:
+        - job.datadog.read
+      risk_tags:
+        - read
+    decision: allow
+  - id: datadog-write
+    match:
+      topics:
+        - job.datadog.write
+      risk_tags:
+        - write
+    decision: require_approval
+    reason: "Datadog write actions require approval"
