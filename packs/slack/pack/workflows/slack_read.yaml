@@ -1,0 +1,24 @@
+id: slack.read
+name: Slack Read
+description: Read Slack channels or user metadata.
+version: "0.1.0"
+timeout_sec: 60
+steps:
+  read:
+    id: read
+    name: Slack Read action
+    type: worker
+    topic: job.slack.read
+    input:
+      profile: ${input.profile}
+      action: ${input.action}
+      params: ${input.params}
+      request_id: ${input.request_id}
+      auth: ${input.auth}
+    input_schema_id: slack/SlackActionInput
+    output_schema_id: slack/SlackActionResult
+    meta:
+      pack_id: slack
+      capability: slack.read
+      risk_tags: ["read", "network"]
+      requires: ["network:egress"]
