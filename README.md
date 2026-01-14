@@ -20,6 +20,10 @@ cordum-packs/
 Pack projects may include worker/bridge code alongside the bundle assets. The
 bundle itself lives at `pack/` (or the project root if `pack.yaml` is there).
 
+## Pack workflow governance
+
+The workflow + policy contract (including pack-managed workflows, required step metadata, and dependency declarations) is defined in `docs/packs-roadmap.md`.
+
 ## Build the catalog + bundles
 
 ```bash
