@@ -84,6 +84,10 @@ jobs:
             echo "::error::Missing CORDUM_DEPS_TOKEN (needs read access to cordum-io/cap and cordum-io/cordum)."
             exit 1
           fi
+        if: ${{ secrets.CORDUM_DEPS_TOKEN == '' }}
+        run: |
+          echo "::error::Missing CORDUM_DEPS_TOKEN (needs read access to cordum-io/cap and cordum-io/cordum)."
+          exit 1
 
       - name: Checkout Go dependency sources
         uses: actions/checkout@v4
