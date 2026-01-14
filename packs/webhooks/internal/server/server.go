@@ -3,7 +3,7 @@ package server
 import (
 	"context"
 	"crypto/hmac"
-	"crypto/sha1"
+	"crypto/sha1" // #nosec G505 -- needed for legacy webhook signatures (e.g., GitHub X-Hub-Signature).
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"

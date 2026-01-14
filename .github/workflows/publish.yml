@@ -24,6 +24,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -63,8 +65,7 @@ jobs:
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          args: --no-git --redact
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
 
       - name: Trivy filesystem scan
         uses: aquasecurity/trivy-action@0.28.0
@@ -75,21 +76,30 @@ jobs:
           exit-code: "1"
           ignore-unfixed: true
 
+      - name: Verify dependency token
+        env:
+          CORDUM_DEPS_TOKEN: ${{ secrets.CORDUM_DEPS_TOKEN }}
+        run: |
+          if [ -z "${CORDUM_DEPS_TOKEN}" ]; then
+            echo "::error::Missing CORDUM_DEPS_TOKEN (needs read access to cordum-io/cap and cordum-io/cordum)."
+            exit 1
+          fi
+
       - name: Checkout Go dependency sources
         uses: actions/checkout@v4
         with:
           repository: cordum-io/cap
           path: .deps/cap
           fetch-depth: 1
-          token: ${{ secrets.CORDUM_DEPS_TOKEN || github.token }}
+          token: ${{ secrets.CORDUM_DEPS_TOKEN }}
 
       - name: Checkout Cordum SDK source
         uses: actions/checkout@v4
         with:
-          repository: cordum/cordum
+          repository: cordum-io/cordum
           path: .deps/cordum
           fetch-depth: 1
-          token: ${{ secrets.CORDUM_DEPS_TOKEN || github.token }}
+          token: ${{ secrets.CORDUM_DEPS_TOKEN }}
 
       - name: Link local replaces
         run: |

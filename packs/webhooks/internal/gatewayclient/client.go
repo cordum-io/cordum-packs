@@ -19,10 +19,10 @@ type Client struct {
 }
 
 type StartRunOptions struct {
-	OrgID           string
-	TeamID          string
-	DryRun          bool
-	IdempotencyKey  string
+	OrgID          string
+	TeamID         string
+	DryRun         bool
+	IdempotencyKey string
 }
 
 type StartRunResponse struct {

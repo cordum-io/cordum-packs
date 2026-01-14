@@ -1,16 +1,28 @@
 # Cordum Packs Roadmap
 
-## Purpose
-This roadmap defines the 20 priority packs and the contract every pack must follow. Packs are installable bundles (workflows + schemas + config/policy overlays). Workers run separately and must be scoped, auditable, and policy-gated.
+This roadmap defines the next 20 "must-have" packs and the consistency pattern each pack must follow. Packs are installable overlays (workflows + schemas + config/policy patches). Workers are deployed separately and should be scoped, auditable, and policy-gated.
 
 ## Guiding Principles
-1) Spec-first integration: topics, capabilities, risk tags, and requires are explicit.
+
+1) Spec-first integration: clear topics, capabilities, risk tags, and requires.
 2) Governable by default: read is allowed; write requires approval; destructive/prod/secrets are restricted.
+3) Observable: every pack emits useful metadata (labels, artifact pointers, logs) for audit.
+4) Consistent UX: common naming, schemas, and policy tests across packs.
+5) Workflows are the product surface; job topics are the building blocks.
+
+## Standard Pack Pattern (Required)
+
+Every pack must include:
+
+1) **Topics + capabilities + risk tags + requires** in `pack.yaml`
+2) **Policy fragment** with the same read/write split
+3) **Minimal workflow template** that proves the integration
+4) **Policy simulations** in `pack.yaml` for safe installs
 3) Observable: every pack emits labels, artifacts, and logs suitable for audit.
 4) Consistent UX: naming, schemas, and policy tests are uniform across packs.
 
-## Pack Contract (Required)
-### Naming and metadata
+### Topic + Capability + Risk Tags
+
 - Topic naming: `job.<pack>.<action>`
 - Capability naming: `<pack>.<action>` or `<pack>.<resource>.<action>`
 - Risk tags: `read`, `write`, plus `prod`, `destructive`, `secrets`, `network` as needed
@@ -26,6 +38,58 @@ This roadmap defines the 20 priority packs and the contract every pack must foll
 2) Summarize (optional LLM)
 3) Approval gate for write/destructive actions
 4) Execute action and emit artifacts
+3) Approval (if action is write/destructive)
+4) Execute action
+
+### Workflow Governance (Required)
+
+**Pack-managed vs user workflows**
+- Pack workflows are stable APIs (IDs stay under `<pack_id>.<name>`).
+- Users should clone pack workflows into new IDs (e.g., `acme.<name>`) before customizing.
+
+**Atomic jobs + reference workflows**
+- Ship atomic job topics as building blocks (e.g., `job.github.pr.create`).
+- Ship 2-5 reference workflows that solve real use cases end-to-end.
+
+**Per-step metadata (non-negotiable)**
+Every worker step must set:
+- `pack_id`
+- `capability`
+- `risk_tags`
+- `requires`
+- `idempotency_key` for any side-effecting step
+
+**Approvals model**
+- Prefer workflow approval steps as the human gate.
+- Avoid double approvals: if a workflow step gates a write, policy should lean on `ALLOW_WITH_CONSTRAINTS`.
+
+**Versioning**
+- Breaking input/output change = new workflow ID (`.v2`).
+- Backward-compatible changes stay on the same ID.
+
+**Idempotency + locks**
+- Derive idempotency from event IDs for webhooks.
+- Acquire locks for irreversible changes (e.g., `repo:<org>/<repo>`, `svc:<name>:env:<env>`).
+
+**Pack dependencies for auto-install**
+If a workflow uses topics from other packs, declare the dependencies so installers can auto-install them:
+
+```yaml
+requires_packs:
+  - slack
+  - github
+```
+
+Use `depends_on` for step ordering only; `requires_packs` is for pack dependencies.
+
+### Policy Simulations
+
+Each pack should ship policy simulations verifying:
+- Read path is `ALLOW`
+- Write path is `REQUIRE_APPROVAL`
+- Sensitive actions are constrained or denied
+
+## Standard Artifacts
 
 ### Required artifacts
 - `pack/pack.yaml`
@@ -79,6 +143,7 @@ Status legend: `in-repo` means a pack exists in this repository.
 - cron-triggers: scheduled runs for checks, summaries, compliance
 
 ## Governance Checklist (Per Pack)
+
 - Define topics and capabilities in `pack.yaml`
 - Annotate every action with risk tags and requires
 - Add policy fragment with the read/write split
