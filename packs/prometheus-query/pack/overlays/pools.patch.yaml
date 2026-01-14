@@ -1,0 +1,5 @@
+topics:
+  job.prometheus-query.read: prometheus-query
+pools:
+  prometheus-query:
+    requires: ["network:egress"]

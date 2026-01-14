@@ -1,0 +1,26 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "PrometheusQuery Action Input",
+  "type": "object",
+  "properties": {
+    "profile": {
+      "type": "string",
+      "description": "Named integration profile to use."
+    },
+    "action": {
+      "type": "string",
+      "description": "Action identifier, e.g. query.instant, query.range, alerts.list."
+    },
+    "params": {
+      "type": "object",
+      "description": "Action-specific parameters."
+    },
+    "request_id": {
+      "type": "string",
+      "description": "Optional idempotency or trace id."
+    }
+  },
+  "required": [
+    "action"
+  ]
+}
