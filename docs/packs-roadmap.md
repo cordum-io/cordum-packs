@@ -8,6 +8,7 @@ This roadmap defines the next 20 "must-have" packs and the consistency pattern e
 2) Governable by default: read is allowed; write requires approval; destructive/prod/secrets are restricted.
 3) Observable: every pack emits useful metadata (labels, artifact pointers, logs) for audit.
 4) Consistent UX: common naming, schemas, and policy tests across packs.
+5) Workflows are the product surface; job topics are the building blocks.
 
 ## Standard Pack Pattern (Required)
 
@@ -43,6 +44,47 @@ Standard flow for each pack:
 2) Summarize (optional LLM)
 3) Approval (if action is write/destructive)
 4) Execute action
+
+### Workflow Governance (Required)
+
+**Pack-managed vs user workflows**
+- Pack workflows are stable APIs (IDs stay under `<pack_id>.<name>`).
+- Users should clone pack workflows into new IDs (e.g., `acme.<name>`) before customizing.
+
+**Atomic jobs + reference workflows**
+- Ship atomic job topics as building blocks (e.g., `job.github.pr.create`).
+- Ship 2-5 reference workflows that solve real use cases end-to-end.
+
+**Per-step metadata (non-negotiable)**
+Every worker step must set:
+- `pack_id`
+- `capability`
+- `risk_tags`
+- `requires`
+- `idempotency_key` for any side-effecting step
+
+**Approvals model**
+- Prefer workflow approval steps as the human gate.
+- Avoid double approvals: if a workflow step gates a write, policy should lean on `ALLOW_WITH_CONSTRAINTS`.
+
+**Versioning**
+- Breaking input/output change = new workflow ID (`.v2`).
+- Backward-compatible changes stay on the same ID.
+
+**Idempotency + locks**
+- Derive idempotency from event IDs for webhooks.
+- Acquire locks for irreversible changes (e.g., `repo:<org>/<repo>`, `svc:<name>:env:<env>`).
+
+**Pack dependencies for auto-install**
+If a workflow uses topics from other packs, declare the dependencies so installers can auto-install them:
+
+```yaml
+requires_packs:
+  - slack
+  - github
+```
+
+Use `depends_on` for step ordering only; `requires_packs` is for pack dependencies.
 
 ### Policy Simulations
 
