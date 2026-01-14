@@ -76,21 +76,27 @@ jobs:
           exit-code: "1"
           ignore-unfixed: true
 
+      - name: Verify dependency token
+        if: ${{ secrets.CORDUM_DEPS_TOKEN == '' }}
+        run: |
+          echo "::error::Missing CORDUM_DEPS_TOKEN (needs read access to cordum-io/cap and cordum-io/cordum)."
+          exit 1
+
       - name: Checkout Go dependency sources
         uses: actions/checkout@v4
         with:
           repository: cordum-io/cap
           path: .deps/cap
           fetch-depth: 1
-          token: ${{ secrets.CORDUM_DEPS_TOKEN || github.token }}
+          token: ${{ secrets.CORDUM_DEPS_TOKEN }}
 
       - name: Checkout Cordum SDK source
         uses: actions/checkout@v4
         with:
-          repository: cordum/cordum
+          repository: cordum-io/cordum
           path: .deps/cordum
           fetch-depth: 1
-          token: ${{ secrets.CORDUM_DEPS_TOKEN || github.token }}
+          token: ${{ secrets.CORDUM_DEPS_TOKEN }}
 
       - name: Link local replaces
         run: |
