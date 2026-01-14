@@ -5,9 +5,24 @@ validates input/output with JSON Schemas.
 
 ## Runtime component
 
-The pack runtime is the hello worker in the Cordum core repo at
-`examples/hello-worker-go`. Installing the pack only registers workflows/schemas;
-you must run or deploy the worker so `job.hello-pack.echo` jobs are executed.
+The runtime is the `cordum-hello-pack` worker in `cmd/cordum-hello-pack`. Installing
+the pack only registers workflows/schemas; you must run or deploy the worker so
+`job.hello-pack.echo` jobs are executed.
+
+## Run the worker
+
+```bash
+cd path/to/cordum-packs/packs/hello-pack
+
+CORDUM_GATEWAY_URL=http://localhost:8081 \
+CORDUM_API_KEY=super-secret-key \
+CORDUM_NATS_URL=nats://localhost:4222 \
+CORDUM_REDIS_URL=redis://localhost:6379 \
+
+go run ./cmd/cordum-hello-pack
+```
+
+See `deploy/env.example` for all environment variables.
 
 ## Install
 
