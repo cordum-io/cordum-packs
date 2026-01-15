@@ -1,0 +1,9 @@
+version: v1
+rules:
+  - id: opentelemetry-read
+    match:
+      topics:
+        - job.opentelemetry.read
+      risk_tags:
+        - read
+    decision: allow

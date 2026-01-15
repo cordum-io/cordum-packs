@@ -1,0 +1,5 @@
+topics:
+  job.opentelemetry.read: opentelemetry
+pools:
+  opentelemetry:
+    requires: ["network:egress"]
