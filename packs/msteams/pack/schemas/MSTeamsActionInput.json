@@ -1,0 +1,41 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "MSTeams Action Input",
+  "type": "object",
+  "properties": {
+    "profile": {
+      "type": "string",
+      "description": "Named integration profile to use."
+    },
+    "action": {
+      "type": "string",
+      "description": "Action identifier, e.g. teams.list, channels.list, messages.post."
+    },
+    "params": {
+      "type": "object",
+      "description": "Action-specific parameters."
+    },
+    "request_id": {
+      "type": "string",
+      "description": "Optional idempotency or trace id."
+    },
+    "auth": {
+      "type": "object",
+      "description": "Optional inline auth (must be enabled in worker config).",
+      "properties": {
+        "token": {
+          "type": "string"
+        },
+        "token_env": {
+          "type": "string"
+        },
+        "token_type": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "required": [
+    "action"
+  ]
+}
