@@ -1,0 +1,17 @@
+version: v1
+rules:
+  - id: msteams-read
+    match:
+      topics:
+        - job.msteams.read
+      risk_tags:
+        - read
+    decision: allow
+  - id: msteams-write
+    match:
+      topics:
+        - job.msteams.write
+      risk_tags:
+        - write
+    decision: require_approval
+    reason: "Microsoft Teams write actions require approval"

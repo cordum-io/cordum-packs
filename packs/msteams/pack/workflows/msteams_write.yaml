@@ -1,0 +1,24 @@
+id: msteams.write
+name: Microsoft Teams Write
+description: Post Teams messages or approvals.
+version: "0.1.0"
+timeout_sec: 120
+steps:
+  write:
+    id: write
+    name: Microsoft Teams Write action
+    type: worker
+    topic: job.msteams.write
+    input:
+      profile: ${input.profile}
+      action: ${input.action}
+      params: ${input.params}
+      request_id: ${input.request_id}
+      auth: ${input.auth}
+    input_schema_id: msteams/MSTeamsActionInput
+    output_schema_id: msteams/MSTeamsActionResult
+    meta:
+      pack_id: msteams
+      capability: msteams.write
+      risk_tags: ["write", "network"]
+      requires: ["network:egress"]
