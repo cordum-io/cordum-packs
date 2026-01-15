@@ -1,0 +1,6 @@
+topics:
+  job.sentry.read: sentry
+  job.sentry.write: sentry
+pools:
+  sentry:
+    requires: ["network:egress"]
