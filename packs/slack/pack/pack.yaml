@@ -6,6 +6,7 @@ metadata:
   version: 0.1.0
   title: Slack
   description: Slack notifications and approvals for ChatOps.
+  image: https://cdn.simpleicons.org/slack
 
 compatibility:
   protocolVersion: 1
