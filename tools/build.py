@@ -106,6 +106,7 @@ def build_catalog_entry(manifest: dict, bundle_path: Path, base_url: str) -> dic
     if not author:
         author = "Cordum"
     source = metadata.get("sourceRepo") or metadata.get("source") or ""
+    image = metadata.get("image") or ""
     homepage = metadata.get("homepage") or ""
     license_name = metadata.get("license") or ""
     url = f"{base_url}/packs/{pack_id}/{version}/pack.tgz"
@@ -117,6 +118,7 @@ def build_catalog_entry(manifest: dict, bundle_path: Path, base_url: str) -> dic
         "author": author,
         "homepage": homepage,
         "source": source,
+        "image": image,
         "license": license_name,
         "url": url,
         "sha256": sha256_file(bundle_path),
