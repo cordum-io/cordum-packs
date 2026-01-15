@@ -1,0 +1,17 @@
+version: v1
+rules:
+  - id: terraform-read
+    match:
+      topics:
+        - job.terraform.read
+      risk_tags:
+        - read
+    decision: allow
+  - id: terraform-write
+    match:
+      topics:
+        - job.terraform.write
+      risk_tags:
+        - write
+    decision: require_approval
+    reason: "Terraform write actions require approval"
