@@ -1,0 +1,17 @@
+version: v1
+rules:
+  - id: sentry-read
+    match:
+      topics:
+        - job.sentry.read
+      risk_tags:
+        - read
+    decision: allow
+  - id: sentry-write
+    match:
+      topics:
+        - job.sentry.write
+      risk_tags:
+        - write
+    decision: require_approval
+    reason: "Sentry write actions require approval"
