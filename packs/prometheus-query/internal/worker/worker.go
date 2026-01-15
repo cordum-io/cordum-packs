@@ -28,11 +28,21 @@ type Worker struct {
 	worker  *runtime.Worker
 }
 
+type InlineAuth struct {
+	Token            string `json:"token"`
+	TokenEnv         string `json:"token_env"`
+	BasicUsername    string `json:"basic_username"`
+	BasicUsernameEnv string `json:"basic_username_env"`
+	BasicPassword    string `json:"basic_password"`
+	BasicPasswordEnv string `json:"basic_password_env"`
+}
+
 type JobInput struct {
 	Profile   string         `json:"profile"`
 	Action    string         `json:"action"`
 	Params    map[string]any `json:"params"`
 	RequestID string         `json:"request_id"`
+	Auth      InlineAuth     `json:"auth"`
 }
 
 type callResult struct {
@@ -129,6 +139,9 @@ func (w *Worker) handleJob(ctx context.Context, req *agentv1.JobRequest) (*agent
 	if err != nil {
 		return w.failJob(jobID, err)
 	}
+	if err := validateInlineAuth(input.Auth, w.cfg.AllowInlineAuth); err != nil {
+		return w.failJob(jobID, err)
+	}
 
 	action := strings.ToLower(strings.TrimSpace(input.Action))
 	if action == "" {
@@ -159,13 +172,18 @@ func (w *Worker) handleJob(ctx context.Context, req *agentv1.JobRequest) (*agent
 		return w.failJob(jobID, err)
 	}
 
+	bearer, basicUser, basicPass, err := w.resolveAuth(profile, input.Auth)
+	if err != nil {
+		return w.failJob(jobID, err)
+	}
+
 	client := promapi.NewClient(profile.BaseURL, promapi.Options{
 		Headers:   profile.Headers,
 		UserAgent: profile.UserAgent,
 		Timeout:   w.requestTimeout(profile),
-		Bearer:    resolveSecret(profile.Token, profile.TokenEnv),
-		BasicUser: resolveSecret(profile.BasicUsername, profile.BasicUsernameEnv),
-		BasicPass: resolveSecret(profile.BasicPassword, profile.BasicPasswordEnv),
+		Bearer:    bearer,
+		BasicUser: basicUser,
+		BasicPass: basicPass,
 	})
 
 	callCtx, cancel := context.WithTimeout(ctx, w.requestTimeout(profile))
@@ -237,6 +255,30 @@ func (w *Worker) requestTimeout(profile config.Profile) time.Duration {
 		return profile.Timeout
 	}
 	return w.cfg.RequestTimeout
+}
+
+func (w *Worker) resolveAuth(profile config.Profile, inline InlineAuth) (string, string, string, error) {
+	if inline.HasAny() && !w.cfg.AllowInlineAuth {
+		return "", "", "", fmt.Errorf("inline auth disabled")
+	}
+
+	bearer := resolveSecret(profile.Token, profile.TokenEnv)
+	basicUser := resolveSecret(profile.BasicUsername, profile.BasicUsernameEnv)
+	basicPass := resolveSecret(profile.BasicPassword, profile.BasicPasswordEnv)
+
+	if inline.HasAny() {
+		if inline.Token != "" || inline.TokenEnv != "" {
+			bearer = resolveSecret(inline.Token, inline.TokenEnv)
+		}
+		if inline.BasicUsername != "" || inline.BasicUsernameEnv != "" {
+			basicUser = resolveSecret(inline.BasicUsername, inline.BasicUsernameEnv)
+		}
+		if inline.BasicPassword != "" || inline.BasicPasswordEnv != "" {
+			basicPass = resolveSecret(inline.BasicPassword, inline.BasicPasswordEnv)
+		}
+	}
+
+	return bearer, basicUser, basicPass, nil
 }
 
 func (w *Worker) execute(ctx context.Context, client *promapi.Client, spec actionSpec, params map[string]any) (any, int, error) {
@@ -414,11 +456,26 @@ func stringParam(params map[string]any, key string) string {
 }
 
 func resolveSecret(raw, envKey string) string {
-	if strings.TrimSpace(raw) != "" {
-		return strings.TrimSpace(raw)
-	}
 	if strings.TrimSpace(envKey) != "" {
-		return strings.TrimSpace(os.Getenv(envKey))
+		if envVal := strings.TrimSpace(os.Getenv(envKey)); envVal != "" {
+			return envVal
+		}
 	}
-	return ""
+	return strings.TrimSpace(raw)
+}
+
+func validateInlineAuth(auth InlineAuth, allowed bool) error {
+	if auth.HasAny() && !allowed {
+		return fmt.Errorf("inline auth disabled")
+	}
+	return nil
+}
+
+func (a InlineAuth) HasAny() bool {
+	return strings.TrimSpace(a.Token) != "" ||
+		strings.TrimSpace(a.TokenEnv) != "" ||
+		strings.TrimSpace(a.BasicUsername) != "" ||
+		strings.TrimSpace(a.BasicUsernameEnv) != "" ||
+		strings.TrimSpace(a.BasicPassword) != "" ||
+		strings.TrimSpace(a.BasicPasswordEnv) != ""
 }

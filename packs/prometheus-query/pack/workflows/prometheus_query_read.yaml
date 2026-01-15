@@ -14,6 +14,7 @@ steps:
       action: ${input.action}
       params: ${input.params}
       request_id: ${input.request_id}
+      auth: ${input.auth}
     input_schema_id: prometheus-query/PrometheusQueryActionInput
     output_schema_id: prometheus-query/PrometheusQueryActionResult
     meta:
