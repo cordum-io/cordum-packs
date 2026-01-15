@@ -18,6 +18,30 @@
     "request_id": {
       "type": "string",
       "description": "Optional idempotency or trace id."
+    },
+    "auth": {
+      "type": "object",
+      "description": "Optional inline auth (must be enabled in worker config).",
+      "properties": {
+        "token": {
+          "type": "string"
+        },
+        "token_env": {
+          "type": "string"
+        },
+        "basic_username": {
+          "type": "string"
+        },
+        "basic_username_env": {
+          "type": "string"
+        },
+        "basic_password": {
+          "type": "string"
+        },
+        "basic_password_env": {
+          "type": "string"
+        }
+      }
     }
   },
   "required": [

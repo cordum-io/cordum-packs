@@ -38,32 +38,34 @@ type Profile struct {
 }
 
 type Config struct {
-	GatewayURL     string
-	APIKey         string
-	NatsURL        string
-	RedisURL       string
-	Pool           string
-	Queue          string
-	Subjects       []string
-	MaxParallel    int32
-	RequestTimeout time.Duration
-	ResultTTL      time.Duration
-	DefaultProfile string
-	Profiles       map[string]Profile
+	GatewayURL      string
+	APIKey          string
+	NatsURL         string
+	RedisURL        string
+	Pool            string
+	Queue           string
+	Subjects        []string
+	MaxParallel     int32
+	RequestTimeout  time.Duration
+	ResultTTL       time.Duration
+	AllowInlineAuth bool
+	DefaultProfile  string
+	Profiles        map[string]Profile
 }
 
 func Load() (Config, error) {
 	cfg := Config{
-		GatewayURL:     envOr("CORDUM_GATEWAY_URL", defaultGatewayURL),
-		APIKey:         envOr("CORDUM_API_KEY", ""),
-		NatsURL:        envOr("CORDUM_NATS_URL", defaultNatsURL),
-		RedisURL:       envOr("CORDUM_REDIS_URL", defaultRedisURL),
-		Pool:           envOr("CORDUM_PROMETHEUS_POOL", defaultPool),
-		Queue:          envOr("CORDUM_PROMETHEUS_QUEUE", defaultQueue),
-		RequestTimeout: defaultRequestTimeout,
-		ResultTTL:      durationEnv("CORDUM_PROMETHEUS_RESULT_TTL", 0),
-		DefaultProfile: strings.TrimSpace(os.Getenv("CORDUM_PROMETHEUS_DEFAULT_PROFILE")),
-		Profiles:       map[string]Profile{},
+		GatewayURL:      envOr("CORDUM_GATEWAY_URL", defaultGatewayURL),
+		APIKey:          envOr("CORDUM_API_KEY", ""),
+		NatsURL:         envOr("CORDUM_NATS_URL", defaultNatsURL),
+		RedisURL:        envOr("CORDUM_REDIS_URL", defaultRedisURL),
+		Pool:            envOr("CORDUM_PROMETHEUS_POOL", defaultPool),
+		Queue:           envOr("CORDUM_PROMETHEUS_QUEUE", defaultQueue),
+		RequestTimeout:  defaultRequestTimeout,
+		ResultTTL:       durationEnv("CORDUM_PROMETHEUS_RESULT_TTL", 0),
+		AllowInlineAuth: boolEnv("CORDUM_PROMETHEUS_ALLOW_INLINE_AUTH", false),
+		DefaultProfile:  strings.TrimSpace(os.Getenv("CORDUM_PROMETHEUS_DEFAULT_PROFILE")),
+		Profiles:        map[string]Profile{},
 	}
 
 	if raw := strings.TrimSpace(os.Getenv("CORDUM_PROMETHEUS_SUBJECTS")); raw != "" {
@@ -165,6 +167,18 @@ func splitList(raw string) []string {
 func envOr(key, fallback string) string {
 	if val := strings.TrimSpace(os.Getenv(key)); val != "" {
 		return val
+	}
+	return fallback
+}
+
+func boolEnv(key string, fallback bool) bool {
+	if raw := strings.TrimSpace(os.Getenv(key)); raw != "" {
+		switch strings.ToLower(raw) {
+		case "1", "true", "yes", "y":
+			return true
+		case "0", "false", "no", "n":
+			return false
+		}
 	}
 	return fallback
 }
