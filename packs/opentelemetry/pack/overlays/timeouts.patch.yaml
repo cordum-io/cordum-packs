@@ -1,0 +1,4 @@
+topics:
+  job.opentelemetry.read:
+    timeout_seconds: 60
+    max_retries: 2
