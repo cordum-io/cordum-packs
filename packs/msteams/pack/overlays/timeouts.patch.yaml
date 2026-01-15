@@ -1,0 +1,7 @@
+topics:
+  job.msteams.read:
+    timeout_seconds: 60
+    max_retries: 2
+  job.msteams.write:
+    timeout_seconds: 120
+    max_retries: 1

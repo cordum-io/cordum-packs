@@ -1,0 +1,6 @@
+topics:
+  job.msteams.read: msteams
+  job.msteams.write: msteams
+pools:
+  msteams:
+    requires: ["network:egress"]
