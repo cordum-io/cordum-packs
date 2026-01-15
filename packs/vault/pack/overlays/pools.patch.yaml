@@ -1,0 +1,5 @@
+topics:
+  job.vault.read: vault
+pools:
+  vault:
+    requires: ["network:egress"]
