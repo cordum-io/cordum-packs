@@ -44,6 +44,8 @@ kubectl version --client \
 go run ./cmd/cordum-kubernetes-triage
 ```
 
+See `deploy/env.example` for the full list of environment variables.
+
 ## Environment
 
 - `CORDUM_GATEWAY_URL` (default `http://localhost:8081`)
