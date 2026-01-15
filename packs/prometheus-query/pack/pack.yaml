@@ -1,0 +1,54 @@
+apiVersion: cordum.io/v1alpha1
+kind: Pack
+
+metadata:
+  id: prometheus-query
+  version: 0.1.0
+  title: Prometheus Query
+  description: PromQL queries, alert state, and label discovery.
+
+compatibility:
+  protocolVersion: 1
+  minCoreVersion: 0.1.0
+
+topics:
+  - name: job.prometheus-query.read
+    requires: ["network:egress"]
+    riskTags: ["read", "network"]
+    capability: prometheus-query.read
+
+resources:
+  schemas:
+    - id: prometheus-query/PrometheusQueryActionInput
+      path: schemas/PrometheusQueryActionInput.json
+    - id: prometheus-query/PrometheusQueryActionResult
+      path: schemas/PrometheusQueryActionResult.json
+  workflows:
+    - id: prometheus-query.read
+      path: workflows/prometheus_query_read.yaml
+
+overlays:
+  config:
+    - name: pools
+      scope: system
+      key: pools
+      strategy: json_merge_patch
+      path: overlays/pools.patch.yaml
+    - name: timeouts
+      scope: system
+      key: timeouts
+      strategy: json_merge_patch
+      path: overlays/timeouts.patch.yaml
+  policy:
+    - name: safety
+      strategy: bundle_fragment
+      path: overlays/policy.fragment.yaml
+
+tests:
+  policySimulations:
+    - name: allow_read
+      request:
+        tenantId: default
+        topic: job.prometheus-query.read
+        riskTags: ["read", "network"]
+      expectDecision: ALLOW
