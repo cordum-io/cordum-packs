@@ -1,0 +1,67 @@
+apiVersion: cordum.io/v1alpha1
+kind: Pack
+
+metadata:
+  id: msteams
+  version: 0.1.0
+  title: Microsoft Teams
+  description: Teams notifications and approvals for enterprise ChatOps.
+
+compatibility:
+  protocolVersion: 1
+  minCoreVersion: 0.1.0
+
+topics:
+  - name: job.msteams.read
+    requires: ["network:egress"]
+    riskTags: ["read", "network"]
+    capability: msteams.read
+
+  - name: job.msteams.write
+    requires: ["network:egress"]
+    riskTags: ["write", "network"]
+    capability: msteams.write
+
+resources:
+  schemas:
+    - id: msteams/MSTeamsActionInput
+      path: schemas/MSTeamsActionInput.json
+    - id: msteams/MSTeamsActionResult
+      path: schemas/MSTeamsActionResult.json
+  workflows:
+    - id: msteams.read
+      path: workflows/msteams_read.yaml
+    - id: msteams.write
+      path: workflows/msteams_write.yaml
+
+overlays:
+  config:
+    - name: pools
+      scope: system
+      key: pools
+      strategy: json_merge_patch
+      path: overlays/pools.patch.yaml
+    - name: timeouts
+      scope: system
+      key: timeouts
+      strategy: json_merge_patch
+      path: overlays/timeouts.patch.yaml
+  policy:
+    - name: safety
+      strategy: bundle_fragment
+      path: overlays/policy.fragment.yaml
+
+tests:
+  policySimulations:
+    - name: allow_read
+      request:
+        tenantId: default
+        topic: job.msteams.read
+        riskTags: ["read", "network"]
+      expectDecision: ALLOW
+    - name: write_requires_approval
+      request:
+        tenantId: default
+        topic: job.msteams.write
+        riskTags: ["write", "network"]
+      expectDecision: REQUIRE_APPROVAL
