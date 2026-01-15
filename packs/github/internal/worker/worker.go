@@ -561,7 +561,9 @@ func escapePath(raw string) string {
 
 func resolveSecret(value, envKey string) string {
 	if strings.TrimSpace(envKey) != "" {
-		return strings.TrimSpace(os.Getenv(envKey))
+		if envVal := strings.TrimSpace(os.Getenv(envKey)); envVal != "" {
+			return envVal
+		}
 	}
 	return strings.TrimSpace(value)
 }
