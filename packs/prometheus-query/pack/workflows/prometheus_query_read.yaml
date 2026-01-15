@@ -1,0 +1,24 @@
+id: prometheus-query.read
+name: Prometheus Query Read
+description: Run Prometheus queries and inspect alert state.
+version: "0.1.0"
+timeout_sec: 60
+steps:
+  read:
+    id: read
+    name: Prometheus Query Read action
+    type: worker
+    topic: job.prometheus-query.read
+    input:
+      profile: ${input.profile}
+      action: ${input.action}
+      params: ${input.params}
+      request_id: ${input.request_id}
+      auth: ${input.auth}
+    input_schema_id: prometheus-query/PrometheusQueryActionInput
+    output_schema_id: prometheus-query/PrometheusQueryActionResult
+    meta:
+      pack_id: prometheus-query
+      capability: prometheus-query.read
+      risk_tags: ["read", "network"]
+      requires: ["network:egress"]
