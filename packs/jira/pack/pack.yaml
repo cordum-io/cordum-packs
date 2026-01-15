@@ -6,6 +6,7 @@ metadata:
   version: 0.1.0
   title: Jira
   description: Jira issues, transitions, and comments with policy gating.
+  image: https://cdn.simpleicons.org/jira
 
 compatibility:
   protocolVersion: 1
