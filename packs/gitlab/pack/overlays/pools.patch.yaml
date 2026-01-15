@@ -1,0 +1,6 @@
+topics:
+  job.gitlab.read: gitlab
+  job.gitlab.write: gitlab
+pools:
+  gitlab:
+    requires: ["network:egress"]
