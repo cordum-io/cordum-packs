@@ -8,6 +8,16 @@ This pack project ships two things:
 - A pack bundle (`pack/`) that installs into Cordum.
 - Simple workers (fetch/summarize/post/ingest) that execute the workflow.
 
+## Runtime components
+
+Installing the pack only registers workflows/schemas. To execute runs, deploy
+the workers in `cmd/`:
+
+- `cmd/fetcher` handles `job.incident-enricher.fetch`
+- `cmd/summarizer` handles `job.incident-enricher.summarize`
+- `cmd/poster` handles `job.incident-enricher.post`
+- `cmd/ingester` is an optional webhook receiver that starts runs
+
 Docs:
 - [docs/overview.md](docs/overview.md) for the platform pitch and pack concepts.
 - [docs/quickstart.md](docs/quickstart.md) for the install + demo flow.
