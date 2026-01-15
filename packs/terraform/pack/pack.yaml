@@ -1,0 +1,67 @@
+apiVersion: cordum.io/v1alpha1
+kind: Pack
+
+metadata:
+  id: terraform
+  version: 0.1.0
+  title: Terraform
+  description: Terraform plan and apply workflows with approvals.
+
+compatibility:
+  protocolVersion: 1
+  minCoreVersion: 0.1.0
+
+topics:
+  - name: job.terraform.read
+    requires: ["network:egress"]
+    riskTags: ["read", "network"]
+    capability: terraform.read
+
+  - name: job.terraform.write
+    requires: ["network:egress"]
+    riskTags: ["write", "network"]
+    capability: terraform.write
+
+resources:
+  schemas:
+    - id: terraform/TerraformActionInput
+      path: schemas/TerraformActionInput.json
+    - id: terraform/TerraformActionResult
+      path: schemas/TerraformActionResult.json
+  workflows:
+    - id: terraform.read
+      path: workflows/terraform_read.yaml
+    - id: terraform.write
+      path: workflows/terraform_write.yaml
+
+overlays:
+  config:
+    - name: pools
+      scope: system
+      key: pools
+      strategy: json_merge_patch
+      path: overlays/pools.patch.yaml
+    - name: timeouts
+      scope: system
+      key: timeouts
+      strategy: json_merge_patch
+      path: overlays/timeouts.patch.yaml
+  policy:
+    - name: safety
+      strategy: bundle_fragment
+      path: overlays/policy.fragment.yaml
+
+tests:
+  policySimulations:
+    - name: allow_read
+      request:
+        tenantId: default
+        topic: job.terraform.read
+        riskTags: ["read", "network"]
+      expectDecision: ALLOW
+    - name: write_requires_approval
+      request:
+        tenantId: default
+        topic: job.terraform.write
+        riskTags: ["write", "network"]
+      expectDecision: REQUIRE_APPROVAL
