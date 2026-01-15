@@ -1,0 +1,54 @@
+apiVersion: cordum.io/v1alpha1
+kind: Pack
+
+metadata:
+  id: vault
+  version: 0.1.0
+  title: Vault
+  description: Vault secret resolution and dynamic credentials.
+
+compatibility:
+  protocolVersion: 1
+  minCoreVersion: 0.1.0
+
+topics:
+  - name: job.vault.read
+    requires: ["network:egress"]
+    riskTags: ["secrets", "network"]
+    capability: vault.read
+
+resources:
+  schemas:
+    - id: vault/VaultActionInput
+      path: schemas/VaultActionInput.json
+    - id: vault/VaultActionResult
+      path: schemas/VaultActionResult.json
+  workflows:
+    - id: vault.read
+      path: workflows/vault_read.yaml
+
+overlays:
+  config:
+    - name: pools
+      scope: system
+      key: pools
+      strategy: json_merge_patch
+      path: overlays/pools.patch.yaml
+    - name: timeouts
+      scope: system
+      key: timeouts
+      strategy: json_merge_patch
+      path: overlays/timeouts.patch.yaml
+  policy:
+    - name: safety
+      strategy: bundle_fragment
+      path: overlays/policy.fragment.yaml
+
+tests:
+  policySimulations:
+    - name: secrets_require_approval
+      request:
+        tenantId: default
+        topic: job.vault.read
+        riskTags: ["secrets", "network"]
+      expectDecision: REQUIRE_APPROVAL

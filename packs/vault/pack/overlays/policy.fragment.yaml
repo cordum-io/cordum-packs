@@ -1,0 +1,10 @@
+version: v1
+rules:
+  - id: vault-secrets
+    match:
+      topics:
+        - job.vault.read
+      risk_tags:
+        - secrets
+    decision: require_approval
+    reason: "Vault secret access requires approval"
