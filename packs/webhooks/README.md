@@ -50,6 +50,8 @@ GITHUB_WEBHOOK_SECRET=*** \
 go run ./cmd/cordum-webhooks
 ```
 
+See `deploy/env.example` for a template environment file.
+
 ## Environment
 
 - `CORDUM_GATEWAY_URL` (default `http://localhost:8081`)
