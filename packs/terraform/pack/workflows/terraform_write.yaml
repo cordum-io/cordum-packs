@@ -1,0 +1,23 @@
+id: terraform.write
+name: Terraform Write
+description: Apply Terraform changes with approvals.
+version: "0.1.0"
+timeout_sec: 120
+steps:
+  write:
+    id: write
+    name: Terraform Write action
+    type: worker
+    topic: job.terraform.write
+    input:
+      profile: ${input.profile}
+      action: ${input.action}
+      params: ${input.params}
+      request_id: ${input.request_id}
+    input_schema_id: terraform/TerraformActionInput
+    output_schema_id: terraform/TerraformActionResult
+    meta:
+      pack_id: terraform
+      capability: terraform.write
+      risk_tags: ["write", "network"]
+      requires: ["network:egress"]

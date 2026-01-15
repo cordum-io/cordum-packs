@@ -1,0 +1,7 @@
+topics:
+  job.terraform.read:
+    timeout_seconds: 60
+    max_retries: 2
+  job.terraform.write:
+    timeout_seconds: 120
+    max_retries: 1
