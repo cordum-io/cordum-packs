@@ -1,0 +1,23 @@
+id: gitlab.write
+name: GitLab Write
+description: Create or update GitLab issues or merge requests.
+version: "0.1.0"
+timeout_sec: 120
+steps:
+  write:
+    id: write
+    name: GitLab Write action
+    type: worker
+    topic: job.gitlab.write
+    input:
+      profile: ${input.profile}
+      action: ${input.action}
+      params: ${input.params}
+      request_id: ${input.request_id}
+    input_schema_id: gitlab/GitLabActionInput
+    output_schema_id: gitlab/GitLabActionResult
+    meta:
+      pack_id: gitlab
+      capability: gitlab.write
+      risk_tags: ["write", "network"]
+      requires: ["network:egress"]

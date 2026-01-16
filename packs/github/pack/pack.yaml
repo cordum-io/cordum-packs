@@ -6,6 +6,7 @@ metadata:
   version: 0.1.0
   title: GitHub
   description: GitHub read/write operations with policy-gated workflows.
+  image: https://cdn.simpleicons.org/github
 
 compatibility:
   protocolVersion: 1

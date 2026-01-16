@@ -1,0 +1,17 @@
+version: v1
+rules:
+  - id: gitlab-read
+    match:
+      topics:
+        - job.gitlab.read
+      risk_tags:
+        - read
+    decision: allow
+  - id: gitlab-write
+    match:
+      topics:
+        - job.gitlab.write
+      risk_tags:
+        - write
+    decision: require_approval
+    reason: "GitLab write actions require approval"

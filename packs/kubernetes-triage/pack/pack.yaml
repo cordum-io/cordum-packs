@@ -6,6 +6,7 @@ metadata:
   version: 0.1.0
   title: Kubernetes Triage
   description: Kubernetes diagnostics and remediation with approvals.
+  image: https://cdn.simpleicons.org/kubernetes
 
 compatibility:
   protocolVersion: 1
