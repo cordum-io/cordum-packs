@@ -1,0 +1,6 @@
+topics:
+  job.terraform.read: terraform
+  job.terraform.write: terraform
+pools:
+  terraform:
+    requires: ["network:egress"]

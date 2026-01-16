@@ -1,0 +1,24 @@
+id: vault.read
+name: Vault Read
+description: Resolve secrets or dynamic credentials via Vault.
+version: "0.1.0"
+timeout_sec: 60
+steps:
+  read:
+    id: read
+    name: Vault Read action
+    type: worker
+    topic: job.vault.read
+    input:
+      profile: ${input.profile}
+      action: ${input.action}
+      params: ${input.params}
+      request_id: ${input.request_id}
+      auth: ${input.auth}
+    input_schema_id: vault/VaultActionInput
+    output_schema_id: vault/VaultActionResult
+    meta:
+      pack_id: vault
+      capability: vault.read
+      risk_tags: ["secrets", "network"]
+      requires: ["network:egress"]

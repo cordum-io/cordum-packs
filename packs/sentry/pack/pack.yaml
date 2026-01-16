@@ -1,0 +1,67 @@
+apiVersion: cordum.io/v1alpha1
+kind: Pack
+
+metadata:
+  id: sentry
+  version: 0.1.0
+  title: Sentry
+  description: Sentry issues, releases, and alert routing actions.
+
+compatibility:
+  protocolVersion: 1
+  minCoreVersion: 0.1.0
+
+topics:
+  - name: job.sentry.read
+    requires: ["network:egress"]
+    riskTags: ["read", "network"]
+    capability: sentry.read
+
+  - name: job.sentry.write
+    requires: ["network:egress"]
+    riskTags: ["write", "network"]
+    capability: sentry.write
+
+resources:
+  schemas:
+    - id: sentry/SentryActionInput
+      path: schemas/SentryActionInput.json
+    - id: sentry/SentryActionResult
+      path: schemas/SentryActionResult.json
+  workflows:
+    - id: sentry.read
+      path: workflows/sentry_read.yaml
+    - id: sentry.write
+      path: workflows/sentry_write.yaml
+
+overlays:
+  config:
+    - name: pools
+      scope: system
+      key: pools
+      strategy: json_merge_patch
+      path: overlays/pools.patch.yaml
+    - name: timeouts
+      scope: system
+      key: timeouts
+      strategy: json_merge_patch
+      path: overlays/timeouts.patch.yaml
+  policy:
+    - name: safety
+      strategy: bundle_fragment
+      path: overlays/policy.fragment.yaml
+
+tests:
+  policySimulations:
+    - name: allow_read
+      request:
+        tenantId: default
+        topic: job.sentry.read
+        riskTags: ["read", "network"]
+      expectDecision: ALLOW
+    - name: write_requires_approval
+      request:
+        tenantId: default
+        topic: job.sentry.write
+        riskTags: ["write", "network"]
+      expectDecision: REQUIRE_APPROVAL

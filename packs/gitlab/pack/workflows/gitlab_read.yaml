@@ -1,0 +1,23 @@
+id: gitlab.read
+name: GitLab Read
+description: Fetch GitLab project, issue, or merge request data.
+version: "0.1.0"
+timeout_sec: 60
+steps:
+  read:
+    id: read
+    name: GitLab Read action
+    type: worker
+    topic: job.gitlab.read
+    input:
+      profile: ${input.profile}
+      action: ${input.action}
+      params: ${input.params}
+      request_id: ${input.request_id}
+    input_schema_id: gitlab/GitLabActionInput
+    output_schema_id: gitlab/GitLabActionResult
+    meta:
+      pack_id: gitlab
+      capability: gitlab.read
+      risk_tags: ["read", "network"]
+      requires: ["network:egress"]
