@@ -1,0 +1,9 @@
+version: v1
+rules:
+  - id: prometheus-query-read
+    match:
+      topics:
+        - job.prometheus-query.read
+      risk_tags:
+        - read
+    decision: allow

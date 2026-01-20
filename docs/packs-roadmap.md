@@ -146,28 +146,28 @@ Status legend: `in-repo` means a pack exists in this repository.
 ### Phase 1 (Foundation)
 - mcp-client: Cordum as an MCP client; `read|write|network` (status: in-repo)
 - github: repo read/search, issues, PRs, checks, releases (status: in-repo)
-- slack: notifications, approvals, incident channels
-- jira: issues, transitions, comments, attachments
-- webhooks: inbound events to start workflows; principal mapping required
-- kubernetes-triage: diagnostics, events, logs, rollout status
+- slack: notifications, approvals, incident channels (status: in-repo)
+- jira: issues, transitions, comments, attachments (status: in-repo)
+- webhooks: inbound events to start workflows; principal mapping required (status: in-repo)
+- kubernetes-triage: diagnostics, events, logs, rollout status (status: in-repo)
 
 ### Phase 2 (Ops and Observability)
-- prometheus-query: PromQL queries and alert state
-- datadog: metrics/logs/traces queries; monitor changes require approval
-- pagerduty: on-call schedules, incidents, escalations
-- servicenow: ITSM incidents/changes/CMDB; `prod` and `write` tagging
-- msteams: Teams-native notifications and approvals
-- sentry: issues, releases, suspect commits
-- opentelemetry: trace search and dependency graphs (read-only early)
+- prometheus-query: PromQL queries and alert state (status: in-repo)
+- datadog: metrics/logs/traces queries; monitor changes require approval (status: in-repo)
+- pagerduty: on-call schedules, incidents, escalations (status: in-repo)
+- servicenow: ITSM incidents/changes/CMDB; `prod` and `write` tagging (status: in-repo)
+- msteams: Teams-native notifications and approvals (status: in-repo)
+- sentry: issues, releases, suspect commits (status: in-repo)
+- opentelemetry: trace search and dependency graphs (read-only early) (status: in-repo)
 
 ### Phase 3 (Infra and Change)
-- aws: CloudWatch logs/metrics, ECS/EKS inspection, S3 evidence
-- gcp: Cloud Logging/Monitoring queries, GKE inspection
-- azure: Azure Monitor queries, AKS inspection
-- terraform: plan, drift detection, policy checks; apply requires approval
-- vault: secret resolution and dynamic credentials; no raw secrets in workflows
-- gitlab: repo read/search, merge requests, pipelines, issues
-- cron-triggers: scheduled runs for checks, summaries, compliance
+- aws: CloudWatch logs/metrics, ECS/EKS inspection, S3 evidence (status: in-repo)
+- gcp: Cloud Logging/Monitoring queries, GKE inspection (status: in-repo)
+- azure: Azure Monitor queries, AKS inspection (status: in-repo)
+- terraform: plan, drift detection, policy checks; apply requires approval (status: in-repo)
+- vault: secret resolution and dynamic credentials; no raw secrets in workflows (status: in-repo)
+- gitlab: repo read/search, merge requests, pipelines, issues (status: in-repo)
+- cron-triggers: scheduled runs for checks, summaries, compliance (status: in-repo)
 
 ## Governance Checklist (Per Pack)
 

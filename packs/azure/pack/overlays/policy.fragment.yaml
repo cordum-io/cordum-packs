@@ -1,0 +1,17 @@
+version: v1
+rules:
+  - id: azure-read
+    match:
+      topics:
+        - job.azure.read
+      risk_tags:
+        - read
+    decision: allow
+  - id: azure-write
+    match:
+      topics:
+        - job.azure.write
+      risk_tags:
+        - write
+    decision: require_approval
+    reason: "Azure write actions require approval"

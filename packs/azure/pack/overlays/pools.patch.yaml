@@ -1,0 +1,6 @@
+topics:
+  job.azure.read: azure
+  job.azure.write: azure
+pools:
+  azure:
+    requires: ["network:egress"]

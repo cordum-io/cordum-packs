@@ -1,0 +1,17 @@
+version: v1
+rules:
+  - id: cron-triggers-read
+    match:
+      topics:
+        - job.cron-triggers.read
+      risk_tags:
+        - read
+    decision: allow
+  - id: cron-triggers-write
+    match:
+      topics:
+        - job.cron-triggers.write
+      risk_tags:
+        - write
+    decision: require_approval
+    reason: "Cron Triggers write actions require approval"

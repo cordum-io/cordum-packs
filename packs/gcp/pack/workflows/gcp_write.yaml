@@ -1,0 +1,23 @@
+id: gcp.write
+name: GCP Write
+description: Perform approved GCP changes or remediations.
+version: "0.1.0"
+timeout_sec: 120
+steps:
+  write:
+    id: write
+    name: GCP Write action
+    type: worker
+    topic: job.gcp.write
+    input:
+      profile: ${input.profile}
+      action: ${input.action}
+      params: ${input.params}
+      request_id: ${input.request_id}
+    input_schema_id: gcp/GCPActionInput
+    output_schema_id: gcp/GCPActionResult
+    meta:
+      pack_id: gcp
+      capability: gcp.write
+      risk_tags: ["write", "network"]
+      requires: ["network:egress"]

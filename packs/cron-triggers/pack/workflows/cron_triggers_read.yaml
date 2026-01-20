@@ -1,0 +1,23 @@
+id: cron-triggers.read
+name: Cron Triggers Read
+description: List or inspect scheduled runs.
+version: "0.1.0"
+timeout_sec: 60
+steps:
+  read:
+    id: read
+    name: Cron Triggers Read action
+    type: worker
+    topic: job.cron-triggers.read
+    input:
+      profile: ${input.profile}
+      action: ${input.action}
+      params: ${input.params}
+      request_id: ${input.request_id}
+    input_schema_id: cron-triggers/CronTriggersActionInput
+    output_schema_id: cron-triggers/CronTriggersActionResult
+    meta:
+      pack_id: cron-triggers
+      capability: cron-triggers.read
+      risk_tags: ["read"]
+      requires: []
