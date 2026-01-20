@@ -8,6 +8,7 @@ minimal MCP stdio client plus tool-schema helpers.
 - `cordum_agent_adapters/mcp_client.py`: MCP stdio client.
 - `cordum_agent_adapters/openai_tools.py`: MCP tool -> OpenAI tool schema.
 - `cordum_agent_adapters/langchain.py`: LangChain adapter.
+- `cordum_agent_adapters/autogen.py`: AutoGen adapter.
 
 ## Requirements
 
@@ -49,6 +50,14 @@ openai_tools = mcp_tools_to_openai_tools(tools)
 from cordum_agent_adapters.langchain import build_langchain_tools
 
 langchain_tools = build_langchain_tools(client)
+```
+
+## AutoGen adapter
+
+```python
+from cordum_agent_adapters.autogen import build_autogen_tools
+
+functions, function_map = build_autogen_tools(client)
 ```
 
 ## Notes
