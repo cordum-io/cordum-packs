@@ -3,7 +3,7 @@ module github.com/cordum-io/cordum-packs/packs/incident-enricher
 go 1.24.0
 
 require (
-	github.com/cordum-io/cap/v2 v2.0.11
+	github.com/cordum-io/cap/v2 v2.0.12
 	github.com/nats-io/nats.go v1.48.0
 	github.com/redis/go-redis/v9 v9.17.2
 	google.golang.org/protobuf v1.33.0
