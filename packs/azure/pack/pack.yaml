@@ -1,0 +1,67 @@
+apiVersion: cordum.io/v1alpha1
+kind: Pack
+
+metadata:
+  id: azure
+  version: 0.1.0
+  title: Azure
+  description: Azure Monitor queries and service inspection.
+
+compatibility:
+  protocolVersion: 1
+  minCoreVersion: 0.1.0
+
+topics:
+  - name: job.azure.read
+    requires: ["network:egress"]
+    riskTags: ["read", "network"]
+    capability: azure.read
+
+  - name: job.azure.write
+    requires: ["network:egress"]
+    riskTags: ["write", "network"]
+    capability: azure.write
+
+resources:
+  schemas:
+    - id: azure/AzureActionInput
+      path: schemas/AzureActionInput.json
+    - id: azure/AzureActionResult
+      path: schemas/AzureActionResult.json
+  workflows:
+    - id: azure.read
+      path: workflows/azure_read.yaml
+    - id: azure.write
+      path: workflows/azure_write.yaml
+
+overlays:
+  config:
+    - name: pools
+      scope: system
+      key: pools
+      strategy: json_merge_patch
+      path: overlays/pools.patch.yaml
+    - name: timeouts
+      scope: system
+      key: timeouts
+      strategy: json_merge_patch
+      path: overlays/timeouts.patch.yaml
+  policy:
+    - name: safety
+      strategy: bundle_fragment
+      path: overlays/policy.fragment.yaml
+
+tests:
+  policySimulations:
+    - name: allow_read
+      request:
+        tenantId: default
+        topic: job.azure.read
+        riskTags: ["read", "network"]
+      expectDecision: ALLOW
+    - name: write_requires_approval
+      request:
+        tenantId: default
+        topic: job.azure.write
+        riskTags: ["write", "network"]
+      expectDecision: REQUIRE_APPROVAL

@@ -1,0 +1,67 @@
+apiVersion: cordum.io/v1alpha1
+kind: Pack
+
+metadata:
+  id: cron-triggers
+  version: 0.1.0
+  title: Cron Triggers
+  description: Scheduled runs that trigger Cordum workflows.
+
+compatibility:
+  protocolVersion: 1
+  minCoreVersion: 0.1.0
+
+topics:
+  - name: job.cron-triggers.read
+    requires: []
+    riskTags: ["read"]
+    capability: cron-triggers.read
+
+  - name: job.cron-triggers.write
+    requires: []
+    riskTags: ["write"]
+    capability: cron-triggers.write
+
+resources:
+  schemas:
+    - id: cron-triggers/CronTriggersActionInput
+      path: schemas/CronTriggersActionInput.json
+    - id: cron-triggers/CronTriggersActionResult
+      path: schemas/CronTriggersActionResult.json
+  workflows:
+    - id: cron-triggers.read
+      path: workflows/cron_triggers_read.yaml
+    - id: cron-triggers.write
+      path: workflows/cron_triggers_write.yaml
+
+overlays:
+  config:
+    - name: pools
+      scope: system
+      key: pools
+      strategy: json_merge_patch
+      path: overlays/pools.patch.yaml
+    - name: timeouts
+      scope: system
+      key: timeouts
+      strategy: json_merge_patch
+      path: overlays/timeouts.patch.yaml
+  policy:
+    - name: safety
+      strategy: bundle_fragment
+      path: overlays/policy.fragment.yaml
+
+tests:
+  policySimulations:
+    - name: allow_read
+      request:
+        tenantId: default
+        topic: job.cron-triggers.read
+        riskTags: ["read"]
+      expectDecision: ALLOW
+    - name: write_requires_approval
+      request:
+        tenantId: default
+        topic: job.cron-triggers.write
+        riskTags: ["write"]
+      expectDecision: REQUIRE_APPROVAL

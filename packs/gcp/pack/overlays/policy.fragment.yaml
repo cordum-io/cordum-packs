@@ -1,0 +1,17 @@
+version: v1
+rules:
+  - id: gcp-read
+    match:
+      topics:
+        - job.gcp.read
+      risk_tags:
+        - read
+    decision: allow
+  - id: gcp-write
+    match:
+      topics:
+        - job.gcp.write
+      risk_tags:
+        - write
+    decision: require_approval
+    reason: "GCP write actions require approval"
