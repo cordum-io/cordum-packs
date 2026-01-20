@@ -113,6 +113,33 @@ Each pack should ship policy simulations verifying:
 - Worker is deployable and audited separately from the pack
 - `python tools/build.py` produces bundle output in `public/`
 
+## Ecosystem Stickiness (Day-One + HN Readiness)
+
+### MVP Day-One Pack Set (80% Coverage)
+Day-one focus: intake + signals + evidence + controlled action.
+- Intake + collaboration: `github`, `jira`, `slack`, `webhooks`
+- Signals + incident response: `prometheus-query`, `datadog`, `pagerduty`, `sentry`
+- Infra evidence: `kubernetes-triage`, `aws` (add `gcp`/`azure` next)
+- Change + guardrails: `terraform`, `cron-triggers`
+
+### Build Your Own Pack (Power Users)
+- Use `python tools/pack_scaffold.py <pack-id>` to generate a starter pack.
+- Reference `packs/hello-pack` for a minimal example.
+- Define topics/capabilities/risk tags/requires in `pack.yaml`.
+- Add `pack/workflows` + `pack/schemas`, plus overlays in `pack/overlays`.
+- Add policy simulations in `pack.yaml` and validate with `python tools/build.py`.
+- If runtime code is needed, place binaries under `cmd/<binary>` and shared code under `internal/`.
+
+### HN-Ready Integrations (Compatibility)
+- MCP-first: `mcp-client` (Cordum -> MCP tools) and `mcp-bridge` (MCP server for Cordum artifacts).
+- LangChain adapter: expose pack capabilities as LangChain tools.
+- AutoGen adapter: map pack topics to AutoGen tools with structured args.
+- CrewAI adapter: pack actions as CrewAI tools with shared context pointers.
+
+### Next Move (HN Comment Readiness)
+- Keep 2-3 names in replies: LangChain tool adapter, AutoGen tool adapter, CrewAI tool adapter.
+- Mention MCP support as the immediate compatibility layer.
+
 ## Pack Roadmap (20 Must-Haves)
 Status legend: `in-repo` means a pack exists in this repository.
 

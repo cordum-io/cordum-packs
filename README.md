@@ -45,6 +45,17 @@ Output:
 - `public/catalog.json`
 - `public/packs/<id>/<version>/pack.tgz`
 
+## Scaffold a new pack
+
+```bash
+python tools/pack_scaffold.py my-pack \
+  --title "My Pack" \
+  --description "Pack scaffold for My Pack"
+```
+
+Output:
+- `packs/my-pack/` (pack bundle under `pack/` plus a starter README)
+
 ## Included packs
 
 - `packs/hello-pack` - minimal example pack
