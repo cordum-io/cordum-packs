@@ -1,0 +1,17 @@
+version: v1
+rules:
+  - id: aws-read
+    match:
+      topics:
+        - job.aws.read
+      risk_tags:
+        - read
+    decision: allow
+  - id: aws-write
+    match:
+      topics:
+        - job.aws.write
+      risk_tags:
+        - write
+    decision: require_approval
+    reason: "AWS write actions require approval"

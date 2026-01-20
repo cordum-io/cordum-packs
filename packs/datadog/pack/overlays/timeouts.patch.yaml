@@ -1,0 +1,7 @@
+topics:
+  job.datadog.read:
+    timeout_seconds: 60
+    max_retries: 2
+  job.datadog.write:
+    timeout_seconds: 120
+    max_retries: 1

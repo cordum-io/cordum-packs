@@ -1,0 +1,6 @@
+topics:
+  job.aws.read: aws
+  job.aws.write: aws
+pools:
+  aws:
+    requires: ["network:egress"]

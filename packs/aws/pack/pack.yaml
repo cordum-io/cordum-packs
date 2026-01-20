@@ -1,0 +1,67 @@
+apiVersion: cordum.io/v1alpha1
+kind: Pack
+
+metadata:
+  id: aws
+  version: 0.1.0
+  title: AWS
+  description: AWS observability and inspection actions.
+
+compatibility:
+  protocolVersion: 1
+  minCoreVersion: 0.1.0
+
+topics:
+  - name: job.aws.read
+    requires: ["network:egress"]
+    riskTags: ["read", "network"]
+    capability: aws.read
+
+  - name: job.aws.write
+    requires: ["network:egress"]
+    riskTags: ["write", "network"]
+    capability: aws.write
+
+resources:
+  schemas:
+    - id: aws/AWSActionInput
+      path: schemas/AWSActionInput.json
+    - id: aws/AWSActionResult
+      path: schemas/AWSActionResult.json
+  workflows:
+    - id: aws.read
+      path: workflows/aws_read.yaml
+    - id: aws.write
+      path: workflows/aws_write.yaml
+
+overlays:
+  config:
+    - name: pools
+      scope: system
+      key: pools
+      strategy: json_merge_patch
+      path: overlays/pools.patch.yaml
+    - name: timeouts
+      scope: system
+      key: timeouts
+      strategy: json_merge_patch
+      path: overlays/timeouts.patch.yaml
+  policy:
+    - name: safety
+      strategy: bundle_fragment
+      path: overlays/policy.fragment.yaml
+
+tests:
+  policySimulations:
+    - name: allow_read
+      request:
+        tenantId: default
+        topic: job.aws.read
+        riskTags: ["read", "network"]
+      expectDecision: ALLOW
+    - name: write_requires_approval
+      request:
+        tenantId: default
+        topic: job.aws.write
+        riskTags: ["write", "network"]
+      expectDecision: REQUIRE_APPROVAL
