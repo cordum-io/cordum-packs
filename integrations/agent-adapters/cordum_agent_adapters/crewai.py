@@ -59,6 +59,17 @@ def _schema_type(schema: Dict[str, Any]) -> Any:
     return Any
 
 
+def _pydantic_config_allow_extra() -> Any:
+    try:
+        from pydantic import ConfigDict
+    except ImportError:
+        class Config:
+            extra = "allow"
+
+        return Config
+    return ConfigDict(extra="allow")
+
+
 def _pydantic_model_from_schema(name: str, schema: Dict[str, Any]) -> Any:
     try:
         from pydantic import Field, create_model
@@ -80,8 +91,15 @@ def _pydantic_model_from_schema(name: str, schema: Dict[str, Any]) -> Any:
                 default = Field(None, description=description)
             fields[prop] = (field_type, default)
 
+    allow_extra = True
+    if isinstance(schema, dict):
+        additional = schema.get("additionalProperties", True)
+        allow_extra = additional is not False
+
     safe_name = re.sub(r"[^a-zA-Z0-9_]", "_", name)
     model_name = f"{safe_name}_Args"
+    if allow_extra:
+        return create_model(model_name, __config__=_pydantic_config_allow_extra(), **fields)
     return create_model(model_name, **fields)
 
 
