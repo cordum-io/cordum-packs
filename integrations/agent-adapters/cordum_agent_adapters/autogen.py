@@ -36,20 +36,21 @@ def build_autogen_tools(
     functions: List[Dict[str, Any]] = []
     function_map: Dict[str, Callable[..., Any]] = {}
 
-    for tool in tool_defs:
-        name = tool.get("name", "")
-        openai_tool = mcp_tool_to_openai_tool(tool)
-        functions.append(openai_tool["function"])
-        tool_name = name
-
+    def _make_call(bound_name: str) -> Callable[..., Any]:
         def _call(*args: Any, **kwargs: Any) -> Any:
             payload = _coerce_args(args, kwargs)
-            result = client.call_tool(tool_name, payload)
+            result = client.call_tool(bound_name, payload)
             if result_transform:
                 return result_transform(result)
             return result
 
-        function_map[tool_name] = _call
+        return _call
+
+    for tool in tool_defs:
+        name = tool.get("name", "")
+        openai_tool = mcp_tool_to_openai_tool(tool)
+        functions.append(openai_tool["function"])
+        function_map[name] = _make_call(name)
 
     return functions, function_map
 
