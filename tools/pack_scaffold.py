@@ -322,7 +322,7 @@ cd path/to/cordum
 curl -sS -X POST http://localhost:8081/api/v1/workflows/{pack_id}.read/runs \
   -H "X-API-Key: $CORDUM_API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"action":"example.read","params":{}}'
+  -d '{{"action":"example.read","params":{{}}}}'
 ```
 """
 
