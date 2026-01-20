@@ -1,0 +1,17 @@
+version: v1
+rules:
+  - id: servicenow-read
+    match:
+      topics:
+        - job.servicenow.read
+      risk_tags:
+        - read
+    decision: allow
+  - id: servicenow-write
+    match:
+      topics:
+        - job.servicenow.write
+      risk_tags:
+        - write
+    decision: require_approval
+    reason: "ServiceNow write actions require approval"
