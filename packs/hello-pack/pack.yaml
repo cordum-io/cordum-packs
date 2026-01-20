@@ -42,3 +42,12 @@ overlays:
     - name: safety
       strategy: bundle_fragment
       path: overlays/policy.fragment.yaml
+
+tests:
+  policySimulations:
+    - name: allow_echo
+      request:
+        tenantId: default
+        topic: job.hello-pack.echo
+        riskTags: []
+      expectDecision: ALLOW
