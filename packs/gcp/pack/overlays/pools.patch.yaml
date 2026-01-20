@@ -1,0 +1,6 @@
+topics:
+  job.gcp.read: gcp
+  job.gcp.write: gcp
+pools:
+  gcp:
+    requires: ["network:egress"]
