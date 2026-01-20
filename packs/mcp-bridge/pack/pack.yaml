@@ -21,6 +21,11 @@ resources:
   schemas:
     - id: mcp-bridge/ToolCall
       path: schemas/tool_call.json
+    - id: mcp-bridge/ToolResult
+      path: schemas/ToolResult.json
+  workflows:
+    - id: mcp-bridge.tool
+      path: workflows/mcp_bridge_tool.yaml
 
 overlays:
   config:
