@@ -86,6 +86,19 @@ def build_langchain_tools(
             return result_transform(result)
         return result
 
+    def _make_structured_call(bound_name: str) -> Callable[..., Any]:
+        def _call(**kwargs: Any) -> Any:
+            return _invoke(bound_name, kwargs)
+
+        return _call
+
+    def _make_tool_call(bound_name: str) -> Callable[[Any], Any]:
+        def _call(raw: Any) -> Any:
+            args = _parse_tool_input(raw)
+            return _invoke(bound_name, args)
+
+        return _call
+
     for tool in tool_defs:
         name = tool.get("name", "")
         description = tool.get("description", "")
@@ -93,26 +106,15 @@ def build_langchain_tools(
 
         args_schema = _pydantic_model_from_schema(name, input_schema)
         if args_schema is not None:
-            tool_name = name
-
-            def _call(**kwargs: Any) -> Any:
-                return _invoke(tool_name, kwargs)
-
             built_tools.append(
                 StructuredTool.from_function(
-                    func=_call,
+                    func=_make_structured_call(name),
                     name=name,
                     description=description,
                     args_schema=args_schema,
                 )
             )
         else:
-            tool_name = name
-
-            def _call(raw: Any) -> Any:
-                args = _parse_tool_input(raw)
-                return _invoke(tool_name, args)
-
-            built_tools.append(Tool(name=name, description=description, func=_call))
+            built_tools.append(Tool(name=name, description=description, func=_make_tool_call(name)))
 
     return built_tools
