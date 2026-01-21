@@ -598,13 +598,13 @@ func applyAuth(ctx context.Context, server *mcpclient.Server, auth config.AuthCo
 }
 
 func resolveSecret(value, envKey string) string {
-	if strings.TrimSpace(value) != "" {
-		return value
+	envKey = strings.TrimSpace(envKey)
+	if envKey != "" {
+		if envValue := strings.TrimSpace(os.Getenv(envKey)); envValue != "" {
+			return envValue
+		}
 	}
-	if strings.TrimSpace(envKey) != "" {
-		return strings.TrimSpace(os.Getenv(envKey))
-	}
-	return ""
+	return strings.TrimSpace(value)
 }
 
 type oauthTokenResponse struct {
