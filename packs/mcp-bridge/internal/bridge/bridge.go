@@ -567,9 +567,9 @@ func buildJobRequest(toolName string, args map[string]any, cfg Config) jobSubmit
 func toolRiskTags(name string) []string {
 	switch name {
 	case "cordum.workflow.run", "cordum.workflow.rerun", "cordum.workflow.cancel", "cordum.job.approve", "cordum.job.reject", "cordum.job.remediate", "cordum.job.cancel", "cordum.dlq.retry":
-		return []string{"write"}
+		return []string{"write", "network"}
 	default:
-		return []string{"read"}
+		return []string{"read", "network"}
 	}
 }
 
