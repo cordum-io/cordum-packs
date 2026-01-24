@@ -546,7 +546,9 @@ func matchAny(patterns []string, value string) bool {
 
 func resolveSecret(value, envKey string) string {
 	if strings.TrimSpace(envKey) != "" {
-		return strings.TrimSpace(os.Getenv(envKey))
+		if envValue := strings.TrimSpace(os.Getenv(envKey)); envValue != "" {
+			return envValue
+		}
 	}
 	return strings.TrimSpace(value)
 }
