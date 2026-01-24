@@ -72,6 +72,12 @@ https://packs.cordum.io/catalog.json
 https://packs.cordum.io/packs/<id>/<version>/pack.tgz
 ```
 
+## Telemetry logging (packs.cordum.io)
+
+If you want download telemetry for catalog fetches and pack downloads, enable
+the Nginx JSON access log in `deploy/nginx/packs.cordum.io.telemetry.conf`.
+See `deploy/README.md` for install steps and privacy notes.
+
 ## Install via Cordum
 
 Set the catalog config in Cordum:

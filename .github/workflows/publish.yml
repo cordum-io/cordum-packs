@@ -162,6 +162,13 @@ jobs:
           name: public
           path: public
 
+
+      - name: Upload deploy artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: deploy
+          path: deploy
+
   deploy_pages:
     needs: build
     runs-on: ubuntu-latest
@@ -185,6 +192,13 @@ jobs:
           name: public
           path: public
 
+
+      - name: Download deploy artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: deploy
+          path: deploy
+
       - name: Configure SSH
         env:
           PACKS_DEPLOY_KEY: ${{ secrets.PACKS_DEPLOY_KEY }}
@@ -203,6 +217,44 @@ jobs:
           printf '%s\n' "$PACKS_DEPLOY_KEY" > ~/.ssh/cordum_packs_deploy
           chmod 600 ~/.ssh/cordum_packs_deploy
           ssh-keyscan -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts
+
+      - name: Install telemetry logging config (optional)
+        if: env.PACKS_TELEMETRY_INSTALL == '1'
+        env:
+          DEPLOY_HOST: ${{ secrets.PACKS_DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.PACKS_DEPLOY_USER }}
+          TELEMETRY_CONF_PATH: ${{ secrets.PACKS_TELEMETRY_CONF_PATH }}
+          TELEMETRY_LOGROTATE_PATH: ${{ secrets.PACKS_TELEMETRY_LOGROTATE_PATH }}
+          TELEMETRY_TMP: ${{ secrets.PACKS_TELEMETRY_TMP }}
+          RELOAD_NGINX: ${{ secrets.PACKS_RELOAD_NGINX }}
+        run: |
+          set -euo pipefail
+          DEPLOY_HOST="${DEPLOY_HOST:-92.205.177.179}"
+          DEPLOY_USER="${DEPLOY_USER:-sysadmin}"
+          TELEMETRY_CONF_PATH="${TELEMETRY_CONF_PATH:-/etc/nginx/conf.d/packs.cordum.io.telemetry.conf}"
+          TELEMETRY_LOGROTATE_PATH="${TELEMETRY_LOGROTATE_PATH:-/etc/logrotate.d/packs.cordum.io}"
+          TELEMETRY_TMP="${TELEMETRY_TMP:-/tmp/cordum-packs-telemetry}"
+          RELOAD_NGINX="${RELOAD_NGINX:-1}"
+
+          ssh -i ~/.ssh/cordum_packs_deploy "$DEPLOY_USER@$DEPLOY_HOST" "mkdir -p \"$TELEMETRY_TMP\""
+
+          rsync -az -e "ssh -i ~/.ssh/cordum_packs_deploy" deploy/nginx/packs.cordum.io.telemetry.conf \
+            "$DEPLOY_USER@$DEPLOY_HOST:$TELEMETRY_TMP/packs.cordum.io.telemetry.conf"
+          rsync -az -e "ssh -i ~/.ssh/cordum_packs_deploy" deploy/logrotate/packs.cordum.io \
+            "$DEPLOY_USER@$DEPLOY_HOST:$TELEMETRY_TMP/packs.cordum.io.logrotate"
+
+          CONF_DIR="$(dirname "$TELEMETRY_CONF_PATH")"
+          LOGROTATE_DIR="$(dirname "$TELEMETRY_LOGROTATE_PATH")"
+
+          ssh -i ~/.ssh/cordum_packs_deploy "$DEPLOY_USER@$DEPLOY_HOST" \
+            "sudo mkdir -p \"$CONF_DIR\" \"$LOGROTATE_DIR\" \
+            && sudo mv \"$TELEMETRY_TMP/packs.cordum.io.telemetry.conf\" \"$TELEMETRY_CONF_PATH\" \
+            && sudo mv \"$TELEMETRY_TMP/packs.cordum.io.logrotate\" \"$TELEMETRY_LOGROTATE_PATH\" \
+            && sudo nginx -t"
+
+          if [ "$RELOAD_NGINX" = "1" ]; then
+            ssh -i ~/.ssh/cordum_packs_deploy "$DEPLOY_USER@$DEPLOY_HOST" "sudo systemctl reload nginx"
+          fi
 
       - name: Upload to server
         env:
