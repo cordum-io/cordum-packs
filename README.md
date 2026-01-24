@@ -78,6 +78,9 @@ If you want download telemetry for catalog fetches and pack downloads, enable
 the Nginx JSON access log in `deploy/nginx/packs.cordum.io.telemetry.conf`.
 See `deploy/README.md` for install steps and privacy notes.
 
+Optional: deploy a private stats page (basic auth) at `/stats/` to summarize
+active installs over the last 7 days (see `deploy/README.md`).
+
 ## Install via Cordum
 
 Set the catalog config in Cordum:
