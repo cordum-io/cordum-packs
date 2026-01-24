@@ -49,8 +49,7 @@ def main() -> None:
             "install_activity": {"total": 0, "recent": []},
             "note": "log file not found",
         }
-        (OUT_DIR / "active.json").write_text(json.dumps(output, indent=2) + "
-", encoding="utf-8")
+        (OUT_DIR / "active.json").write_text(json.dumps(output, indent=2) + "\n", encoding="utf-8")
         return
 
     unique_ips = set()
@@ -172,8 +171,7 @@ def main() -> None:
     }
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
-    (OUT_DIR / "active.json").write_text(json.dumps(output, indent=2) + "
-", encoding="utf-8")
+    (OUT_DIR / "active.json").write_text(json.dumps(output, indent=2) + "\n", encoding="utf-8")
 
 
 if __name__ == "__main__":
