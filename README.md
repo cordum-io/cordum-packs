@@ -45,6 +45,13 @@ Output:
 - `public/catalog.json`
 - `public/packs/<id>/<version>/pack.tgz`
 
+## Security & operations docs
+
+- `docs/security-hardening.md`
+- `docs/pack-runtime-guide.md`
+- `docs/testing-and-validation.md`
+- `docs/wiki/` (wiki mirror content)
+
 ## Scaffold a new pack
 
 ```bash
