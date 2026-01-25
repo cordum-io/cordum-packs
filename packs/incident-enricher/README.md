@@ -24,8 +24,7 @@ Docs:
 
 ## Compatibility
 
-This pack requires Cordum core `>= 0.6.0` (see `pack/pack.yaml`). It will not
-install on older gateways (for example, `v0.1.3`).
+This pack requires Cordum core `>= 0.1.0` (see `pack/pack.yaml`).
 
 ## Scope
 
