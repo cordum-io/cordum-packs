@@ -380,6 +380,9 @@ func (w *Worker) runApply(ctx context.Context, profile config.Profile, workDir s
 	if hasPlan {
 		args = append(args, planFile)
 	} else if getBool(params, "auto_approve") {
+		if !w.cfg.AllowAutoApprove {
+			return nil, fmt.Errorf("auto_approve disabled; set CORDUM_TERRAFORM_ALLOW_AUTO_APPROVE=true")
+		}
 		args = append(args, "-auto-approve")
 	} else {
 		return nil, fmt.Errorf("apply requires plan_file or auto_approve")

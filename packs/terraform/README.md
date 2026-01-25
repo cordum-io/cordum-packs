@@ -60,7 +60,7 @@ Write actions (use `job.terraform.write`):
 }
 ```
 
-`apply.run` (auto-approve):
+`apply.run` (auto-approve; requires `CORDUM_TERRAFORM_ALLOW_AUTO_APPROVE=true`):
 
 ```json
 {
@@ -88,3 +88,4 @@ Write actions (use `job.terraform.write`):
 
 - Use `CORDUM_TERRAFORM_ALLOWED_DIRS` and `CORDUM_TERRAFORM_DENIED_DIRS` to constrain working directories.
 - Write actions require approval by default (per pack policy fragment).
+- Auto-approve is disabled by default; enable only for tightly scoped runners.
