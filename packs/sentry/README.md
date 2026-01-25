@@ -103,3 +103,14 @@ Write actions (use `job.sentry.write`):
 - Use `CORDUM_SENTRY_ALLOWED_ORGS` and `CORDUM_SENTRY_DENIED_ORGS` to constrain org access.
 - Use `CORDUM_SENTRY_ALLOWED_PROJECTS` and `CORDUM_SENTRY_DENIED_PROJECTS` to constrain projects (e.g. `my-org/*`).
 - Write actions require approval by default (per pack policy fragment).
+
+## Mock testing
+
+No real credentials yet? Follow `docs/mock-testing.md` for a local mock setup and
+use `tools/scripts/pack_mock_smoke.sh` for automated smoke tests.
+
+## Security best practices
+
+- Follow `docs/security-best-practices.md` for least-privilege guidance and hardening tips.
+- Set `CORDUM_SENTRY_ALLOWED_ORGS` and `CORDUM_SENTRY_ALLOWED_PROJECTS`.
+
