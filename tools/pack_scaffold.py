@@ -239,12 +239,15 @@ def read_result_schema(title: str) -> str:
         "title": f"{title} Read Result",
         "type": "object",
         "properties": {
-            "ok": {"type": "boolean"},
-            "result": {"type": "object", "additionalProperties": True},
+            "job_id": {"type": "string"},
+            "profile": {"type": "string"},
+            "action": {"type": "string"},
+            "status_code": {"type": "integer"},
             "request_id": {"type": "string"},
+            "duration_ms": {"type": "number"},
+            "result": {"type": ["object", "array", "string", "number", "boolean", "null"]},
+            "error": {"type": "string"},
         },
-        "required": ["ok"],
-        "additionalProperties": False,
     }
     return json.dumps(payload, indent=2)
 
@@ -280,12 +283,15 @@ def write_result_schema(title: str) -> str:
         "title": f"{title} Write Result",
         "type": "object",
         "properties": {
-            "ok": {"type": "boolean"},
-            "result": {"type": "object", "additionalProperties": True},
+            "job_id": {"type": "string"},
+            "profile": {"type": "string"},
+            "action": {"type": "string"},
+            "status_code": {"type": "integer"},
             "request_id": {"type": "string"},
+            "duration_ms": {"type": "number"},
+            "result": {"type": ["object", "array", "string", "number", "boolean", "null"]},
+            "error": {"type": "string"},
         },
-        "required": ["ok"],
-        "additionalProperties": False,
     }
     return json.dumps(payload, indent=2)
 
@@ -316,7 +322,7 @@ cd path/to/cordum
 curl -sS -X POST http://localhost:8081/api/v1/workflows/{pack_id}.read/runs \
   -H "X-API-Key: $CORDUM_API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"action":"example.read","params":{}}'
+  -d '{{"action":"example.read","params":{{}}}}'
 ```
 """
 
