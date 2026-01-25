@@ -83,3 +83,4 @@ All actions use `job.vault.read`:
 
 - Use `CORDUM_VAULT_ALLOWED_PATHS` and `CORDUM_VAULT_DENIED_PATHS` to scope which secrets are accessible.
 - The pack policy requires approval for all `job.vault.read` requests by default.
+- Inline auth is disabled by default; inline secrets require `CORDUM_VAULT_ALLOW_INLINE_SECRETS=true` (keep it off in production).

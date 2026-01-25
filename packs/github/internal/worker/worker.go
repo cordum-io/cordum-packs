@@ -269,6 +269,9 @@ func (w *Worker) resolveAuth(profile config.Profile, inline InlineAuth) (githuba
 	if inlineProvided && !w.cfg.AllowInlineAuth {
 		return nil, "", fmt.Errorf("inline auth disabled")
 	}
+	if inline.HasSecrets() && !w.cfg.AllowInlineSecrets {
+		return nil, "", fmt.Errorf("inline secrets disabled; use *_env fields")
+	}
 
 	token := resolveSecret(profile.Token, profile.TokenEnv)
 	tokenType := strings.TrimSpace(profile.TokenType)
@@ -577,6 +580,10 @@ func (a InlineAuth) HasAny() bool {
 		strings.TrimSpace(a.PrivateKeyEnv) != "" ||
 		strings.TrimSpace(a.InstallationID) != "" ||
 		strings.TrimSpace(a.InstallationIDEnv) != ""
+}
+
+func (a InlineAuth) HasSecrets() bool {
+	return strings.TrimSpace(a.Token) != "" || strings.TrimSpace(a.PrivateKey) != ""
 }
 
 const (

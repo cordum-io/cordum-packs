@@ -56,6 +56,7 @@ See `deploy/env.example` for the full list of environment variables.
 - `CORDUM_GITHUB_REQUEST_TIMEOUT` (default `45s`)
 - `CORDUM_GITHUB_RESULT_TTL` (optional; example `24h`)
 - `CORDUM_GITHUB_ALLOW_INLINE_AUTH` (default `false`)
+- `CORDUM_GITHUB_ALLOW_INLINE_SECRETS` (default `false`)
 - `CORDUM_GITHUB_DEFAULT_PROFILE` (default `default`)
 
 ### Default profile (env-based)
@@ -145,7 +146,7 @@ The worker expects `GitHubActionInput` payloads. Example:
 }
 ```
 
-If `CORDUM_GITHUB_ALLOW_INLINE_AUTH=true`, you may include `auth`:
+If `CORDUM_GITHUB_ALLOW_INLINE_AUTH=true`, you may include `auth`. Inline secrets (for example `token`) require `CORDUM_GITHUB_ALLOW_INLINE_SECRETS=true`; prefer `*_env` fields for production.
 
 ```json
 {
@@ -163,7 +164,7 @@ If `CORDUM_GITHUB_ALLOW_INLINE_AUTH=true`, you may include `auth`:
 
 - **Default policy**: read is allowed, write requires approval.
 - **Allow/deny lists**: enforce repo and action allowlists to limit scope.
-- **Inline auth**: disabled by default; use profiles for production.
+- **Inline auth**: disabled by default; inline secrets require `CORDUM_GITHUB_ALLOW_INLINE_SECRETS=true` (keep it off in production).
 
 ## License
 
