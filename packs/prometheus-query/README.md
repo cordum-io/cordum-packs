@@ -91,3 +91,4 @@ All actions use `job.prometheus-query.read`:
 
 - Use `CORDUM_PROMETHEUS_ALLOW_ACTIONS` and `CORDUM_PROMETHEUS_DENY_ACTIONS` to constrain actions.
 - All requests are tagged `read` and routed through the Safety Kernel.
+- Inline auth is disabled by default; inline secrets require `CORDUM_PROMETHEUS_ALLOW_INLINE_SECRETS=true` (keep it off in production).
