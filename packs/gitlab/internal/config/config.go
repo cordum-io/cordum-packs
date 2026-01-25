@@ -38,34 +38,36 @@ type Profile struct {
 }
 
 type Config struct {
-	GatewayURL      string
-	APIKey          string
-	NatsURL         string
-	RedisURL        string
-	Pool            string
-	Queue           string
-	Subjects        []string
-	MaxParallel     int32
-	RequestTimeout  time.Duration
-	ResultTTL       time.Duration
-	AllowInlineAuth bool
-	DefaultProfile  string
-	Profiles        map[string]Profile
+	GatewayURL         string
+	APIKey             string
+	NatsURL            string
+	RedisURL           string
+	Pool               string
+	Queue              string
+	Subjects           []string
+	MaxParallel        int32
+	RequestTimeout     time.Duration
+	ResultTTL          time.Duration
+	AllowInlineAuth    bool
+	AllowInlineSecrets bool
+	DefaultProfile     string
+	Profiles           map[string]Profile
 }
 
 func Load() (Config, error) {
 	cfg := Config{
-		GatewayURL:      envOr("CORDUM_GATEWAY_URL", defaultGatewayURL),
-		APIKey:          envOr("CORDUM_API_KEY", ""),
-		NatsURL:         envOr("CORDUM_NATS_URL", defaultNatsURL),
-		RedisURL:        envOr("CORDUM_REDIS_URL", defaultRedisURL),
-		Pool:            envOr("CORDUM_GITLAB_POOL", defaultPool),
-		Queue:           envOr("CORDUM_GITLAB_QUEUE", defaultQueue),
-		RequestTimeout:  defaultRequestTimeout,
-		ResultTTL:       parseDuration("CORDUM_GITLAB_RESULT_TTL", "CORDUM_GITLAB_RESULT_TTL_SECONDS", 0),
-		AllowInlineAuth: boolEnv("CORDUM_GITLAB_ALLOW_INLINE_AUTH", false),
-		DefaultProfile:  strings.TrimSpace(os.Getenv("CORDUM_GITLAB_DEFAULT_PROFILE")),
-		Profiles:        map[string]Profile{},
+		GatewayURL:         envOr("CORDUM_GATEWAY_URL", defaultGatewayURL),
+		APIKey:             envOr("CORDUM_API_KEY", ""),
+		NatsURL:            envOr("CORDUM_NATS_URL", defaultNatsURL),
+		RedisURL:           envOr("CORDUM_REDIS_URL", defaultRedisURL),
+		Pool:               envOr("CORDUM_GITLAB_POOL", defaultPool),
+		Queue:              envOr("CORDUM_GITLAB_QUEUE", defaultQueue),
+		RequestTimeout:     defaultRequestTimeout,
+		ResultTTL:          parseDuration("CORDUM_GITLAB_RESULT_TTL", "CORDUM_GITLAB_RESULT_TTL_SECONDS", 0),
+		AllowInlineAuth:    boolEnv("CORDUM_GITLAB_ALLOW_INLINE_AUTH", false),
+		AllowInlineSecrets: boolEnv("CORDUM_GITLAB_ALLOW_INLINE_SECRETS", false),
+		DefaultProfile:     strings.TrimSpace(os.Getenv("CORDUM_GITLAB_DEFAULT_PROFILE")),
+		Profiles:           map[string]Profile{},
 	}
 
 	if raw := strings.TrimSpace(os.Getenv("CORDUM_GITLAB_SUBJECTS")); raw != "" {
