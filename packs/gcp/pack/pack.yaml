@@ -2,30 +2,37 @@ apiVersion: cordum.io/v1alpha1
 kind: Pack
 
 metadata:
-  id: mcp-bridge
-  version: 0.2.1
-  title: MCP Bridge
-  description: MCP stdio bridge for Cordum tools and flight-recorder resource templates.
+  id: gcp
+  version: 0.1.0
+  title: GCP
+  description: GCP logging/monitoring queries and service inspection.
 
 compatibility:
   protocolVersion: 1
   minCoreVersion: 0.1.0
 
 topics:
-  - name: job.mcp-bridge.tool
+  - name: job.gcp.read
     requires: ["network:egress"]
-    riskTags: ["write"]
-    capability: cordum.mcp.bridge
+    riskTags: ["read", "network"]
+    capability: gcp.read
+
+  - name: job.gcp.write
+    requires: ["network:egress"]
+    riskTags: ["write", "network"]
+    capability: gcp.write
 
 resources:
   schemas:
-    - id: mcp-bridge/ToolCall
-      path: schemas/tool_call.json
-    - id: mcp-bridge/ToolResult
-      path: schemas/ToolResult.json
+    - id: gcp/GCPActionInput
+      path: schemas/GCPActionInput.json
+    - id: gcp/GCPActionResult
+      path: schemas/GCPActionResult.json
   workflows:
-    - id: mcp-bridge.tool
-      path: workflows/mcp_bridge_tool.yaml
+    - id: gcp.read
+      path: workflows/gcp_read.yaml
+    - id: gcp.write
+      path: workflows/gcp_write.yaml
 
 overlays:
   config:
@@ -46,15 +53,15 @@ overlays:
 
 tests:
   policySimulations:
-    - name: allow_read_tools
+    - name: allow_read
       request:
         tenantId: default
-        topic: job.mcp-bridge.tool
-        riskTags: ["read"]
+        topic: job.gcp.read
+        riskTags: ["read", "network"]
       expectDecision: ALLOW
     - name: write_requires_approval
       request:
         tenantId: default
-        topic: job.mcp-bridge.tool
-        riskTags: ["write"]
+        topic: job.gcp.write
+        riskTags: ["write", "network"]
       expectDecision: REQUIRE_APPROVAL

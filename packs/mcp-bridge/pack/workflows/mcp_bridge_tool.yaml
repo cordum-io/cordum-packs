@@ -1,0 +1,21 @@
+id: mcp-bridge.tool
+name: MCP Bridge Tool Call
+description: Submit an MCP tool call to Cordum.
+version: "0.1.0"
+timeout_sec: 120
+steps:
+  call:
+    id: call
+    name: MCP tool call
+    type: worker
+    topic: job.mcp-bridge.tool
+    input:
+      tool: ${input.tool}
+      args: ${input.args}
+    input_schema_id: mcp-bridge/ToolCall
+    output_schema_id: mcp-bridge/ToolResult
+    meta:
+      pack_id: mcp-bridge
+      capability: cordum.mcp.bridge
+      risk_tags: ["write", "network"]
+      requires: ["network:egress"]

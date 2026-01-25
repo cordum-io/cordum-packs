@@ -1,0 +1,6 @@
+topics:
+  job.servicenow.read: servicenow
+  job.servicenow.write: servicenow
+pools:
+  servicenow:
+    requires: ["network:egress"]

@@ -113,34 +113,61 @@ Each pack should ship policy simulations verifying:
 - Worker is deployable and audited separately from the pack
 - `python tools/build.py` produces bundle output in `public/`
 
+## Ecosystem Stickiness (Day-One + HN Readiness)
+
+### MVP Day-One Pack Set (80% Coverage)
+Day-one focus: intake + signals + evidence + controlled action.
+- Intake + collaboration: `github`, `jira`, `slack`, `webhooks`
+- Signals + incident response: `prometheus-query`, `datadog`, `pagerduty`, `sentry`
+- Infra evidence: `kubernetes-triage`, `aws` (add `gcp`/`azure` next)
+- Change + guardrails: `terraform`, `cron-triggers`
+
+### Build Your Own Pack (Power Users)
+- Use `python tools/pack_scaffold.py <pack-id>` to generate a starter pack.
+- Reference `packs/hello-pack` for a minimal example.
+- Define topics/capabilities/risk tags/requires in `pack.yaml`.
+- Add `pack/workflows` + `pack/schemas`, plus overlays in `pack/overlays`.
+- Add policy simulations in `pack.yaml` and validate with `python tools/build.py`.
+- If runtime code is needed, place binaries under `cmd/<binary>` and shared code under `internal/`.
+
+### HN-Ready Integrations (Compatibility)
+- MCP-first: `mcp-client` (Cordum -> MCP tools) and `mcp-bridge` (MCP server for Cordum artifacts).
+- LangChain adapter: expose pack capabilities as LangChain tools.
+- AutoGen adapter: map pack topics to AutoGen tools with structured args.
+- CrewAI adapter: pack actions as CrewAI tools with shared context pointers.
+
+### Next Move (HN Comment Readiness)
+- Keep 2-3 names in replies: LangChain tool adapter, AutoGen tool adapter, CrewAI tool adapter.
+- Mention MCP support as the immediate compatibility layer.
+
 ## Pack Roadmap (20 Must-Haves)
 Status legend: `in-repo` means a pack exists in this repository.
 
 ### Phase 1 (Foundation)
 - mcp-client: Cordum as an MCP client; `read|write|network` (status: in-repo)
 - github: repo read/search, issues, PRs, checks, releases (status: in-repo)
-- slack: notifications, approvals, incident channels
-- jira: issues, transitions, comments, attachments
-- webhooks: inbound events to start workflows; principal mapping required
-- kubernetes-triage: diagnostics, events, logs, rollout status
+- slack: notifications, approvals, incident channels (status: in-repo)
+- jira: issues, transitions, comments, attachments (status: in-repo)
+- webhooks: inbound events to start workflows; principal mapping required (status: in-repo)
+- kubernetes-triage: diagnostics, events, logs, rollout status (status: in-repo)
 
 ### Phase 2 (Ops and Observability)
-- prometheus-query: PromQL queries and alert state
-- datadog: metrics/logs/traces queries; monitor changes require approval
-- pagerduty: on-call schedules, incidents, escalations
-- servicenow: ITSM incidents/changes/CMDB; `prod` and `write` tagging
-- msteams: Teams-native notifications and approvals
-- sentry: issues, releases, suspect commits
-- opentelemetry: trace search and dependency graphs (read-only early)
+- prometheus-query: PromQL queries and alert state (status: in-repo)
+- datadog: metrics/logs/traces queries; monitor changes require approval (status: in-repo)
+- pagerduty: on-call schedules, incidents, escalations (status: in-repo)
+- servicenow: ITSM incidents/changes/CMDB; `prod` and `write` tagging (status: in-repo)
+- msteams: Teams-native notifications and approvals (status: in-repo)
+- sentry: issues, releases, suspect commits (status: in-repo)
+- opentelemetry: trace search and dependency graphs (read-only early) (status: in-repo)
 
 ### Phase 3 (Infra and Change)
-- aws: CloudWatch logs/metrics, ECS/EKS inspection, S3 evidence
-- gcp: Cloud Logging/Monitoring queries, GKE inspection
-- azure: Azure Monitor queries, AKS inspection
-- terraform: plan, drift detection, policy checks; apply requires approval
-- vault: secret resolution and dynamic credentials; no raw secrets in workflows
-- gitlab: repo read/search, merge requests, pipelines, issues
-- cron-triggers: scheduled runs for checks, summaries, compliance
+- aws: CloudWatch logs/metrics, ECS/EKS inspection, S3 evidence (status: in-repo)
+- gcp: Cloud Logging/Monitoring queries, GKE inspection (status: in-repo)
+- azure: Azure Monitor queries, AKS inspection (status: in-repo)
+- terraform: plan, drift detection, policy checks; apply requires approval (status: in-repo)
+- vault: secret resolution and dynamic credentials; no raw secrets in workflows (status: in-repo)
+- gitlab: repo read/search, merge requests, pipelines, issues (status: in-repo)
+- cron-triggers: scheduled runs for checks, summaries, compliance (status: in-repo)
 
 ## Governance Checklist (Per Pack)
 

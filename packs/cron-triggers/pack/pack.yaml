@@ -2,30 +2,37 @@ apiVersion: cordum.io/v1alpha1
 kind: Pack
 
 metadata:
-  id: mcp-bridge
-  version: 0.2.1
-  title: MCP Bridge
-  description: MCP stdio bridge for Cordum tools and flight-recorder resource templates.
+  id: cron-triggers
+  version: 0.1.0
+  title: Cron Triggers
+  description: Scheduled runs that trigger Cordum workflows.
 
 compatibility:
   protocolVersion: 1
   minCoreVersion: 0.1.0
 
 topics:
-  - name: job.mcp-bridge.tool
-    requires: ["network:egress"]
+  - name: job.cron-triggers.read
+    requires: []
+    riskTags: ["read"]
+    capability: cron-triggers.read
+
+  - name: job.cron-triggers.write
+    requires: []
     riskTags: ["write"]
-    capability: cordum.mcp.bridge
+    capability: cron-triggers.write
 
 resources:
   schemas:
-    - id: mcp-bridge/ToolCall
-      path: schemas/tool_call.json
-    - id: mcp-bridge/ToolResult
-      path: schemas/ToolResult.json
+    - id: cron-triggers/CronTriggersActionInput
+      path: schemas/CronTriggersActionInput.json
+    - id: cron-triggers/CronTriggersActionResult
+      path: schemas/CronTriggersActionResult.json
   workflows:
-    - id: mcp-bridge.tool
-      path: workflows/mcp_bridge_tool.yaml
+    - id: cron-triggers.read
+      path: workflows/cron_triggers_read.yaml
+    - id: cron-triggers.write
+      path: workflows/cron_triggers_write.yaml
 
 overlays:
   config:
@@ -46,15 +53,15 @@ overlays:
 
 tests:
   policySimulations:
-    - name: allow_read_tools
+    - name: allow_read
       request:
         tenantId: default
-        topic: job.mcp-bridge.tool
+        topic: job.cron-triggers.read
         riskTags: ["read"]
       expectDecision: ALLOW
     - name: write_requires_approval
       request:
         tenantId: default
-        topic: job.mcp-bridge.tool
+        topic: job.cron-triggers.write
         riskTags: ["write"]
       expectDecision: REQUIRE_APPROVAL
