@@ -59,42 +59,46 @@ type ServerConfig struct {
 }
 
 type Config struct {
-	GatewayURL        string
-	APIKey            string
-	NatsURL           string
-	RedisURL          string
-	Pool              string
-	Subjects          []string
-	Queue             string
-	JobTopic          string
-	PackID            string
-	ClientName        string
-	ClientVersion     string
-	CallTimeout       time.Duration
-	ProtocolVersion   string
-	MaxParallel       int32
-	AllowInlineServer bool
-	AllowInlineAuth   bool
-	Servers           map[string]ServerConfig
+	GatewayURL              string
+	APIKey                  string
+	NatsURL                 string
+	RedisURL                string
+	Pool                    string
+	Subjects                []string
+	Queue                   string
+	JobTopic                string
+	PackID                  string
+	ClientName              string
+	ClientVersion           string
+	CallTimeout             time.Duration
+	ProtocolVersion         string
+	MaxParallel             int32
+	AllowInlineServer       bool
+	AllowInlineUnsafeServer bool
+	AllowInlineAuth         bool
+	AllowInlineSecrets      bool
+	Servers                 map[string]ServerConfig
 }
 
 func Load() (Config, error) {
 	cfg := Config{
-		GatewayURL:        envOr("CORDUM_GATEWAY_URL", defaultGatewayURL),
-		APIKey:            envOr("CORDUM_API_KEY", ""),
-		NatsURL:           envOr("CORDUM_NATS_URL", defaultNatsURL),
-		RedisURL:          envOr("CORDUM_REDIS_URL", defaultRedisURL),
-		Pool:              envOr("CORDUM_MCP_CLIENT_POOL", defaultPool),
-		Queue:             envOr("CORDUM_MCP_CLIENT_QUEUE", defaultQueue),
-		JobTopic:          envOr("CORDUM_MCP_CLIENT_JOB_TOPIC", defaultJobTopic),
-		PackID:            envOr("CORDUM_MCP_CLIENT_PACK_ID", defaultPackID),
-		ClientName:        envOr("CORDUM_MCP_CLIENT_NAME", defaultClientName),
-		ClientVersion:     envOr("CORDUM_MCP_CLIENT_VERSION", defaultClientVersion),
-		ProtocolVersion:   envOr("CORDUM_MCP_CLIENT_PROTOCOL_VERSION", defaultProtocolVersion),
-		CallTimeout:       defaultCallTimeout,
-		AllowInlineServer: boolEnv("CORDUM_MCP_CLIENT_ALLOW_INLINE_SERVER", false),
-		AllowInlineAuth:   boolEnv("CORDUM_MCP_CLIENT_ALLOW_INLINE_AUTH", false),
-		Servers:           map[string]ServerConfig{},
+		GatewayURL:              envOr("CORDUM_GATEWAY_URL", defaultGatewayURL),
+		APIKey:                  envOr("CORDUM_API_KEY", ""),
+		NatsURL:                 envOr("CORDUM_NATS_URL", defaultNatsURL),
+		RedisURL:                envOr("CORDUM_REDIS_URL", defaultRedisURL),
+		Pool:                    envOr("CORDUM_MCP_CLIENT_POOL", defaultPool),
+		Queue:                   envOr("CORDUM_MCP_CLIENT_QUEUE", defaultQueue),
+		JobTopic:                envOr("CORDUM_MCP_CLIENT_JOB_TOPIC", defaultJobTopic),
+		PackID:                  envOr("CORDUM_MCP_CLIENT_PACK_ID", defaultPackID),
+		ClientName:              envOr("CORDUM_MCP_CLIENT_NAME", defaultClientName),
+		ClientVersion:           envOr("CORDUM_MCP_CLIENT_VERSION", defaultClientVersion),
+		ProtocolVersion:         envOr("CORDUM_MCP_CLIENT_PROTOCOL_VERSION", defaultProtocolVersion),
+		CallTimeout:             defaultCallTimeout,
+		AllowInlineServer:       boolEnv("CORDUM_MCP_CLIENT_ALLOW_INLINE_SERVER", false),
+		AllowInlineUnsafeServer: boolEnv("CORDUM_MCP_CLIENT_ALLOW_INLINE_UNSAFE_SERVER", false),
+		AllowInlineAuth:         boolEnv("CORDUM_MCP_CLIENT_ALLOW_INLINE_AUTH", false),
+		AllowInlineSecrets:      boolEnv("CORDUM_MCP_CLIENT_ALLOW_INLINE_SECRETS", false),
+		Servers:                 map[string]ServerConfig{},
 	}
 
 	if raw := strings.TrimSpace(os.Getenv("CORDUM_MCP_CLIENT_SUBJECTS")); raw != "" {

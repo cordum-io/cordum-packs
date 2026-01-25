@@ -102,3 +102,4 @@ Write actions (use `job.gitlab.write`):
 - Use `CORDUM_GITLAB_ALLOWED_PROJECTS` and `CORDUM_GITLAB_DENIED_PROJECTS` to constrain project access.
 - Use `CORDUM_GITLAB_ALLOW_ACTIONS` and `CORDUM_GITLAB_DENY_ACTIONS` to constrain actions per profile.
 - Write actions require approval by default (per pack policy fragment).
+- Inline auth is disabled by default; inline secrets require `CORDUM_GITLAB_ALLOW_INLINE_SECRETS=true` (keep it off in production).
