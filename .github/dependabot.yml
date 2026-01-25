@@ -1,0 +1,72 @@
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+
+  - package-ecosystem: "pip"
+    directory: "/tools"
+    schedule:
+      interval: "weekly"
+
+  - package-ecosystem: "gomod"
+    directory: "/packs/github"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "gomod"
+    directory: "/packs/incident-enricher"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "gomod"
+    directory: "/packs/jira"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "gomod"
+    directory: "/packs/kubernetes-triage"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "gomod"
+    directory: "/packs/mcp-bridge"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "gomod"
+    directory: "/packs/mcp-client"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "gomod"
+    directory: "/packs/msteams"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "gomod"
+    directory: "/packs/opentelemetry"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "gomod"
+    directory: "/packs/prometheus-query"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "gomod"
+    directory: "/packs/sentry"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "gomod"
+    directory: "/packs/slack"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "gomod"
+    directory: "/packs/terraform"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "gomod"
+    directory: "/packs/vault"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "gomod"
+    directory: "/packs/webhooks"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "gomod"
+    directory: "/packs/gitlab"
+    schedule:
+      interval: "weekly"

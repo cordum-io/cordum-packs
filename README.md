@@ -14,6 +14,8 @@ These are published at `https://packs.cordum.io`.
 cordum-packs/
   packs/               # pack projects (pack.yaml at root or in pack/)
   tools/               # build + catalog tooling
+  integrations/        # agent adapters and SDK integrations
+  docs/                # repo docs and roadmap notes
   public/              # build output (published)
 ```
 
@@ -45,7 +47,9 @@ Output:
 - `public/catalog.json`
 - `public/packs/<id>/<version>/pack.tgz`
 
-## Scaffold a new pack
+## Pack tooling
+
+Scaffold a new pack bundle:
 
 ```bash
 python tools/pack_scaffold.py my-pack \
@@ -56,11 +60,32 @@ python tools/pack_scaffold.py my-pack \
 Output:
 - `packs/my-pack/` (pack bundle under `pack/` plus a starter README)
 
+Audit pack bundles for required assets:
+
+```bash
+python tools/pack_audit.py
+```
+
+## Agent adapters
+
+Python adapters that expose MCP tools to popular agent frameworks live under
+`integrations/agent-adapters/`. The package exports:
+
+- LangChain tools (`build_langchain_tools`)
+- AutoGen tools (`build_autogen_tools`)
+- CrewAI tools (`build_crewai_tools`)
+
+Each adapter expects an MCP stdio server such as `packs/mcp-bridge`.
+
 ## Included packs
 
 - `packs/hello-pack` - minimal example pack
 - `packs/mcp-bridge` - MCP stdio bridge + pack bundle
+- `packs/mcp-client` - call external MCP servers with policy gating
+- `packs/slack` - Slack ChatOps notifications and approvals
+- `packs/github` - GitHub automation workflows
 - `packs/incident-enricher` - reference pack with workers + workflows
+- See `packs/` for the full catalog.
 
 ## Publish (GitHub Pages)
 
@@ -71,15 +96,6 @@ Point `packs.cordum.io` at the Pages domain and it will serve:
 https://packs.cordum.io/catalog.json
 https://packs.cordum.io/packs/<id>/<version>/pack.tgz
 ```
-
-## Telemetry logging (packs.cordum.io)
-
-If you want download telemetry for catalog fetches and pack downloads, enable
-the Nginx JSON access log in `deploy/nginx/packs.cordum.io.telemetry.conf`.
-See `deploy/README.md` for install steps and privacy notes.
-
-Optional: deploy a private stats page (basic auth) at `/stats/` to summarize
-active installs over the last 7 days (see `deploy/README.md`).
 
 ## Install via Cordum
 
