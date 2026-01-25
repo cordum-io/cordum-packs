@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+cmd="${1:-}"
+shift || true
+
+case "$cmd" in
+  init)
+    echo "Terraform has been successfully initialized!"
+    exit 0
+    ;;
+  validate)
+    if [[ " $* " == *" -json "* ]]; then
+      echo '{"valid":true,"error_count":0,"warning_count":0,"diagnostics":[]}'
+    else
+      echo "Success! The configuration is valid."
+    fi
+    exit 0
+    ;;
+  output)
+    if [[ " $* " == *" -json "* ]]; then
+      echo '{}'
+    else
+      echo "No outputs."
+    fi
+    exit 0
+    ;;
+  show)
+    if [[ " $* " == *" -json "* ]]; then
+      echo '{"format_version":"1.0","values":{}}'
+    else
+      echo "No plan file provided."
+    fi
+    exit 0
+    ;;
+  plan)
+    echo "Plan: 0 to add, 0 to change, 0 to destroy."
+    exit 0
+    ;;
+  apply)
+    echo "Apply complete! Resources: 0 added, 0 changed, 0 destroyed."
+    exit 0
+    ;;
+  *)
+    echo "mock terraform: $cmd $*"
+    exit 0
+    ;;
+esac

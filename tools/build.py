@@ -135,7 +135,13 @@ def build_catalog(packs_dir: Path, base_url: str) -> list:
             continue
         if should_skip(pack_dir, packs_dir):
             continue
-        manifest, pack_root = find_manifest(pack_dir)
+        try:
+            manifest, pack_root = find_manifest(pack_dir)
+        except FileNotFoundError:
+            if pack_dir.is_symlink():
+                print(f"skipping {pack_dir}: pack.yaml not found", file=sys.stderr)
+                continue
+            raise
         metadata = manifest.get("metadata") or {}
         pack_id = str(metadata.get("id") or "").strip()
         version = str(metadata.get("version") or "").strip()
