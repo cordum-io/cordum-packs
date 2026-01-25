@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Cordum Packs · Active Systems</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: "Georgia", "Times New Roman", serif;
+      }
+      body {
+        margin: 0;
+        background: #f7f4ef;
+        color: #1f1f1f;
+      }
+      header {
+        padding: 32px 40px 16px;
+        border-bottom: 1px solid #d9d2c6;
+        background: linear-gradient(135deg, #f7f0e4, #fdfbf7);
+      }
+      h1 {
+        margin: 0 0 8px;
+        font-size: 28px;
+        letter-spacing: 0.4px;
+      }
+      .sub {
+        color: #5c5248;
+        font-size: 14px;
+      }
+      main {
+        padding: 24px 40px 56px;
+        display: grid;
+        gap: 20px;
+      }
+      .grid {
+        display: grid;
+        gap: 16px;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      }
+      .card {
+        background: #fffaf3;
+        border: 1px solid #e6dfd2;
+        border-radius: 16px;
+        padding: 16px;
+        box-shadow: 0 10px 24px rgba(31, 31, 31, 0.08);
+      }
+      .card h2 {
+        margin: 0 0 8px;
+        font-size: 16px;
+        color: #6a5d51;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+      }
+      .value {
+        font-size: 30px;
+        font-weight: 600;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      th, td {
+        text-align: left;
+        padding: 8px 10px;
+        border-bottom: 1px solid #eee6da;
+        font-size: 14px;
+      }
+      th {
+        color: #6a5d51;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        font-size: 12px;
+      }
+      .pill {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 999px;
+        background: #1f1f1f;
+        color: #fff;
+        font-size: 12px;
+      }
+      .muted {
+        color: #6a5d51;
+        font-size: 13px;
+      }
+      footer {
+        padding: 0 40px 40px;
+        color: #6a5d51;
+        font-size: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Packs Activity</h1>
+      <div class="sub" id="window">Loading…</div>
+    </header>
+
+    <main>
+      <section class="grid" id="summary"></section>
+
+      <section class="card">
+        <h2>Top Packs (Downloads)</h2>
+        <table id="top-packs">
+          <thead>
+            <tr><th>Pack</th><th>Downloads</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </section>
+
+      <section class="card">
+        <h2>Top Countries</h2>
+        <table id="top-countries">
+          <thead>
+            <tr><th>Country</th><th>Events</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </section>
+
+      <section class="card">
+        <h2>Recent Events</h2>
+        <table id="recent">
+          <thead>
+            <tr><th>Time</th><th>Event</th><th>Pack</th><th>Install</th><th>Country</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </section>
+    </main>
+
+    <footer id="updated"></footer>
+
+    <script>
+      async function load() {
+        const res = await fetch("/stats/active.json", { cache: "no-store" });
+        if (!res.ok) {
+          document.getElementById("window").textContent = "Failed to load stats";
+          return;
+        }
+        const data = await res.json();
+        const windowText = `Last ${data.window_days}d · ${data.window_start} → ${data.window_end}`;
+        document.getElementById("window").textContent = windowText;
+
+        const summary = document.getElementById("summary");
+        const cards = [
+          ["Active installs", data.unique?.install_ids ?? 0],
+          ["Active IP+UA", data.unique?.ip_ua ?? 0],
+          ["Catalog fetches", data.counts?.catalog_fetches ?? 0],
+          ["Pack downloads", data.counts?.pack_downloads ?? 0],
+          ["Unique IPs", data.unique?.ips ?? 0],
+          ["Countries", data.unique?.countries ?? 0],
+        ];
+        summary.innerHTML = cards.map(([label, value]) => `
+          <div class="card">
+            <h2>${label}</h2>
+            <div class="value">${value}</div>
+          </div>
+        `).join("");
+
+        const topPacks = document.querySelector("#top-packs tbody");
+        topPacks.innerHTML = (data.top?.packs || []).map(row => `
+          <tr><td>${row.name}</td><td><span class="pill">${row.count}</span></td></tr>
+        `).join("");
+
+        const topCountries = document.querySelector("#top-countries tbody");
+        topCountries.innerHTML = (data.top?.countries || []).map(row => `
+          <tr><td>${row.name}</td><td>${row.count}</td></tr>
+        `).join("");
+
+        const recent = document.querySelector("#recent tbody");
+        recent.innerHTML = (data.recent_events || []).map(row => `
+          <tr>
+            <td>${row.ts}</td>
+            <td>${row.event}</td>
+            <td>${row.pack || "-"}</td>
+            <td>${row.install_id || "-"}</td>
+            <td>${row.country || "-"}</td>
+          </tr>
+        `).join("");
+
+        document.getElementById("updated").textContent = `Generated at ${data.generated_at}`;
+      }
+      load();
+    </script>
+  </body>
+</html>

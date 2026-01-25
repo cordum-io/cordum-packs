@@ -59,6 +59,7 @@ See `deploy/env.example` for a template environment file.
 - `CORDUM_WEBHOOKS_BIND` (default `:8089`)
 - `CORDUM_WEBHOOKS_MAX_BODY_BYTES` (default `1048576`)
 - `CORDUM_WEBHOOKS_TRUST_PROXY` (default `false`)
+- `CORDUM_WEBHOOKS_ALLOW_INSECURE` (default `false`)
 - `CORDUM_WEBHOOKS_ROUTES` (required JSON array; see below)
 
 ### Route configuration (`CORDUM_WEBHOOKS_ROUTES`)
@@ -70,7 +71,7 @@ Each route config supports:
 - `method` (string): HTTP method (default `POST`).
 - `workflow_id` (string): Cordum workflow ID to start.
 - `org_id` / `team_id` (optional): scope the run to a tenant.
-- `signature_type` (string): `none`, `token`, `hmac_sha256`, `hmac_sha1`.
+- `signature_type` (string): `token`, `hmac_sha256`, `hmac_sha1` (`none` only when `CORDUM_WEBHOOKS_ALLOW_INSECURE=true`).
 - `signature_header` (string): header holding the signature/token.
 - `token_header` (string): default `X-Webhook-Token`.
 - `secret` / `secret_env` (string): shared secret for signatures.
@@ -103,6 +104,19 @@ The receiver sends a workflow input shaped like:
 - **Signature checks**: enforce HMAC or token-based verification.
 - **IP allow/deny lists**: restrict ingress by CIDR.
 - **Idempotency**: forward unique delivery IDs to prevent duplicate runs.
+
+
+## Mock testing
+
+No real credentials yet? Follow `docs/mock-testing.md` for a local mock setup and
+use `tools/scripts/pack_mock_smoke.sh` for automated smoke tests.
+
+
+## Security best practices
+
+- Follow `docs/security-best-practices.md` for least-privilege guidance and hardening tips.
+- Use `hmac_sha256` signatures and restrict `allowed_ip_ranges`.
+- Keep `CORDUM_WEBHOOKS_ALLOW_INSECURE=false` in production.
 
 ## License
 

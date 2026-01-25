@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+args=("$@")
+args_str=" ${args[*]} "
+
+if [[ "$args_str" == *" -o json "* ]]; then
+  echo '{"items": []}'
+  exit 0
+fi
+
+if [[ "$args_str" == *"rollout status"* ]]; then
+  echo "deployment \"mock\" successfully rolled out"
+  exit 0
+fi
+
+if [[ "$args_str" == *"logs"* ]]; then
+  echo "mock logs"
+  exit 0
+fi
+
+if [[ "$args_str" == *"delete"* ]]; then
+  echo "deleted"
+  exit 0
+fi
+
+echo "mock kubectl ok"

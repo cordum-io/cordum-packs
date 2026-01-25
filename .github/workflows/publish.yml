@@ -162,6 +162,13 @@ jobs:
           name: public
           path: public
 
+
+      - name: Upload deploy artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: deploy
+          path: deploy
+
   deploy_pages:
     needs: build
     runs-on: ubuntu-latest
@@ -178,12 +185,22 @@ jobs:
     if: github.ref == 'refs/heads/main'
     environment:
       name: production
+    env:
+      PACKS_TELEMETRY_INSTALL: ${{ secrets.PACKS_TELEMETRY_INSTALL }}
+      PACKS_STATS_INSTALL: ${{ secrets.PACKS_STATS_INSTALL }}
     steps:
       - name: Download public artifact
         uses: actions/download-artifact@v4
         with:
           name: public
           path: public
+
+
+      - name: Download deploy artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: deploy
+          path: deploy
 
       - name: Configure SSH
         env:
@@ -203,6 +220,113 @@ jobs:
           printf '%s\n' "$PACKS_DEPLOY_KEY" > ~/.ssh/cordum_packs_deploy
           chmod 600 ~/.ssh/cordum_packs_deploy
           ssh-keyscan -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts
+
+      - name: Install telemetry logging config (optional)
+        if: env.PACKS_TELEMETRY_INSTALL == '1'
+        env:
+          DEPLOY_HOST: ${{ secrets.PACKS_DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.PACKS_DEPLOY_USER }}
+          TELEMETRY_CONF_PATH: ${{ secrets.PACKS_TELEMETRY_CONF_PATH }}
+          TELEMETRY_LOGROTATE_PATH: ${{ secrets.PACKS_TELEMETRY_LOGROTATE_PATH }}
+          TELEMETRY_TMP: ${{ secrets.PACKS_TELEMETRY_TMP }}
+          RELOAD_NGINX: ${{ secrets.PACKS_RELOAD_NGINX }}
+        run: |
+          set -euo pipefail
+          DEPLOY_HOST="${DEPLOY_HOST:-92.205.177.179}"
+          DEPLOY_USER="${DEPLOY_USER:-sysadmin}"
+          TELEMETRY_CONF_PATH="${TELEMETRY_CONF_PATH:-/etc/nginx/conf.d/packs.cordum.io.telemetry.conf}"
+          TELEMETRY_LOGROTATE_PATH="${TELEMETRY_LOGROTATE_PATH:-/etc/logrotate.d/packs.cordum.io}"
+          TELEMETRY_TMP="${TELEMETRY_TMP:-/tmp/cordum-packs-telemetry}"
+          RELOAD_NGINX="${RELOAD_NGINX:-1}"
+
+          ssh -i ~/.ssh/cordum_packs_deploy "$DEPLOY_USER@$DEPLOY_HOST" "mkdir -p \"$TELEMETRY_TMP\""
+
+          rsync -az -e "ssh -i ~/.ssh/cordum_packs_deploy" deploy/nginx/packs.cordum.io.telemetry.conf \
+            "$DEPLOY_USER@$DEPLOY_HOST:$TELEMETRY_TMP/packs.cordum.io.telemetry.conf"
+          rsync -az -e "ssh -i ~/.ssh/cordum_packs_deploy" deploy/logrotate/packs.cordum.io \
+            "$DEPLOY_USER@$DEPLOY_HOST:$TELEMETRY_TMP/packs.cordum.io.logrotate"
+
+          CONF_DIR="$(dirname "$TELEMETRY_CONF_PATH")"
+          LOGROTATE_DIR="$(dirname "$TELEMETRY_LOGROTATE_PATH")"
+
+          ssh -i ~/.ssh/cordum_packs_deploy "$DEPLOY_USER@$DEPLOY_HOST" \
+            "sudo mkdir -p \"$CONF_DIR\" \"$LOGROTATE_DIR\" \
+            && sudo mv \"$TELEMETRY_TMP/packs.cordum.io.telemetry.conf\" \"$TELEMETRY_CONF_PATH\" \
+            && sudo mv \"$TELEMETRY_TMP/packs.cordum.io.logrotate\" \"$TELEMETRY_LOGROTATE_PATH\" \
+            && sudo nginx -t"
+
+          if [ "$RELOAD_NGINX" = "1" ]; then
+            ssh -i ~/.ssh/cordum_packs_deploy "$DEPLOY_USER@$DEPLOY_HOST" "sudo systemctl reload nginx"
+          fi
+
+      - name: Install stats dashboard (optional)
+        if: env.PACKS_STATS_INSTALL == '1'
+        env:
+          DEPLOY_HOST: ${{ secrets.PACKS_DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.PACKS_DEPLOY_USER }}
+          STATS_ROOT: ${{ secrets.PACKS_STATS_ROOT }}
+          STATS_SCRIPT_PATH: ${{ secrets.PACKS_STATS_SCRIPT_PATH }}
+          STATS_CRON_PATH: ${{ secrets.PACKS_STATS_CRON_PATH }}
+          STATS_HTPASSWD_PATH: ${{ secrets.PACKS_STATS_HTPASSWD_PATH }}
+          STATS_NGINX_SNIPPET_PATH: ${{ secrets.PACKS_STATS_NGINX_SNIPPET_PATH }}
+          STATS_BASIC_USER: ${{ secrets.PACKS_STATS_BASIC_USER }}
+          STATS_BASIC_PASS: ${{ secrets.PACKS_STATS_BASIC_PASS }}
+          STATS_TMP: ${{ secrets.PACKS_STATS_TMP }}
+          RELOAD_NGINX: ${{ secrets.PACKS_RELOAD_NGINX }}
+        run: |
+          set -euo pipefail
+          DEPLOY_HOST="${DEPLOY_HOST:-92.205.177.179}"
+          DEPLOY_USER="${DEPLOY_USER:-sysadmin}"
+          STATS_ROOT="${STATS_ROOT:-/var/www/packs.cordum.io/stats}"
+          STATS_SCRIPT_PATH="${STATS_SCRIPT_PATH:-/opt/cordum-packs/build_stats.py}"
+          STATS_CRON_PATH="${STATS_CRON_PATH:-/etc/cron.d/cordum-packs-stats}"
+          STATS_HTPASSWD_PATH="${STATS_HTPASSWD_PATH:-/etc/nginx/.htpasswd_packs_stats}"
+          STATS_NGINX_SNIPPET_PATH="${STATS_NGINX_SNIPPET_PATH:-/etc/nginx/snippets/packs.cordum.io.stats.location.conf}"
+          STATS_TMP="${STATS_TMP:-/tmp/cordum-packs-stats}"
+          RELOAD_NGINX="${RELOAD_NGINX:-1}"
+
+          if [ -z "${STATS_BASIC_USER:-}" ] || [ -z "${STATS_BASIC_PASS:-}" ]; then
+            echo "PACKS_STATS_BASIC_USER and PACKS_STATS_BASIC_PASS are required" >&2
+            exit 1
+          fi
+
+          ssh -i ~/.ssh/cordum_packs_deploy "$DEPLOY_USER@$DEPLOY_HOST" "mkdir -p \"$STATS_TMP\""
+
+          rsync -az -e "ssh -i ~/.ssh/cordum_packs_deploy" deploy/scripts/build_stats.py \
+            "$DEPLOY_USER@$DEPLOY_HOST:$STATS_TMP/build_stats.py"
+          rsync -az -e "ssh -i ~/.ssh/cordum_packs_deploy" deploy/stats/index.html \
+            "$DEPLOY_USER@$DEPLOY_HOST:$STATS_TMP/index.html"
+          rsync -az -e "ssh -i ~/.ssh/cordum_packs_deploy" deploy/cron/cordum-packs-stats \
+            "$DEPLOY_USER@$DEPLOY_HOST:$STATS_TMP/cordum-packs-stats"
+          rsync -az -e "ssh -i ~/.ssh/cordum_packs_deploy" deploy/nginx/packs.cordum.io.stats.location.conf \
+            "$DEPLOY_USER@$DEPLOY_HOST:$STATS_TMP/packs.cordum.io.stats.location.conf"
+
+          STATS_SCRIPT_DIR="$(dirname "$STATS_SCRIPT_PATH")"
+          STATS_CRON_DIR="$(dirname "$STATS_CRON_PATH")"
+          STATS_HTPASSWD_DIR="$(dirname "$STATS_HTPASSWD_PATH")"
+          STATS_SNIPPET_DIR="$(dirname "$STATS_NGINX_SNIPPET_PATH")"
+
+          ssh -i ~/.ssh/cordum_packs_deploy "$DEPLOY_USER@$DEPLOY_HOST" \
+            "sudo mkdir -p \"$STATS_SCRIPT_DIR\" \"$STATS_ROOT\" \"$STATS_CRON_DIR\" \"$STATS_HTPASSWD_DIR\" \"$STATS_SNIPPET_DIR\" \
+            && sudo mv \"$STATS_TMP/build_stats.py\" \"$STATS_SCRIPT_PATH\" \
+            && sudo mv \"$STATS_TMP/index.html\" \"$STATS_ROOT/index.html\" \
+            && sudo mv \"$STATS_TMP/cordum-packs-stats\" \"$STATS_CRON_PATH\" \
+            && sudo mv \"$STATS_TMP/packs.cordum.io.stats.location.conf\" \"$STATS_NGINX_SNIPPET_PATH\" \
+            && sudo chmod +x \"$STATS_SCRIPT_PATH\""
+
+          HASH="$(openssl passwd -apr1 "$STATS_BASIC_PASS")"
+          ssh -i ~/.ssh/cordum_packs_deploy "$DEPLOY_USER@$DEPLOY_HOST" \
+            "printf \'%s:%s\\n\' \"$STATS_BASIC_USER\" \"$HASH\" | sudo tee \"$STATS_HTPASSWD_PATH\" >/dev/null"
+
+          ssh -i ~/.ssh/cordum_packs_deploy "$DEPLOY_USER@$DEPLOY_HOST" \
+            "PACKS_TELEMETRY_LOG=/var/log/nginx/packs.cordum.io.access.json \
+            PACKS_STATS_DIR=\"$STATS_ROOT\" \
+            PACKS_STATS_WINDOW_DAYS=7 \
+            sudo /usr/bin/python3 \"$STATS_SCRIPT_PATH\""
+
+          if [ "$RELOAD_NGINX" = "1" ]; then
+            ssh -i ~/.ssh/cordum_packs_deploy "$DEPLOY_USER@$DEPLOY_HOST" "sudo nginx -t && sudo systemctl reload nginx"
+          fi
 
       - name: Upload to server
         env:
