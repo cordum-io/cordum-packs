@@ -73,6 +73,7 @@ If `CORDUM_K8S_PROFILES` is not set, the worker builds a single `default` profil
 - `CORDUM_K8S_DENIED_NAMESPACES` (comma-separated denylist)
 - `CORDUM_K8S_ALLOW_ACTIONS` (comma-separated allowlist)
 - `CORDUM_K8S_DENY_ACTIONS` (comma-separated denylist)
+- `CORDUM_K8S_ALLOW_UNSAFE_NAMESPACES` (default `false`)
 
 ### Profiles (recommended)
 
@@ -143,6 +144,7 @@ use `tools/scripts/pack_mock_smoke.sh` for automated smoke tests.
 
 - Follow `docs/security-best-practices.md` for least-privilege guidance and hardening tips.
 - Set `CORDUM_K8S_ALLOWED_NAMESPACES` and use read-only RBAC.
+- Keep `CORDUM_K8S_ALLOW_UNSAFE_NAMESPACES=false` in production.
 
 ## License
 
