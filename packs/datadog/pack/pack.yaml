@@ -2,30 +2,37 @@ apiVersion: cordum.io/v1alpha1
 kind: Pack
 
 metadata:
-  id: mcp-bridge
-  version: 0.2.1
-  title: MCP Bridge
-  description: MCP stdio bridge for Cordum tools and flight-recorder resource templates.
+  id: datadog
+  version: 0.1.0
+  title: Datadog
+  description: Datadog metrics, logs, traces, and monitor actions.
 
 compatibility:
   protocolVersion: 1
   minCoreVersion: 0.1.0
 
 topics:
-  - name: job.mcp-bridge.tool
+  - name: job.datadog.read
     requires: ["network:egress"]
-    riskTags: ["write"]
-    capability: cordum.mcp.bridge
+    riskTags: ["read", "network"]
+    capability: datadog.read
+
+  - name: job.datadog.write
+    requires: ["network:egress"]
+    riskTags: ["write", "network"]
+    capability: datadog.write
 
 resources:
   schemas:
-    - id: mcp-bridge/ToolCall
-      path: schemas/tool_call.json
-    - id: mcp-bridge/ToolResult
-      path: schemas/ToolResult.json
+    - id: datadog/DatadogActionInput
+      path: schemas/DatadogActionInput.json
+    - id: datadog/DatadogActionResult
+      path: schemas/DatadogActionResult.json
   workflows:
-    - id: mcp-bridge.tool
-      path: workflows/mcp_bridge_tool.yaml
+    - id: datadog.read
+      path: workflows/datadog_read.yaml
+    - id: datadog.write
+      path: workflows/datadog_write.yaml
 
 overlays:
   config:
@@ -46,15 +53,15 @@ overlays:
 
 tests:
   policySimulations:
-    - name: allow_read_tools
+    - name: allow_read
       request:
         tenantId: default
-        topic: job.mcp-bridge.tool
-        riskTags: ["read"]
+        topic: job.datadog.read
+        riskTags: ["read", "network"]
       expectDecision: ALLOW
     - name: write_requires_approval
       request:
         tenantId: default
-        topic: job.mcp-bridge.tool
-        riskTags: ["write"]
+        topic: job.datadog.write
+        riskTags: ["write", "network"]
       expectDecision: REQUIRE_APPROVAL

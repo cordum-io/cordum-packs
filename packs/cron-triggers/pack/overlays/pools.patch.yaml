@@ -1,0 +1,6 @@
+topics:
+  job.cron-triggers.read: cron-triggers
+  job.cron-triggers.write: cron-triggers
+pools:
+  cron-triggers:
+    requires: []
