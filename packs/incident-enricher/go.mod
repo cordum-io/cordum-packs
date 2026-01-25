@@ -6,7 +6,7 @@ require (
 	github.com/cordum-io/cap/v2 v2.0.11
 	github.com/nats-io/nats.go v1.48.0
 	github.com/redis/go-redis/v9 v9.17.2
-	google.golang.org/protobuf v1.33.0
+	google.golang.org/protobuf v1.36.11
 )
 
 require (

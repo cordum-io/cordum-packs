@@ -154,7 +154,7 @@ func (w *Worker) handleJob(ctx context.Context, req *agentv1.JobRequest) (*agent
 	if err != nil {
 		return w.failJob(jobID, err)
 	}
-	if err := enforceDirPolicy(profile, workDir); err != nil {
+	if err := enforceDirPolicy(profile, workDir, w.cfg.AllowUnsafeDirs); err != nil {
 		return w.failJob(jobID, err)
 	}
 
@@ -510,17 +510,30 @@ func normalizeDir(baseDir, dir string) (string, error) {
 	return abs, nil
 }
 
-func enforceDirPolicy(profile config.Profile, dir string) error {
-	if len(profile.AllowedDirs) == 0 && len(profile.DeniedDirs) == 0 {
-		return nil
-	}
+func enforceDirPolicy(profile config.Profile, dir string, allowUnsafe bool) error {
 	normalized := normalizeForMatch(dir)
 	if strings.TrimSpace(normalized) == "" {
 		return fmt.Errorf("dir required for policy enforcement")
 	}
-	if len(profile.AllowedDirs) > 0 && !matchAny(profile.AllowedDirs, normalized) {
+
+	if len(profile.AllowedDirs) == 0 {
+		if !allowUnsafe {
+			if strings.TrimSpace(profile.WorkingDir) == "" {
+				return fmt.Errorf("dir allowlist required; set CORDUM_TERRAFORM_ALLOWED_DIRS or CORDUM_TERRAFORM_WORKDIR")
+			}
+			workingDir, err := normalizeDir("", profile.WorkingDir)
+			if err != nil {
+				return err
+			}
+			normalizedWorking := normalizeForMatch(workingDir)
+			if normalized != normalizedWorking && !strings.HasPrefix(normalized, normalizedWorking+"/") {
+				return fmt.Errorf("dir not allowed: %s", dir)
+			}
+		}
+	} else if !matchAny(profile.AllowedDirs, normalized) {
 		return fmt.Errorf("dir not allowed: %s", dir)
 	}
+
 	if matchAny(profile.DeniedDirs, normalized) {
 		return fmt.Errorf("dir denied: %s", dir)
 	}
