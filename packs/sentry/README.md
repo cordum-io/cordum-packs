@@ -103,3 +103,4 @@ Write actions (use `job.sentry.write`):
 - Use `CORDUM_SENTRY_ALLOWED_ORGS` and `CORDUM_SENTRY_DENIED_ORGS` to constrain org access.
 - Use `CORDUM_SENTRY_ALLOWED_PROJECTS` and `CORDUM_SENTRY_DENIED_PROJECTS` to constrain projects (e.g. `my-org/*`).
 - Write actions require approval by default (per pack policy fragment).
+- Inline auth is disabled by default; inline secrets require `CORDUM_SENTRY_ALLOW_INLINE_SECRETS=true` (keep it off in production).
