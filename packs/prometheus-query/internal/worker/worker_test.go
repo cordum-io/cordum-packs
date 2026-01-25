@@ -40,7 +40,7 @@ func TestValidateParams(t *testing.T) {
 }
 
 func TestResolveAuthInline(t *testing.T) {
-	w := &Worker{cfg: config.Config{AllowInlineAuth: true}}
+	w := &Worker{cfg: config.Config{AllowInlineAuth: true, AllowInlineSecrets: true}}
 	profile := config.Profile{Token: "profile-token"}
 	bearer, _, _, err := w.resolveAuth(profile, InlineAuth{Token: "inline-token"})
 	if err != nil {
