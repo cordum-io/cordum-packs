@@ -135,6 +135,12 @@ Set `CORDUM_MCP_CLIENT_ALLOW_INLINE_AUTH=true` to allow raw secrets in job input
 - Tool allow/deny lists can be set per server.
 - Policy fragment enforces read allow, write approval, secrets approval.
 
+
+## Mock testing
+
+No real credentials yet? Follow `docs/mock-testing.md` for a local mock setup and
+use `tools/scripts/pack_mock_smoke.sh` for automated smoke tests.
+
 ## License
 
 BUSL-1.1 (same as Cordum core).

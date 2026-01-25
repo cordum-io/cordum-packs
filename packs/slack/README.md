@@ -176,6 +176,12 @@ If `CORDUM_SLACK_ALLOW_INLINE_AUTH=true`, you may include `auth`:
 - **Allow/deny lists**: enforce action and channel allowlists to limit scope.
 - **Inline auth**: disabled by default; use profiles for production.
 
+
+## Mock testing
+
+No real credentials yet? Follow `docs/mock-testing.md` for a local mock setup and
+use `tools/scripts/pack_mock_smoke.sh` for automated smoke tests.
+
 ## License
 
 BUSL-1.1 (same as Cordum core).

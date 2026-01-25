@@ -104,6 +104,12 @@ The receiver sends a workflow input shaped like:
 - **IP allow/deny lists**: restrict ingress by CIDR.
 - **Idempotency**: forward unique delivery IDs to prevent duplicate runs.
 
+
+## Mock testing
+
+No real credentials yet? Follow `docs/mock-testing.md` for a local mock setup and
+use `tools/scripts/pack_mock_smoke.sh` for automated smoke tests.
+
 ## License
 
 BUSL-1.1 (same as Cordum core).

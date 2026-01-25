@@ -91,3 +91,8 @@ All actions use `job.prometheus-query.read`:
 
 - Use `CORDUM_PROMETHEUS_ALLOW_ACTIONS` and `CORDUM_PROMETHEUS_DENY_ACTIONS` to constrain actions.
 - All requests are tagged `read` and routed through the Safety Kernel.
+
+## Mock testing
+
+No real credentials yet? Follow `docs/mock-testing.md` for a local mock setup and
+use `tools/scripts/pack_mock_smoke.sh` for automated smoke tests.

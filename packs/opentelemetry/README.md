@@ -84,3 +84,8 @@ All actions use `job.opentelemetry.read`:
 
 - Use `CORDUM_OTEL_ALLOWED_SERVICES` and `CORDUM_OTEL_DENIED_SERVICES` to constrain service names.
 - All requests are tagged `read` and routed through the Safety Kernel.
+
+## Mock testing
+
+No real credentials yet? Follow `docs/mock-testing.md` for a local mock setup and
+use `tools/scripts/pack_mock_smoke.sh` for automated smoke tests.

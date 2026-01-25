@@ -22,6 +22,11 @@ Docs:
 - [docs/overview.md](docs/overview.md) for the platform pitch and pack concepts.
 - [docs/quickstart.md](docs/quickstart.md) for the install + demo flow.
 
+## Compatibility
+
+This pack requires Cordum core `>= 0.6.0` (see `pack/pack.yaml`). It will not
+install on older gateways (for example, `v0.1.3`).
+
 ## Scope
 
 Incident Enricher is a reference pack that proves the full platform loop
@@ -120,3 +125,8 @@ INGESTER_URL=http://localhost:8088 ./scripts/demo.sh
 - `OPENAI_API_KEY`, `OPENAI_MODEL` (reserved; not implemented yet)
 - `LLM_MAX_INPUT_BYTES`, `LLM_MAX_EVIDENCE_BYTES`, `LLM_MAX_EVIDENCE_ITEMS`
 - `SLACK_WEBHOOK_URL`
+
+## Mock testing
+
+No real credentials yet? Follow `docs/mock-testing.md` for a local mock setup and
+use `tools/scripts/pack_mock_smoke.sh` for automated smoke tests.

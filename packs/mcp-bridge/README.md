@@ -98,6 +98,12 @@ Use `resources/read` with a resolved URI to fetch concrete data.
 The bridge expects an API key with admin permissions for gateway reads/writes.
 In enterprise setups, use a dedicated service principal with scoped permissions.
 
+
+## Mock testing
+
+No real credentials yet? Follow `docs/mock-testing.md` for a local mock setup and
+use `tools/scripts/pack_mock_smoke.sh` for automated smoke tests.
+
 ## License
 
 BUSL‑1.1 (same as Cordum core).
