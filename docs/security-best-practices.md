@@ -25,6 +25,7 @@ least-privilege configuration, safe defaults, and operational hardening.
 ### Webhooks
 
 - Use `signature_type: hmac_sha256` with a strong secret in `secret_env`.
+- Keep `CORDUM_WEBHOOKS_ALLOW_INSECURE=false` in production (default).
 - Restrict `allowed_ip_ranges` when possible.
 - Lower `max_body_bytes` per route for safety.
 
@@ -32,12 +33,14 @@ least-privilege configuration, safe defaults, and operational hardening.
 
 - Run the worker with a **read-only** Kubernetes RBAC service account.
 - Set `CORDUM_K8S_ALLOWED_NAMESPACES` (and/or `DENIED_NAMESPACES`).
+- Keep `CORDUM_K8S_ALLOW_UNSAFE_NAMESPACES=false` in production (default).
 - Use a dedicated kubeconfig with least privilege.
 
 ### Terraform
 
 - Set `CORDUM_TERRAFORM_ALLOWED_DIRS` to a strict allowlist.
 - Use a dedicated working directory and CI-scoped credentials.
+- Keep `CORDUM_TERRAFORM_ALLOW_UNSAFE_DIRS=false` in production (default).
 - Avoid `apply.run` in production unless fully approved.
 
 ### MCP-bridge / MCP-client
