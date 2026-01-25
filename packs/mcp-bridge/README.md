@@ -104,6 +104,12 @@ In enterprise setups, use a dedicated service principal with scoped permissions.
 No real credentials yet? Follow `docs/mock-testing.md` for a local mock setup and
 use `tools/scripts/pack_mock_smoke.sh` for automated smoke tests.
 
+
+## Security best practices
+
+- Follow `docs/security-best-practices.md` for least-privilege guidance and hardening tips.
+- Restrict approvals and job actions via policy where possible.
+
 ## License
 
 BUSL‑1.1 (same as Cordum core).

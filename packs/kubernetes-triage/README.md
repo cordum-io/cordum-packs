@@ -138,6 +138,12 @@ The worker expects `KubernetesTriageActionInput` payloads. Example:
 No real credentials yet? Follow `docs/mock-testing.md` for a local mock setup and
 use `tools/scripts/pack_mock_smoke.sh` for automated smoke tests.
 
+
+## Security best practices
+
+- Follow `docs/security-best-practices.md` for least-privilege guidance and hardening tips.
+- Set `CORDUM_K8S_ALLOWED_NAMESPACES` and use read-only RBAC.
+
 ## License
 
 BUSL-1.1 (same as Cordum core).

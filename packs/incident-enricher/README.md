@@ -129,3 +129,9 @@ INGESTER_URL=http://localhost:8088 ./scripts/demo.sh
 
 No real credentials yet? Follow `docs/mock-testing.md` for a local mock setup and
 use `tools/scripts/pack_mock_smoke.sh` for automated smoke tests.
+
+## Security best practices
+
+- Follow `docs/security-best-practices.md` for least-privilege guidance and hardening tips.
+- Keep the post step approval-gated; review summaries before posting.
+

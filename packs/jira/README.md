@@ -160,6 +160,12 @@ If `CORDUM_JIRA_ALLOW_INLINE_AUTH=true`, you may include `auth`:
 No real credentials yet? Follow `docs/mock-testing.md` for a local mock setup and
 use `tools/scripts/pack_mock_smoke.sh` for automated smoke tests.
 
+
+## Security best practices
+
+- Follow `docs/security-best-practices.md` for least-privilege guidance and hardening tips.
+- Set `CORDUM_JIRA_ALLOWED_PROJECTS` to a strict allowlist.
+
 ## License
 
 BUSL-1.1 (same as Cordum core).

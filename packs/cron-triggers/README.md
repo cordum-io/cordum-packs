@@ -38,8 +38,13 @@ cd path/to/cordum
 
 ## Mock testing
 
-See `docs/mock-testing.md` for a no‑credentials workflow and the shared mock
+See `docs/mock-testing.md` for a no-credentials workflow and the shared mock
 harness in `tools/mock`.
+
+
+## Security best practices
+
+- Follow `docs/security-best-practices.md` for least-privilege guidance and hardening tips.
 
 ## License
 
