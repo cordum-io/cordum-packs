@@ -106,9 +106,9 @@ Note: You still need to include the snippet in the server block once.
 - `event`: `catalog_fetch` or `pack_download`
 - `pack_id`, `pack_version` (for pack downloads)
 - `install_id` (from `?install_id=` query param, avoid secrets)
-- `ts`, `method`, `host`, `uri`, `status`, `bytes`, `request_time`
+- `ts`, `method`, `host`, `uri` (path only), `status`, `bytes`, `request_time`
 - `remote_addr`, `xff`, `cf_ip`, `cf_country`, `cf_ray`
-- `user_agent`, `referer`, `accept_language`, `tls_protocol`, `tls_cipher`
+- `user_agent`, `accept_language`, `tls_protocol`, `tls_cipher`
 
 ## Privacy note
 
