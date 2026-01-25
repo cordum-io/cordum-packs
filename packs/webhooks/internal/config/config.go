@@ -37,22 +37,24 @@ type Route struct {
 }
 
 type Config struct {
-	GatewayURL  string
-	APIKey      string
-	BindAddress string
-	MaxBody     int64
-	TrustProxy  bool
-	Routes      []Route
+	GatewayURL    string
+	APIKey        string
+	BindAddress   string
+	MaxBody       int64
+	TrustProxy    bool
+	AllowInsecure bool
+	Routes        []Route
 }
 
 func Load() (Config, error) {
 	cfg := Config{
-		GatewayURL:  envOr("CORDUM_GATEWAY_URL", defaultGatewayURL),
-		APIKey:      envOr("CORDUM_API_KEY", ""),
-		BindAddress: envOr("CORDUM_WEBHOOKS_BIND", defaultBind),
-		MaxBody:     parseInt64("CORDUM_WEBHOOKS_MAX_BODY_BYTES", defaultMaxBody),
-		TrustProxy:  boolEnv("CORDUM_WEBHOOKS_TRUST_PROXY", false),
-		Routes:      []Route{},
+		GatewayURL:    envOr("CORDUM_GATEWAY_URL", defaultGatewayURL),
+		APIKey:        envOr("CORDUM_API_KEY", ""),
+		BindAddress:   envOr("CORDUM_WEBHOOKS_BIND", defaultBind),
+		MaxBody:       parseInt64("CORDUM_WEBHOOKS_MAX_BODY_BYTES", defaultMaxBody),
+		TrustProxy:    boolEnv("CORDUM_WEBHOOKS_TRUST_PROXY", false),
+		AllowInsecure: boolEnv("CORDUM_WEBHOOKS_ALLOW_INSECURE", false),
+		Routes:        []Route{},
 	}
 
 	routesRaw := strings.TrimSpace(os.Getenv("CORDUM_WEBHOOKS_ROUTES"))
@@ -68,6 +70,16 @@ func Load() (Config, error) {
 	for i := range cfg.Routes {
 		route := &cfg.Routes[i]
 		normalizeRoute(route, cfg.MaxBody)
+		if !cfg.AllowInsecure && route.SignatureType == "none" {
+			label := route.ID
+			if label == "" {
+				label = route.Path
+			}
+			if label == "" {
+				label = fmt.Sprintf("route %d", i)
+			}
+			return cfg, fmt.Errorf("%s: signature_type required (set CORDUM_WEBHOOKS_ALLOW_INSECURE=true for local testing)", label)
+		}
 		if err := compileCIDRs(route); err != nil {
 			return cfg, err
 		}

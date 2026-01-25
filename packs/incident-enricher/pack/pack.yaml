@@ -9,7 +9,7 @@ metadata:
 
 compatibility:
   protocolVersion: 1
-  minCoreVersion: 0.6.0
+  minCoreVersion: 0.1.0
 
 topics:
   - name: job.incident-enricher.fetch

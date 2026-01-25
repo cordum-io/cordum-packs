@@ -86,5 +86,15 @@ Write actions (use `job.terraform.write`):
 
 ## Security
 
-- Use `CORDUM_TERRAFORM_ALLOWED_DIRS` and `CORDUM_TERRAFORM_DENIED_DIRS` to constrain working directories.
+- Use `CORDUM_TERRAFORM_ALLOWED_DIRS` and `CORDUM_TERRAFORM_DENIED_DIRS` to constrain working directories (required unless `CORDUM_TERRAFORM_ALLOW_UNSAFE_DIRS=true` for local dev).
 - Write actions require approval by default (per pack policy fragment).
+
+## Mock testing
+
+No real credentials yet? Follow `docs/mock-testing.md` for a local mock setup and
+use `tools/scripts/pack_mock_smoke.sh` for automated smoke tests.
+
+## Security best practices
+
+- Follow `docs/security-best-practices.md` for least-privilege guidance and hardening tips.
+- Set `CORDUM_TERRAFORM_ALLOWED_DIRS` and avoid `apply.run` in prod.

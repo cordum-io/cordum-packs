@@ -83,3 +83,14 @@ All actions use `job.vault.read`:
 
 - Use `CORDUM_VAULT_ALLOWED_PATHS` and `CORDUM_VAULT_DENIED_PATHS` to scope which secrets are accessible.
 - The pack policy requires approval for all `job.vault.read` requests by default.
+
+## Mock testing
+
+No real credentials yet? Follow `docs/mock-testing.md` for a local mock setup and
+use `tools/scripts/pack_mock_smoke.sh` for automated smoke tests.
+
+## Security best practices
+
+- Follow `docs/security-best-practices.md` for least-privilege guidance and hardening tips.
+- Set `CORDUM_VAULT_ALLOWED_PATHS` to restrict secrets scope.
+

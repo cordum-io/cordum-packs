@@ -31,3 +31,13 @@ curl -sS -X POST http://localhost:8081/api/v1/workflows/hello-pack.echo/runs \
 ```bash
 go run ./cmd/cordumctl pack uninstall hello-pack
 ```
+
+## Mock testing
+
+No real credentials yet? Follow `docs/mock-testing.md` for a local mock setup and
+use `tools/scripts/pack_mock_smoke.sh` for automated smoke tests.
+
+## Security best practices
+
+- Follow `docs/security-best-practices.md` for least-privilege guidance and hardening tips.
+

@@ -1,0 +1,6 @@
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+PACKS_TELEMETRY_LOG=/var/log/nginx/packs.cordum.io.access.json
+PACKS_STATS_DIR=/var/www/packs.cordum.io/stats
+PACKS_STATS_WINDOW_DAYS=7
+*/15 * * * * root /usr/bin/python3 /opt/cordum-packs/build_stats.py > /var/log/cordum-packs-stats.log 2>&1
