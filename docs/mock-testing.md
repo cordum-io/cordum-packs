@@ -119,6 +119,7 @@ Run the server and POST a payload to the mock route:
 ```bash
 # cordum-packs/packs/webhooks
 CORDUM_WEBHOOKS_BIND=:8099 \
+CORDUM_WEBHOOKS_ALLOW_INSECURE=true \
 CORDUM_WEBHOOKS_ROUTES='[{"id":"mock","path":"/webhooks/mock","method":"POST","workflow_id":"hello-pack.echo","signature_type":"none"}]' \
 go run ./cmd/cordum-webhooks
 
