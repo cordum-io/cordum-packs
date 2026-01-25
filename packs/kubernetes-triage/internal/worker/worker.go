@@ -158,7 +158,7 @@ func (w *Worker) handleJob(ctx context.Context, req *agentv1.JobRequest) (*agent
 
 	namespace := resolveNamespace(profile, params, spec.Namespaced)
 	if spec.Namespaced {
-		if err := enforceNamespacePolicy(profile, namespace); err != nil {
+		if err := enforceNamespacePolicy(profile, namespace, w.cfg.AllowUnsafeNamespaces); err != nil {
 			return w.failJob(jobID, err)
 		}
 	}
@@ -388,8 +388,20 @@ func resolveNamespace(profile config.Profile, params map[string]any, namespaced 
 	return profile.Namespace
 }
 
-func enforceNamespacePolicy(profile config.Profile, namespace string) error {
+func enforceNamespacePolicy(profile config.Profile, namespace string, allowUnsafe bool) error {
 	if len(profile.AllowedNamespaces) == 0 && len(profile.DeniedNamespaces) == 0 {
+		if allowUnsafe {
+			return nil
+		}
+		if namespace == "" {
+			return fmt.Errorf("namespace required for policy enforcement")
+		}
+		if strings.TrimSpace(profile.Namespace) == "" {
+			return fmt.Errorf("namespace allowlist required; set CORDUM_K8S_ALLOWED_NAMESPACES or CORDUM_K8S_NAMESPACE")
+		}
+		if !matchAny([]string{profile.Namespace}, namespace) {
+			return fmt.Errorf("namespace not allowed: %s", namespace)
+		}
 		return nil
 	}
 	if namespace == "" {
