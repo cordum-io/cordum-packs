@@ -84,3 +84,4 @@ All actions use `job.opentelemetry.read`:
 
 - Use `CORDUM_OTEL_ALLOWED_SERVICES` and `CORDUM_OTEL_DENIED_SERVICES` to constrain service names.
 - All requests are tagged `read` and routed through the Safety Kernel.
+- Inline auth is disabled by default; inline secrets require `CORDUM_OTEL_ALLOW_INLINE_SECRETS=true` (keep it off in production).

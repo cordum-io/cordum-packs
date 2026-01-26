@@ -54,7 +54,7 @@ func (s *Server) routeHandler(route config.Route) http.HandlerFunc {
 			return
 		}
 
-		sourceIP := resolveSourceIP(r, s.cfg.TrustProxy)
+		sourceIP := resolveSourceIP(r, s.cfg.TrustProxy, s.cfg.TrustProxyCIDRs)
 		if !ipAllowed(route, sourceIP) {
 			http.Error(w, "source ip not allowed", http.StatusForbidden)
 			return
@@ -78,7 +78,7 @@ func (s *Server) routeHandler(route config.Route) http.HandlerFunc {
 			return
 		}
 
-		payload := buildPayload(route, r, sourceIP, body)
+		payload := buildPayload(route, r, sourceIP, body, s.cfg.RedactHeaders, s.cfg.RedactHeaderNames)
 
 		idempotencyKey := ""
 		if strings.TrimSpace(route.IdempotencyHeader) != "" {
@@ -104,8 +104,12 @@ func (s *Server) routeHandler(route config.Route) http.HandlerFunc {
 	}
 }
 
-func resolveSourceIP(r *http.Request, trustProxy bool) string {
+func resolveSourceIP(r *http.Request, trustProxy bool, trustedProxyCIDRs []*net.IPNet) string {
+	remoteIP := resolveRemoteIP(r.RemoteAddr)
 	if trustProxy {
+		if len(trustedProxyCIDRs) > 0 && !ipInCIDRs(remoteIP, trustedProxyCIDRs) {
+			return remoteIP
+		}
 		if forwarded := strings.TrimSpace(r.Header.Get("X-Forwarded-For")); forwarded != "" {
 			parts := strings.Split(forwarded, ",")
 			if len(parts) > 0 {
@@ -116,11 +120,31 @@ func resolveSourceIP(r *http.Request, trustProxy bool) string {
 			return realIP
 		}
 	}
-	host, _, err := net.SplitHostPort(r.RemoteAddr)
+	return remoteIP
+}
+
+func resolveRemoteIP(remoteAddr string) string {
+	host, _, err := net.SplitHostPort(remoteAddr)
 	if err == nil {
 		return host
 	}
-	return r.RemoteAddr
+	return remoteAddr
+}
+
+func ipInCIDRs(ip string, cidrs []*net.IPNet) bool {
+	if ip == "" {
+		return false
+	}
+	parsed := net.ParseIP(ip)
+	if parsed == nil {
+		return false
+	}
+	for _, cidr := range cidrs {
+		if cidr.Contains(parsed) {
+			return true
+		}
+	}
+	return false
 }
 
 func ipAllowed(route config.Route, ip string) bool {
@@ -162,7 +186,7 @@ func verifySignature(route config.Route, r *http.Request, body []byte, secret st
 		if header == "" {
 			return fmt.Errorf("token header not configured")
 		}
-		if strings.TrimSpace(r.Header.Get(header)) != secret {
+		if !secureCompare(strings.TrimSpace(r.Header.Get(header)), secret) {
 			return fmt.Errorf("invalid webhook token")
 		}
 		return nil
@@ -205,14 +229,14 @@ func normalizeSignature(raw string) string {
 	return raw
 }
 
-func buildPayload(route config.Route, r *http.Request, sourceIP string, body []byte) map[string]any {
+func buildPayload(route config.Route, r *http.Request, sourceIP string, body []byte, redactHeaders bool, redactHeaderNames []string) map[string]any {
 	parsedBody := parseBody(body)
 	return map[string]any{
 		"webhook": map[string]any{
 			"id":          route.ID,
 			"path":        route.Path,
 			"method":      r.Method,
-			"headers":     headersToMap(r.Header),
+			"headers":     headersToMap(r.Header, redactHeaders, buildSensitiveHeaders(route, redactHeaderNames)),
 			"query":       r.URL.Query(),
 			"body":        parsedBody,
 			"raw_body":    string(body),
@@ -233,17 +257,68 @@ func parseBody(body []byte) any {
 	return strings.TrimSpace(string(body))
 }
 
-func headersToMap(headers http.Header) map[string][]string {
+func headersToMap(headers http.Header, redact bool, sensitiveHeaders map[string]struct{}) map[string][]string {
 	out := map[string][]string{}
 	for key, values := range headers {
+		if redact && isSensitiveHeader(key, sensitiveHeaders) {
+			out[key] = []string{redactedValue}
+			continue
+		}
 		out[key] = values
 	}
 	return out
 }
 
+func isSensitiveHeader(key string, sensitiveHeaders map[string]struct{}) bool {
+	_, ok := sensitiveHeaders[strings.ToLower(strings.TrimSpace(key))]
+	return ok
+}
+
+func buildSensitiveHeaders(route config.Route, extra []string) map[string]struct{} {
+	out := map[string]struct{}{}
+	for _, name := range defaultSensitiveHeaders {
+		out[name] = struct{}{}
+	}
+	if header := strings.TrimSpace(route.SignatureHeader); header != "" {
+		out[strings.ToLower(header)] = struct{}{}
+	}
+	if header := strings.TrimSpace(route.TokenHeader); header != "" {
+		out[strings.ToLower(header)] = struct{}{}
+	}
+	for _, name := range extra {
+		if trimmed := strings.TrimSpace(name); trimmed != "" {
+			out[strings.ToLower(trimmed)] = struct{}{}
+		}
+	}
+	return out
+}
+
+func secureCompare(a, b string) bool {
+	return hmac.Equal([]byte(a), []byte(b))
+}
+
+const redactedValue = "[redacted]"
+
+var defaultSensitiveHeaders = []string{
+	"authorization",
+	"proxy-authorization",
+	"cookie",
+	"set-cookie",
+	"x-api-key",
+	"x-webhook-token",
+	"x-hub-signature",
+	"x-hub-signature-256",
+	"x-gitlab-token",
+	"x-github-token",
+	"x-slack-signature",
+	"x-slack-request-timestamp",
+}
+
 func resolveSecret(value, envKey string) string {
 	if strings.TrimSpace(envKey) != "" {
-		return strings.TrimSpace(os.Getenv(envKey))
+		if envVal := strings.TrimSpace(os.Getenv(envKey)); envVal != "" {
+			return envVal
+		}
 	}
 	return strings.TrimSpace(value)
 }
