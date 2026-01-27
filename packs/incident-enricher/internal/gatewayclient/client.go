@@ -19,7 +19,7 @@ type Client struct {
 	HTTP    *http.Client
 }
 
-func New(baseURL, apiKey string) *Client {
+func New(baseURL, apiKey, tenantID string) *Client {
 	return &Client{
 		BaseURL: strings.TrimRight(strings.TrimSpace(baseURL), "/"),
 		APIKey:  strings.TrimSpace(apiKey),

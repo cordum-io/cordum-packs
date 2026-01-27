@@ -31,6 +31,7 @@ cd path/to/cordum-packs/packs/mcp-client
 
 CORDUM_GATEWAY_URL=http://localhost:8081 \
 CORDUM_API_KEY=super-secret-key \
+CORDUM_TENANT_ID=default \
 CORDUM_NATS_URL=nats://localhost:4222 \
 CORDUM_REDIS_URL=redis://localhost:6379 \
 CORDUM_MCP_CLIENT_SERVERS='[{"name":"local-mcp","transport":"stdio","command":"/usr/local/bin/mcp-server"}]' \
@@ -41,7 +42,8 @@ go run ./cmd/cordum-mcp-client
 ## Environment
 
 - `CORDUM_GATEWAY_URL` (default `http://localhost:8081`)
-- `CORDUM_API_KEY` (optional; required for enterprise installs)
+- `CORDUM_API_KEY` (required)
+- `CORDUM_TENANT_ID` (default `default`)
 - `CORDUM_NATS_URL` (default `nats://localhost:4222`)
 - `CORDUM_REDIS_URL` (default `redis://localhost:6379`)
 - `CORDUM_MCP_CLIENT_POOL` (default `mcp-client`)

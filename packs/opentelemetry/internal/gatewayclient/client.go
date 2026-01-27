@@ -14,6 +14,7 @@ import (
 type Client struct {
 	baseURL    string
 	apiKey     string
+	tenantID   string
 	httpClient *http.Client
 }
 
@@ -22,10 +23,11 @@ type MemoryPayload struct {
 	JSON    any    `json:"json"`
 }
 
-func New(baseURL, apiKey string) *Client {
+func New(baseURL, apiKey, tenantID string) *Client {
 	return &Client{
 		baseURL:    strings.TrimRight(baseURL, "/"),
 		apiKey:     apiKey,
+		tenantID:   strings.TrimSpace(tenantID),
 		httpClient: &http.Client{Timeout: 20 * time.Second},
 	}
 }
@@ -63,6 +65,9 @@ func (c *Client) doJSON(ctx context.Context, method, path string, body any, out 
 	}
 	if c.apiKey != "" {
 		req.Header.Set("X-API-Key", c.apiKey)
+	}
+	if c.tenantID != "" {
+		req.Header.Set("X-Tenant-ID", c.tenantID)
 	}
 	resp, err := c.httpClient.Do(req)
 	if err != nil {

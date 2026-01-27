@@ -31,6 +31,7 @@ cd path/to/cordum-packs/packs/webhooks
 
 CORDUM_GATEWAY_URL=http://localhost:8081 \
 CORDUM_API_KEY=super-secret-key \
+CORDUM_TENANT_ID=default \
 CORDUM_WEBHOOKS_BIND=:8089 \
 CORDUM_WEBHOOKS_ROUTES='[
   {
@@ -55,7 +56,8 @@ See `deploy/env.example` for a template environment file.
 ## Environment
 
 - `CORDUM_GATEWAY_URL` (default `http://localhost:8081`)
-- `CORDUM_API_KEY` (optional; required for enterprise installs)
+- `CORDUM_API_KEY` (required)
+- `CORDUM_TENANT_ID` (default `default`)
 - `CORDUM_WEBHOOKS_BIND` (default `:8089`)
 - `CORDUM_WEBHOOKS_MAX_BODY_BYTES` (default `1048576`)
 - `CORDUM_WEBHOOKS_TRUST_PROXY` (default `false`)

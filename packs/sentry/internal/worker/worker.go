@@ -125,7 +125,7 @@ func New(cfg config.Config) (*Worker, error) {
 
 	return &Worker{
 		cfg:     cfg,
-		gateway: gatewayclient.New(cfg.GatewayURL, cfg.APIKey),
+		gateway: gatewayclient.New(cfg.GatewayURL, cfg.APIKey, cfg.TenantID),
 		redis:   redisClient,
 		worker:  worker,
 	}, nil
