@@ -14,6 +14,8 @@ These are published at `https://packs.cordum.io`.
 cordum-packs/
   packs/               # pack projects (pack.yaml at root or in pack/)
   tools/               # build + catalog tooling
+  integrations/        # agent adapters and SDK integrations
+  docs/                # repo docs and roadmap notes
   public/              # build output (published)
 ```
 
@@ -45,6 +47,9 @@ Output:
 - `public/catalog.json`
 - `public/packs/<id>/<version>/pack.tgz`
 
+## Pack tooling
+
+Scaffold a new pack bundle:
 ## Security & operations docs
 
 - `docs/security-hardening.md`
@@ -63,11 +68,32 @@ python tools/pack_scaffold.py my-pack \
 Output:
 - `packs/my-pack/` (pack bundle under `pack/` plus a starter README)
 
+Audit pack bundles for required assets:
+
+```bash
+python tools/pack_audit.py
+```
+
+## Agent adapters
+
+Python adapters that expose MCP tools to popular agent frameworks live under
+`integrations/agent-adapters/`. The package exports:
+
+- LangChain tools (`build_langchain_tools`)
+- AutoGen tools (`build_autogen_tools`)
+- CrewAI tools (`build_crewai_tools`)
+
+Each adapter expects an MCP stdio server such as `packs/mcp-bridge`.
+
 ## Included packs
 
 - `packs/hello-pack` - minimal example pack
 - `packs/mcp-bridge` - MCP stdio bridge + pack bundle
+- `packs/mcp-client` - call external MCP servers with policy gating
+- `packs/slack` - Slack ChatOps notifications and approvals
+- `packs/github` - GitHub automation workflows
 - `packs/incident-enricher` - reference pack with workers + workflows
+- See `packs/` for the full catalog.
 
 ## Publish (GitHub Pages)
 
