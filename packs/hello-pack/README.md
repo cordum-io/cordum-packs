@@ -22,6 +22,7 @@ go run ./cmd/cordumctl pack install path/to/cordum-packs/packs/hello-pack
 ```bash
 curl -sS -X POST http://localhost:8081/api/v1/workflows/hello-pack.echo/runs \
   -H "X-API-Key: ${CORDUM_API_KEY:-super-secret-key}" \
+  -H "X-Tenant-ID: ${CORDUM_TENANT_ID:-default}" \
   -H "Content-Type: application/json" \
   -d '{"message":"hello from pack","author":"demo"}'
 ```

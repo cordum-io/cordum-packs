@@ -22,6 +22,7 @@ cd path/to/cordum-packs/packs/msteams
 
 CORDUM_GATEWAY_URL=http://localhost:8081 \
 CORDUM_API_KEY=super-secret-key \
+CORDUM_TENANT_ID=default \
 CORDUM_NATS_URL=nats://localhost:4222 \
 CORDUM_REDIS_URL=redis://localhost:6379 \
 CORDUM_MSTEAMS_TOKEN_ENV=MSTEAMS_TOKEN \
@@ -81,3 +82,4 @@ Write actions (use `job.msteams.write`):
 - Use `CORDUM_MSTEAMS_ALLOWED_TEAMS` and `CORDUM_MSTEAMS_DENIED_TEAMS` to constrain team access.
 - Use `CORDUM_MSTEAMS_ALLOWED_CHANNELS` and `CORDUM_MSTEAMS_DENIED_CHANNELS` to constrain channels.
 - Write actions require approval by default (per pack policy fragment).
+- Inline auth is disabled by default; inline secrets require `CORDUM_MSTEAMS_ALLOW_INLINE_SECRETS=true` (keep it off in production).

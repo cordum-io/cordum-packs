@@ -50,6 +50,14 @@ Output:
 ## Pack tooling
 
 Scaffold a new pack bundle:
+## Security & operations docs
+
+- `docs/security-hardening.md`
+- `docs/pack-runtime-guide.md`
+- `docs/testing-and-validation.md`
+- `docs/wiki/` (wiki mirror content)
+
+## Scaffold a new pack
 
 ```bash
 python tools/pack_scaffold.py my-pack \

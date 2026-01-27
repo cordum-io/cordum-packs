@@ -31,6 +31,7 @@ cd path/to/cordum-packs/packs/webhooks
 
 CORDUM_GATEWAY_URL=http://localhost:8081 \
 CORDUM_API_KEY=super-secret-key \
+CORDUM_TENANT_ID=default \
 CORDUM_WEBHOOKS_BIND=:8089 \
 CORDUM_WEBHOOKS_ROUTES='[
   {
@@ -55,10 +56,14 @@ See `deploy/env.example` for a template environment file.
 ## Environment
 
 - `CORDUM_GATEWAY_URL` (default `http://localhost:8081`)
-- `CORDUM_API_KEY` (optional; required for enterprise installs)
+- `CORDUM_API_KEY` (required)
+- `CORDUM_TENANT_ID` (default `default`)
 - `CORDUM_WEBHOOKS_BIND` (default `:8089`)
 - `CORDUM_WEBHOOKS_MAX_BODY_BYTES` (default `1048576`)
 - `CORDUM_WEBHOOKS_TRUST_PROXY` (default `false`)
+- `CORDUM_WEBHOOKS_TRUST_PROXY_CIDRS` (optional; comma-separated proxy CIDRs)
+- `CORDUM_WEBHOOKS_REDACT_HEADERS` (default `true`)
+- `CORDUM_WEBHOOKS_REDACT_HEADER_NAMES` (optional; comma-separated header names to redact)
 - `CORDUM_WEBHOOKS_ROUTES` (required JSON array; see below)
 
 ### Route configuration (`CORDUM_WEBHOOKS_ROUTES`)
@@ -98,11 +103,15 @@ The receiver sends a workflow input shaped like:
 }
 ```
 
+When redaction is enabled, sensitive header values are replaced with `[redacted]`.
+
 ## Security
 
 - **Signature checks**: enforce HMAC or token-based verification.
 - **IP allow/deny lists**: restrict ingress by CIDR.
 - **Idempotency**: forward unique delivery IDs to prevent duplicate runs.
+- **Header redaction**: sensitive headers (authorization/signature/token) are redacted by default.
+- **Proxy safety**: if `CORDUM_WEBHOOKS_TRUST_PROXY=true`, set `CORDUM_WEBHOOKS_TRUST_PROXY_CIDRS` to trusted proxies.
 
 ## License
 

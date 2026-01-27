@@ -43,6 +43,7 @@ func loadConfig() bridge.Config {
 	cfg := bridge.Config{
 		GatewayURL:    envOr("CORDUM_GATEWAY_URL", "http://localhost:8081"),
 		APIKey:        envOr("CORDUM_API_KEY", ""),
+		TenantID:      envOr("CORDUM_TENANT_ID", "default"),
 		NatsURL:       envOr("CORDUM_NATS_URL", "nats://localhost:4222"),
 		RedisURL:      envOr("CORDUM_REDIS_URL", "redis://localhost:6379"),
 		Pool:          envOr("CORDUM_MCP_POOL", "mcp-bridge"),

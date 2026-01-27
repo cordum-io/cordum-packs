@@ -93,7 +93,7 @@ func New(cfg config.Config) (*Worker, error) {
 
 	return &Worker{
 		cfg:     cfg,
-		gateway: gatewayclient.New(cfg.GatewayURL, cfg.APIKey),
+		gateway: gatewayclient.New(cfg.GatewayURL, cfg.APIKey, cfg.TenantID),
 		redis:   redisClient,
 		worker:  worker,
 	}, nil
@@ -123,7 +123,7 @@ func (w *Worker) handleJob(ctx context.Context, req *agentv1.JobRequest) (*agent
 	if err != nil {
 		return w.failJob(jobID, err)
 	}
-	if err := validateInlineAuth(input.Auth, w.cfg.AllowInlineAuth); err != nil {
+	if err := validateInlineAuth(input.Auth, w.cfg.AllowInlineAuth, w.cfg.AllowInlineSecrets); err != nil {
 		return w.failJob(jobID, err)
 	}
 	server, err := w.resolveServer(input)
@@ -179,6 +179,10 @@ func (w *Worker) fetchInput(ctx context.Context, ptr string) (JobInput, error) {
 
 func (w *Worker) resolveServer(input JobInput) (config.ServerConfig, error) {
 	inlineAllowed := w.cfg.AllowInlineServer
+	unsafeInlineAllowed := w.cfg.AllowInlineUnsafeServer
+	if err := validateInlineAuth(input.Auth, w.cfg.AllowInlineAuth, w.cfg.AllowInlineSecrets); err != nil {
+		return config.ServerConfig{}, err
+	}
 	var base config.ServerConfig
 	if strings.TrimSpace(input.Server) != "" {
 		server, ok := w.cfg.Servers[input.Server]
@@ -186,16 +190,21 @@ func (w *Worker) resolveServer(input JobInput) (config.ServerConfig, error) {
 			return config.ServerConfig{}, fmt.Errorf("unknown server: %s", input.Server)
 		}
 		if !inlineAllowed && hasInlineServerOverrides(input) {
+			return config.ServerConfig{}, fmt.Errorf("inline server overrides disabled")
+		}
+		if inlineAllowed && !unsafeInlineAllowed && hasUnsafeInlineServerOverrides(input) {
 			return config.ServerConfig{}, fmt.Errorf("inline server config disabled")
 		}
 		base = server
 		base.Name = input.Server
 	} else if !inlineAllowed {
 		return config.ServerConfig{}, fmt.Errorf("inline server config disabled")
+	} else if !unsafeInlineAllowed {
+		return config.ServerConfig{}, fmt.Errorf("server required; inline server config disabled")
 	}
 
 	server := base
-	if inlineAllowed {
+	if inlineAllowed && unsafeInlineAllowed {
 		if strings.TrimSpace(input.Transport) != "" {
 			server.Transport = input.Transport
 		}
@@ -209,6 +218,8 @@ func (w *Worker) resolveServer(input JobInput) (config.ServerConfig, error) {
 			server.Args = append([]string{}, input.Args...)
 		}
 		server.Env = mergeStringMap(server.Env, input.Env)
+	}
+	if inlineAllowed {
 		server.Headers = mergeStringMap(server.Headers, input.Headers)
 	}
 	server.Auth = mergeAuth(server.Auth, input.Auth)
@@ -248,6 +259,16 @@ func (w *Worker) resolveServer(input JobInput) (config.ServerConfig, error) {
 }
 
 func hasInlineServerOverrides(input JobInput) bool {
+	if hasUnsafeInlineServerOverrides(input) {
+		return true
+	}
+	if len(input.Headers) > 0 {
+		return true
+	}
+	return false
+}
+
+func hasUnsafeInlineServerOverrides(input JobInput) bool {
 	if strings.TrimSpace(input.Transport) != "" {
 		return true
 	}
@@ -261,9 +282,6 @@ func hasInlineServerOverrides(input JobInput) bool {
 		return true
 	}
 	if len(input.Env) > 0 {
-		return true
-	}
-	if len(input.Headers) > 0 {
 		return true
 	}
 	return false
@@ -449,6 +467,50 @@ func mergeAuth(base, overlay config.AuthConfig) config.AuthConfig {
 	return out
 }
 
+func validateInlineAuth(auth config.AuthConfig, allowInline, allowSecrets bool) error {
+	if !allowInline && hasAuthValues(auth) {
+		return fmt.Errorf("inline auth disabled")
+	}
+	if !allowSecrets && hasAuthSecrets(auth) {
+		return fmt.Errorf("inline secrets disabled; use *_env fields")
+	}
+	return nil
+}
+
+func hasAuthValues(auth config.AuthConfig) bool {
+	if strings.TrimSpace(auth.APIKey) != "" ||
+		strings.TrimSpace(auth.APIKeyEnv) != "" ||
+		strings.TrimSpace(auth.APIKeyHeader) != "" ||
+		strings.TrimSpace(auth.Bearer) != "" ||
+		strings.TrimSpace(auth.BearerEnv) != "" ||
+		strings.TrimSpace(auth.BasicUsername) != "" ||
+		strings.TrimSpace(auth.BasicPassword) != "" ||
+		strings.TrimSpace(auth.BasicPasswordEnv) != "" {
+		return true
+	}
+	if auth.OAuth == nil {
+		return false
+	}
+	return strings.TrimSpace(auth.OAuth.TokenURL) != "" ||
+		strings.TrimSpace(auth.OAuth.ClientID) != "" ||
+		strings.TrimSpace(auth.OAuth.ClientSecret) != "" ||
+		strings.TrimSpace(auth.OAuth.ClientSecretEnv) != "" ||
+		len(auth.OAuth.Scopes) > 0 ||
+		strings.TrimSpace(auth.OAuth.Audience) != ""
+}
+
+func hasAuthSecrets(auth config.AuthConfig) bool {
+	if strings.TrimSpace(auth.APIKey) != "" ||
+		strings.TrimSpace(auth.Bearer) != "" ||
+		strings.TrimSpace(auth.BasicPassword) != "" {
+		return true
+	}
+	if auth.OAuth == nil {
+		return false
+	}
+	return strings.TrimSpace(auth.OAuth.ClientSecret) != ""
+}
+
 func mergeOAuth(base, overlay *config.OAuthConfig) {
 	if overlay == nil {
 		return
@@ -497,19 +559,6 @@ func isAllowedMethod(method string) bool {
 	default:
 		return false
 	}
-}
-
-func validateInlineAuth(auth config.AuthConfig, allow bool) error {
-	if allow {
-		return nil
-	}
-	if auth.APIKey != "" || auth.Bearer != "" || auth.BasicPassword != "" {
-		return fmt.Errorf("inline auth secrets are disabled")
-	}
-	if auth.OAuth != nil && auth.OAuth.ClientSecret != "" {
-		return fmt.Errorf("inline oauth client_secret is disabled")
-	}
-	return nil
 }
 
 func applyAuth(ctx context.Context, server *mcpclient.Server, auth config.AuthConfig) error {

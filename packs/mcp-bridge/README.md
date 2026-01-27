@@ -40,6 +40,7 @@ cd path/to/cordum-packs/packs/mcp-bridge
 
 CORDUM_GATEWAY_URL=http://localhost:8081 \
 CORDUM_API_KEY=super-secret-key \
+CORDUM_TENANT_ID=default \
 CORDUM_NATS_URL=nats://localhost:4222 \
 CORDUM_REDIS_URL=redis://localhost:6379 \
 
@@ -51,7 +52,8 @@ The bridge runs as a stdio MCP server (reads JSON‑RPC from stdin, writes to st
 ## Environment
 
 - `CORDUM_GATEWAY_URL` (default `http://localhost:8081`)
-- `CORDUM_API_KEY` (required for enterprise installs)
+- `CORDUM_API_KEY` (required)
+- `CORDUM_TENANT_ID` (default `default`)
 - `CORDUM_NATS_URL` (default `nats://localhost:4222`)
 - `CORDUM_REDIS_URL` (default `redis://localhost:6379`)
 - `CORDUM_MCP_POOL` (default `mcp-bridge`)

@@ -36,34 +36,36 @@ type Profile struct {
 }
 
 type Config struct {
-	GatewayURL     string
-	APIKey         string
-	NatsURL        string
-	RedisURL       string
-	Pool           string
-	Queue          string
-	Subjects       []string
-	MaxParallel    int32
-	RequestTimeout time.Duration
-	CommandTimeout time.Duration
-	ResultTTL      time.Duration
-	DefaultProfile string
-	Profiles       map[string]Profile
+	GatewayURL       string
+	APIKey           string
+	NatsURL          string
+	RedisURL         string
+	Pool             string
+	Queue            string
+	Subjects         []string
+	MaxParallel      int32
+	RequestTimeout   time.Duration
+	CommandTimeout   time.Duration
+	ResultTTL        time.Duration
+	AllowAutoApprove bool
+	DefaultProfile   string
+	Profiles         map[string]Profile
 }
 
 func Load() (Config, error) {
 	cfg := Config{
-		GatewayURL:     envOr("CORDUM_GATEWAY_URL", defaultGatewayURL),
-		APIKey:         envOr("CORDUM_API_KEY", ""),
-		NatsURL:        envOr("CORDUM_NATS_URL", defaultNatsURL),
-		RedisURL:       envOr("CORDUM_REDIS_URL", defaultRedisURL),
-		Pool:           envOr("CORDUM_TERRAFORM_POOL", defaultPool),
-		Queue:          envOr("CORDUM_TERRAFORM_QUEUE", defaultQueue),
-		RequestTimeout: defaultRequestTimeout,
-		CommandTimeout: defaultCommandTimeout,
-		ResultTTL:      parseDuration("CORDUM_TERRAFORM_RESULT_TTL", "CORDUM_TERRAFORM_RESULT_TTL_SECONDS", 0),
-		DefaultProfile: strings.TrimSpace(os.Getenv("CORDUM_TERRAFORM_DEFAULT_PROFILE")),
-		Profiles:       map[string]Profile{},
+		GatewayURL:       envOr("CORDUM_GATEWAY_URL", defaultGatewayURL),
+		APIKey:           envOr("CORDUM_API_KEY", ""),
+		NatsURL:          envOr("CORDUM_NATS_URL", defaultNatsURL),
+		RedisURL:         envOr("CORDUM_REDIS_URL", defaultRedisURL),
+		Pool:             envOr("CORDUM_TERRAFORM_POOL", defaultPool),
+		Queue:            envOr("CORDUM_TERRAFORM_QUEUE", defaultQueue),
+		RequestTimeout:   defaultRequestTimeout,
+		CommandTimeout:   defaultCommandTimeout,
+		ResultTTL:        parseDuration("CORDUM_TERRAFORM_RESULT_TTL", "CORDUM_TERRAFORM_RESULT_TTL_SECONDS", 0),
+		AllowAutoApprove: boolEnv("CORDUM_TERRAFORM_ALLOW_AUTO_APPROVE", false),
+		DefaultProfile:   strings.TrimSpace(os.Getenv("CORDUM_TERRAFORM_DEFAULT_PROFILE")),
+		Profiles:         map[string]Profile{},
 	}
 
 	if raw := strings.TrimSpace(os.Getenv("CORDUM_TERRAFORM_SUBJECTS")); raw != "" {
@@ -178,6 +180,18 @@ func splitList(raw string) []string {
 func envOr(key, fallback string) string {
 	if val := strings.TrimSpace(os.Getenv(key)); val != "" {
 		return val
+	}
+	return fallback
+}
+
+func boolEnv(key string, fallback bool) bool {
+	if raw := strings.TrimSpace(os.Getenv(key)); raw != "" {
+		switch strings.ToLower(raw) {
+		case "1", "true", "yes", "y":
+			return true
+		case "0", "false", "no", "n":
+			return false
+		}
 	}
 	return fallback
 }

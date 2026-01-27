@@ -22,6 +22,7 @@ cd path/to/cordum-packs/packs/opentelemetry
 
 CORDUM_GATEWAY_URL=http://localhost:8081 \
 CORDUM_API_KEY=super-secret-key \
+CORDUM_TENANT_ID=default \
 CORDUM_NATS_URL=nats://localhost:4222 \
 CORDUM_REDIS_URL=redis://localhost:6379 \
 CORDUM_OTEL_BASE_URL=http://localhost:16686/api \
@@ -84,3 +85,4 @@ All actions use `job.opentelemetry.read`:
 
 - Use `CORDUM_OTEL_ALLOWED_SERVICES` and `CORDUM_OTEL_DENIED_SERVICES` to constrain service names.
 - All requests are tagged `read` and routed through the Safety Kernel.
+- Inline auth is disabled by default; inline secrets require `CORDUM_OTEL_ALLOW_INLINE_SECRETS=true` (keep it off in production).

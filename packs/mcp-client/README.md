@@ -31,6 +31,7 @@ cd path/to/cordum-packs/packs/mcp-client
 
 CORDUM_GATEWAY_URL=http://localhost:8081 \
 CORDUM_API_KEY=super-secret-key \
+CORDUM_TENANT_ID=default \
 CORDUM_NATS_URL=nats://localhost:4222 \
 CORDUM_REDIS_URL=redis://localhost:6379 \
 CORDUM_MCP_CLIENT_SERVERS='[{"name":"local-mcp","transport":"stdio","command":"/usr/local/bin/mcp-server"}]' \
@@ -41,7 +42,8 @@ go run ./cmd/cordum-mcp-client
 ## Environment
 
 - `CORDUM_GATEWAY_URL` (default `http://localhost:8081`)
-- `CORDUM_API_KEY` (optional; required for enterprise installs)
+- `CORDUM_API_KEY` (required)
+- `CORDUM_TENANT_ID` (default `default`)
 - `CORDUM_NATS_URL` (default `nats://localhost:4222`)
 - `CORDUM_REDIS_URL` (default `redis://localhost:6379`)
 - `CORDUM_MCP_CLIENT_POOL` (default `mcp-client`)
@@ -55,7 +57,9 @@ go run ./cmd/cordum-mcp-client
 - `CORDUM_MCP_CLIENT_PROTOCOL_VERSION` (default `2025-11-25`)
 - `CORDUM_MCP_CLIENT_SERVERS` (JSON array of named MCP servers)
 - `CORDUM_MCP_CLIENT_ALLOW_INLINE_SERVER` (default `false`)
+- `CORDUM_MCP_CLIENT_ALLOW_INLINE_UNSAFE_SERVER` (default `false`)
 - `CORDUM_MCP_CLIENT_ALLOW_INLINE_AUTH` (default `false`)
+- `CORDUM_MCP_CLIENT_ALLOW_INLINE_SECRETS` (default `false`)
 - `CORDUM_MCP_CLIENT_MAX_PARALLEL` (default `0` = unlimited)
 
 ### Server configuration
@@ -92,7 +96,9 @@ The worker expects job input matching the `McpCallInput` schema. The simplest fo
 }
 ```
 
-If `CORDUM_MCP_CLIENT_ALLOW_INLINE_SERVER=true`, you may include inline server details:
+If `CORDUM_MCP_CLIENT_ALLOW_INLINE_SERVER=true`, you may override headers for named servers. To pass full inline server details (transport, command/url, args, env), also set `CORDUM_MCP_CLIENT_ALLOW_INLINE_UNSAFE_SERVER=true`.
+
+Example (inline server details):
 
 ```json
 {
@@ -127,11 +133,12 @@ Prefer environment-backed secrets:
 }
 ```
 
-Set `CORDUM_MCP_CLIENT_ALLOW_INLINE_AUTH=true` to allow raw secrets in job input.
+Set `CORDUM_MCP_CLIENT_ALLOW_INLINE_AUTH=true` to allow `auth` in job input. Raw secrets require `CORDUM_MCP_CLIENT_ALLOW_INLINE_SECRETS=true`; prefer `*_env` fields in production.
 
 ## Security
 
 - By default, **only named servers** from `CORDUM_MCP_CLIENT_SERVERS` are allowed.
+- Inline server config is disabled by default; keep `CORDUM_MCP_CLIENT_ALLOW_INLINE_UNSAFE_SERVER=false` in production.
 - Tool allow/deny lists can be set per server.
 - Policy fragment enforces read allow, write approval, secrets approval.
 
