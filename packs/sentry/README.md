@@ -22,6 +22,7 @@ cd path/to/cordum-packs/packs/sentry
 
 CORDUM_GATEWAY_URL=http://localhost:8081 \
 CORDUM_API_KEY=super-secret-key \
+CORDUM_TENANT_ID=default \
 CORDUM_NATS_URL=nats://localhost:4222 \
 CORDUM_REDIS_URL=redis://localhost:6379 \
 CORDUM_SENTRY_TOKEN_ENV=SENTRY_TOKEN \

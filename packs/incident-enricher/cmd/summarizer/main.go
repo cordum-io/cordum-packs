@@ -43,7 +43,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	gw := gatewayclient.New(cfg.GatewayURL, cfg.APIKey)
+	gw := gatewayclient.New(cfg.GatewayURL, cfg.APIKey, cfg.TenantID)
 
 	handler := func(ctx context.Context, req *agentv1.JobRequest) (*agentv1.JobResult, error) {
 		start := time.Now()

@@ -20,7 +20,7 @@ func main() {
 		log.Fatalf("config error: %v", err)
 	}
 
-	client := gatewayclient.New(cfg.GatewayURL, cfg.APIKey)
+	client := gatewayclient.New(cfg.GatewayURL, cfg.APIKey, cfg.TenantID)
 	srv := server.New(cfg, client)
 
 	httpServer := &http.Server{

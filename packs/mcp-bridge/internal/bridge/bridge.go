@@ -33,6 +33,7 @@ var supportedProtocolVersions = []string{
 type Config struct {
 	GatewayURL    string
 	APIKey        string
+	TenantID      string
 	NatsURL       string
 	RedisURL      string
 	Pool          string
@@ -121,7 +122,7 @@ func New(cfg Config) (*Bridge, error) {
 
 	b := &Bridge{
 		cfg:     cfg,
-		client:  newGatewayClient(cfg.GatewayURL, cfg.APIKey),
+		client:  newGatewayClient(cfg.GatewayURL, cfg.APIKey, cfg.TenantID),
 		redis:   client,
 		worker:  worker,
 		pending: map[string]chan callResult{},
@@ -722,13 +723,15 @@ type jobSubmitResponse struct {
 type gatewayClient struct {
 	baseURL    string
 	apiKey     string
+	tenantID   string
 	httpClient *http.Client
 }
 
-func newGatewayClient(baseURL, apiKey string) *gatewayClient {
+func newGatewayClient(baseURL, apiKey, tenantID string) *gatewayClient {
 	return &gatewayClient{
 		baseURL:    strings.TrimRight(baseURL, "/"),
 		apiKey:     apiKey,
+		tenantID:   strings.TrimSpace(tenantID),
 		httpClient: &http.Client{Timeout: 20 * time.Second},
 	}
 }
@@ -921,6 +924,9 @@ func (c *gatewayClient) doJSONWithHeaders(ctx context.Context, method, path stri
 	}
 	if c.apiKey != "" {
 		req.Header.Set("X-API-Key", c.apiKey)
+	}
+	if c.tenantID != "" {
+		req.Header.Set("X-Tenant-ID", c.tenantID)
 	}
 	for k, v := range headers {
 		if strings.TrimSpace(k) == "" {

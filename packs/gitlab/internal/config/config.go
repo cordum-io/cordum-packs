@@ -40,6 +40,7 @@ type Profile struct {
 type Config struct {
 	GatewayURL         string
 	APIKey             string
+	TenantID           string
 	NatsURL            string
 	RedisURL           string
 	Pool               string
@@ -58,6 +59,7 @@ func Load() (Config, error) {
 	cfg := Config{
 		GatewayURL:         envOr("CORDUM_GATEWAY_URL", defaultGatewayURL),
 		APIKey:             envOr("CORDUM_API_KEY", ""),
+		TenantID:           envOr("CORDUM_TENANT_ID", "default"),
 		NatsURL:            envOr("CORDUM_NATS_URL", defaultNatsURL),
 		RedisURL:           envOr("CORDUM_REDIS_URL", defaultRedisURL),
 		Pool:               envOr("CORDUM_GITLAB_POOL", defaultPool),

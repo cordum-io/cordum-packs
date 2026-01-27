@@ -39,6 +39,7 @@ type Route struct {
 type Config struct {
 	GatewayURL        string
 	APIKey            string
+	TenantID          string
 	BindAddress       string
 	MaxBody           int64
 	TrustProxy        bool
@@ -52,6 +53,7 @@ func Load() (Config, error) {
 	cfg := Config{
 		GatewayURL:        envOr("CORDUM_GATEWAY_URL", defaultGatewayURL),
 		APIKey:            envOr("CORDUM_API_KEY", ""),
+		TenantID:          envOr("CORDUM_TENANT_ID", "default"),
 		BindAddress:       envOr("CORDUM_WEBHOOKS_BIND", defaultBind),
 		MaxBody:           parseInt64("CORDUM_WEBHOOKS_MAX_BODY_BYTES", defaultMaxBody),
 		TrustProxy:        boolEnv("CORDUM_WEBHOOKS_TRUST_PROXY", false),

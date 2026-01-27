@@ -31,6 +31,7 @@ cd path/to/cordum-packs/packs/jira
 
 CORDUM_GATEWAY_URL=http://localhost:8081 \
 CORDUM_API_KEY=super-secret-key \
+CORDUM_TENANT_ID=default \
 CORDUM_NATS_URL=nats://localhost:4222 \
 CORDUM_REDIS_URL=redis://localhost:6379 \
 CORDUM_JIRA_BASE_URL=https://your-domain.atlassian.net \
@@ -49,7 +50,8 @@ See `deploy/env.example` for the full list of environment variables.
 ## Environment
 
 - `CORDUM_GATEWAY_URL` (default `http://localhost:8081`)
-- `CORDUM_API_KEY` (optional; required for enterprise installs)
+- `CORDUM_API_KEY` (required)
+- `CORDUM_TENANT_ID` (default `default`)
 - `CORDUM_NATS_URL` (default `nats://localhost:4222`)
 - `CORDUM_REDIS_URL` (default `redis://localhost:6379`)
 - `CORDUM_JIRA_POOL` (default `jira`)

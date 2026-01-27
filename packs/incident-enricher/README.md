@@ -112,7 +112,7 @@ INGESTER_URL=http://localhost:8088 ./scripts/demo.sh
 
 ## Configuration summary
 
-- `CORDUM_GATEWAY_URL`, `CORDUM_API_KEY`
+ - `CORDUM_GATEWAY_URL`, `CORDUM_API_KEY`, `CORDUM_TENANT_ID`
 - `NATS_URL`, `REDIS_ADDR` or `REDIS_URL`
 - `WORKER_POOL` (per worker: `incident-enricher-fetch|summarize|post`), `WORKER_ID`, `WORKER_MAX_PARALLEL`
 - `LLM_PROVIDER` (`mock` or `ollama`)
