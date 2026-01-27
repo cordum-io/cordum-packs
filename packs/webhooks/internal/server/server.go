@@ -315,9 +315,10 @@ var defaultSensitiveHeaders = []string{
 }
 
 func resolveSecret(value, envKey string) string {
-	if strings.TrimSpace(envKey) != "" {
-		if envVal := strings.TrimSpace(os.Getenv(envKey)); envVal != "" {
-			return envVal
+	envKey = strings.TrimSpace(envKey)
+	if envKey != "" {
+		if envValue := strings.TrimSpace(os.Getenv(envKey)); envValue != "" {
+			return envValue
 		}
 	}
 	return strings.TrimSpace(value)
