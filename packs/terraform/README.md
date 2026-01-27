@@ -22,6 +22,7 @@ cd path/to/cordum-packs/packs/terraform
 
 CORDUM_GATEWAY_URL=http://localhost:8081 \
 CORDUM_API_KEY=super-secret-key \
+CORDUM_TENANT_ID=default \
 CORDUM_NATS_URL=nats://localhost:4222 \
 CORDUM_REDIS_URL=redis://localhost:6379 \
 CORDUM_TERRAFORM_WORKDIR=/repos/infra \
@@ -60,7 +61,7 @@ Write actions (use `job.terraform.write`):
 }
 ```
 
-`apply.run` (auto-approve):
+`apply.run` (auto-approve; requires `CORDUM_TERRAFORM_ALLOW_AUTO_APPROVE=true`):
 
 ```json
 {
@@ -88,3 +89,4 @@ Write actions (use `job.terraform.write`):
 
 - Use `CORDUM_TERRAFORM_ALLOWED_DIRS` and `CORDUM_TERRAFORM_DENIED_DIRS` to constrain working directories.
 - Write actions require approval by default (per pack policy fragment).
+- Auto-approve is disabled by default; enable only for tightly scoped runners.

@@ -36,34 +36,38 @@ type Profile struct {
 }
 
 type Config struct {
-	GatewayURL      string
-	APIKey          string
-	NatsURL         string
-	RedisURL        string
-	Pool            string
-	Queue           string
-	Subjects        []string
-	MaxParallel     int32
-	RequestTimeout  time.Duration
-	ResultTTL       time.Duration
-	AllowInlineAuth bool
-	DefaultProfile  string
-	Profiles        map[string]Profile
+	GatewayURL         string
+	APIKey             string
+	TenantID           string
+	NatsURL            string
+	RedisURL           string
+	Pool               string
+	Queue              string
+	Subjects           []string
+	MaxParallel        int32
+	RequestTimeout     time.Duration
+	ResultTTL          time.Duration
+	AllowInlineAuth    bool
+	AllowInlineSecrets bool
+	DefaultProfile     string
+	Profiles           map[string]Profile
 }
 
 func Load() (Config, error) {
 	cfg := Config{
-		GatewayURL:      envOr("CORDUM_GATEWAY_URL", defaultGatewayURL),
-		APIKey:          envOr("CORDUM_API_KEY", ""),
-		NatsURL:         envOr("CORDUM_NATS_URL", defaultNatsURL),
-		RedisURL:        envOr("CORDUM_REDIS_URL", defaultRedisURL),
-		Pool:            envOr("CORDUM_SLACK_POOL", defaultPool),
-		Queue:           envOr("CORDUM_SLACK_QUEUE", defaultQueue),
-		RequestTimeout:  defaultRequestTimeout,
-		ResultTTL:       parseDuration("CORDUM_SLACK_RESULT_TTL", "CORDUM_SLACK_RESULT_TTL_SECONDS", 0),
-		AllowInlineAuth: boolEnv("CORDUM_SLACK_ALLOW_INLINE_AUTH", false),
-		DefaultProfile:  strings.TrimSpace(os.Getenv("CORDUM_SLACK_DEFAULT_PROFILE")),
-		Profiles:        map[string]Profile{},
+		GatewayURL:         envOr("CORDUM_GATEWAY_URL", defaultGatewayURL),
+		APIKey:             envOr("CORDUM_API_KEY", ""),
+		TenantID:           envOr("CORDUM_TENANT_ID", "default"),
+		NatsURL:            envOr("CORDUM_NATS_URL", defaultNatsURL),
+		RedisURL:           envOr("CORDUM_REDIS_URL", defaultRedisURL),
+		Pool:               envOr("CORDUM_SLACK_POOL", defaultPool),
+		Queue:              envOr("CORDUM_SLACK_QUEUE", defaultQueue),
+		RequestTimeout:     defaultRequestTimeout,
+		ResultTTL:          parseDuration("CORDUM_SLACK_RESULT_TTL", "CORDUM_SLACK_RESULT_TTL_SECONDS", 0),
+		AllowInlineAuth:    boolEnv("CORDUM_SLACK_ALLOW_INLINE_AUTH", false),
+		AllowInlineSecrets: boolEnv("CORDUM_SLACK_ALLOW_INLINE_SECRETS", false),
+		DefaultProfile:     strings.TrimSpace(os.Getenv("CORDUM_SLACK_DEFAULT_PROFILE")),
+		Profiles:           map[string]Profile{},
 	}
 
 	if raw := strings.TrimSpace(os.Getenv("CORDUM_SLACK_SUBJECTS")); raw != "" {

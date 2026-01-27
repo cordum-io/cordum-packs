@@ -37,22 +37,30 @@ type Route struct {
 }
 
 type Config struct {
-	GatewayURL  string
-	APIKey      string
-	BindAddress string
-	MaxBody     int64
-	TrustProxy  bool
-	Routes      []Route
+	GatewayURL        string
+	APIKey            string
+	TenantID          string
+	BindAddress       string
+	MaxBody           int64
+	TrustProxy        bool
+	TrustProxyCIDRs   []*net.IPNet
+	RedactHeaders     bool
+	RedactHeaderNames []string
+	Routes            []Route
 }
 
 func Load() (Config, error) {
 	cfg := Config{
-		GatewayURL:  envOr("CORDUM_GATEWAY_URL", defaultGatewayURL),
-		APIKey:      envOr("CORDUM_API_KEY", ""),
-		BindAddress: envOr("CORDUM_WEBHOOKS_BIND", defaultBind),
-		MaxBody:     parseInt64("CORDUM_WEBHOOKS_MAX_BODY_BYTES", defaultMaxBody),
-		TrustProxy:  boolEnv("CORDUM_WEBHOOKS_TRUST_PROXY", false),
-		Routes:      []Route{},
+		GatewayURL:        envOr("CORDUM_GATEWAY_URL", defaultGatewayURL),
+		APIKey:            envOr("CORDUM_API_KEY", ""),
+		TenantID:          envOr("CORDUM_TENANT_ID", "default"),
+		BindAddress:       envOr("CORDUM_WEBHOOKS_BIND", defaultBind),
+		MaxBody:           parseInt64("CORDUM_WEBHOOKS_MAX_BODY_BYTES", defaultMaxBody),
+		TrustProxy:        boolEnv("CORDUM_WEBHOOKS_TRUST_PROXY", false),
+		TrustProxyCIDRs:   []*net.IPNet{},
+		RedactHeaders:     boolEnv("CORDUM_WEBHOOKS_REDACT_HEADERS", true),
+		RedactHeaderNames: splitList(os.Getenv("CORDUM_WEBHOOKS_REDACT_HEADER_NAMES")),
+		Routes:            []Route{},
 	}
 
 	routesRaw := strings.TrimSpace(os.Getenv("CORDUM_WEBHOOKS_ROUTES"))
@@ -71,6 +79,14 @@ func Load() (Config, error) {
 		if err := compileCIDRs(route); err != nil {
 			return cfg, err
 		}
+	}
+
+	if raw := strings.TrimSpace(os.Getenv("CORDUM_WEBHOOKS_TRUST_PROXY_CIDRS")); raw != "" {
+		ranges, err := parseCIDRs(splitList(raw))
+		if err != nil {
+			return cfg, err
+		}
+		cfg.TrustProxyCIDRs = ranges
 	}
 
 	return cfg, nil
@@ -152,4 +168,48 @@ func boolEnv(key string, fallback bool) bool {
 		}
 	}
 	return fallback
+}
+
+func splitList(raw string) []string {
+	if raw == "" {
+		return nil
+	}
+	parts := strings.Split(raw, ",")
+	out := make([]string, 0, len(parts))
+	for _, part := range parts {
+		val := strings.TrimSpace(part)
+		if val != "" {
+			out = append(out, val)
+		}
+	}
+	return out
+}
+
+func parseCIDRs(entries []string) ([]*net.IPNet, error) {
+	out := []*net.IPNet{}
+	for _, entry := range entries {
+		val := strings.TrimSpace(entry)
+		if val == "" {
+			continue
+		}
+		if strings.Contains(val, "/") {
+			_, cidr, err := net.ParseCIDR(val)
+			if err != nil {
+				return nil, fmt.Errorf("invalid cidr %s: %w", val, err)
+			}
+			out = append(out, cidr)
+			continue
+		}
+		ip := net.ParseIP(val)
+		if ip == nil {
+			return nil, fmt.Errorf("invalid ip %s", val)
+		}
+		bits := 32
+		if ip.To4() == nil {
+			bits = 128
+		}
+		mask := net.CIDRMask(bits, bits)
+		out = append(out, &net.IPNet{IP: ip, Mask: mask})
+	}
+	return out, nil
 }

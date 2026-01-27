@@ -121,7 +121,7 @@ func New(cfg config.Config) (*Worker, error) {
 
 	return &Worker{
 		cfg:     cfg,
-		gateway: gatewayclient.New(cfg.GatewayURL, cfg.APIKey),
+		gateway: gatewayclient.New(cfg.GatewayURL, cfg.APIKey, cfg.TenantID),
 		redis:   redisClient,
 		worker:  worker,
 	}, nil
@@ -268,6 +268,9 @@ func (w *Worker) resolveAuth(profile config.Profile, inline InlineAuth) (githuba
 	inlineProvided := inline.HasAny()
 	if inlineProvided && !w.cfg.AllowInlineAuth {
 		return nil, "", fmt.Errorf("inline auth disabled")
+	}
+	if inline.HasSecrets() && !w.cfg.AllowInlineSecrets {
+		return nil, "", fmt.Errorf("inline secrets disabled; use *_env fields")
 	}
 
 	token := resolveSecret(profile.Token, profile.TokenEnv)
@@ -577,6 +580,10 @@ func (a InlineAuth) HasAny() bool {
 		strings.TrimSpace(a.PrivateKeyEnv) != "" ||
 		strings.TrimSpace(a.InstallationID) != "" ||
 		strings.TrimSpace(a.InstallationIDEnv) != ""
+}
+
+func (a InlineAuth) HasSecrets() bool {
+	return strings.TrimSpace(a.Token) != "" || strings.TrimSpace(a.PrivateKey) != ""
 }
 
 const (

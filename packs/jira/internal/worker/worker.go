@@ -119,7 +119,7 @@ func New(cfg config.Config) (*Worker, error) {
 
 	return &Worker{
 		cfg:     cfg,
-		gateway: gatewayclient.New(cfg.GatewayURL, cfg.APIKey),
+		gateway: gatewayclient.New(cfg.GatewayURL, cfg.APIKey, cfg.TenantID),
 		redis:   redisClient,
 		worker:  worker,
 	}, nil
@@ -149,7 +149,7 @@ func (w *Worker) handleJob(ctx context.Context, req *agentv1.JobRequest) (*agent
 	if err != nil {
 		return w.failJob(jobID, err)
 	}
-	if err := validateInlineAuth(input.Auth, w.cfg.AllowInlineAuth); err != nil {
+	if err := validateInlineAuth(input.Auth, w.cfg.AllowInlineAuth, w.cfg.AllowInlineSecrets); err != nil {
 		return w.failJob(jobID, err)
 	}
 
@@ -402,9 +402,12 @@ func (w *Worker) storeResult(ctx context.Context, jobID string, payload any) (st
 	return "redis://" + key, nil
 }
 
-func validateInlineAuth(auth InlineAuth, allowed bool) error {
+func validateInlineAuth(auth InlineAuth, allowed, allowSecrets bool) error {
 	if auth.HasAny() && !allowed {
 		return fmt.Errorf("inline auth disabled")
+	}
+	if auth.HasSecrets() && !allowSecrets {
+		return fmt.Errorf("inline secrets disabled; use token_env")
 	}
 	return nil
 }
@@ -736,4 +739,8 @@ func (a InlineAuth) HasAny() bool {
 		strings.TrimSpace(a.Token) != "" ||
 		strings.TrimSpace(a.TokenEnv) != "" ||
 		strings.TrimSpace(a.TokenType) != ""
+}
+
+func (a InlineAuth) HasSecrets() bool {
+	return strings.TrimSpace(a.Token) != ""
 }

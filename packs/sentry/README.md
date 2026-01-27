@@ -22,6 +22,7 @@ cd path/to/cordum-packs/packs/sentry
 
 CORDUM_GATEWAY_URL=http://localhost:8081 \
 CORDUM_API_KEY=super-secret-key \
+CORDUM_TENANT_ID=default \
 CORDUM_NATS_URL=nats://localhost:4222 \
 CORDUM_REDIS_URL=redis://localhost:6379 \
 CORDUM_SENTRY_TOKEN_ENV=SENTRY_TOKEN \
@@ -103,3 +104,4 @@ Write actions (use `job.sentry.write`):
 - Use `CORDUM_SENTRY_ALLOWED_ORGS` and `CORDUM_SENTRY_DENIED_ORGS` to constrain org access.
 - Use `CORDUM_SENTRY_ALLOWED_PROJECTS` and `CORDUM_SENTRY_DENIED_PROJECTS` to constrain projects (e.g. `my-org/*`).
 - Write actions require approval by default (per pack policy fragment).
+- Inline auth is disabled by default; inline secrets require `CORDUM_SENTRY_ALLOW_INLINE_SECRETS=true` (keep it off in production).

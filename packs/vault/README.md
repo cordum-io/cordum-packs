@@ -22,6 +22,7 @@ cd path/to/cordum-packs/packs/vault
 
 CORDUM_GATEWAY_URL=http://localhost:8081 \
 CORDUM_API_KEY=super-secret-key \
+CORDUM_TENANT_ID=default \
 CORDUM_NATS_URL=nats://localhost:4222 \
 CORDUM_REDIS_URL=redis://localhost:6379 \
 CORDUM_VAULT_TOKEN_ENV=VAULT_TOKEN \
@@ -83,3 +84,4 @@ All actions use `job.vault.read`:
 
 - Use `CORDUM_VAULT_ALLOWED_PATHS` and `CORDUM_VAULT_DENIED_PATHS` to scope which secrets are accessible.
 - The pack policy requires approval for all `job.vault.read` requests by default.
+- Inline auth is disabled by default; inline secrets require `CORDUM_VAULT_ALLOW_INLINE_SECRETS=true` (keep it off in production).

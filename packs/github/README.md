@@ -31,6 +31,7 @@ cd path/to/cordum-packs/packs/github
 
 CORDUM_GATEWAY_URL=http://localhost:8081 \
 CORDUM_API_KEY=super-secret-key \
+CORDUM_TENANT_ID=default \
 CORDUM_NATS_URL=nats://localhost:4222 \
 CORDUM_REDIS_URL=redis://localhost:6379 \
 CORDUM_GITHUB_TOKEN_ENV=GITHUB_TOKEN \
@@ -46,7 +47,8 @@ See `deploy/env.example` for the full list of environment variables.
 ## Environment
 
 - `CORDUM_GATEWAY_URL` (default `http://localhost:8081`)
-- `CORDUM_API_KEY` (optional; required for enterprise installs)
+- `CORDUM_API_KEY` (required)
+- `CORDUM_TENANT_ID` (default `default`)
 - `CORDUM_NATS_URL` (default `nats://localhost:4222`)
 - `CORDUM_REDIS_URL` (default `redis://localhost:6379`)
 - `CORDUM_GITHUB_POOL` (default `github`)
@@ -56,6 +58,7 @@ See `deploy/env.example` for the full list of environment variables.
 - `CORDUM_GITHUB_REQUEST_TIMEOUT` (default `45s`)
 - `CORDUM_GITHUB_RESULT_TTL` (optional; example `24h`)
 - `CORDUM_GITHUB_ALLOW_INLINE_AUTH` (default `false`)
+- `CORDUM_GITHUB_ALLOW_INLINE_SECRETS` (default `false`)
 - `CORDUM_GITHUB_DEFAULT_PROFILE` (default `default`)
 
 ### Default profile (env-based)
@@ -145,7 +148,7 @@ The worker expects `GitHubActionInput` payloads. Example:
 }
 ```
 
-If `CORDUM_GITHUB_ALLOW_INLINE_AUTH=true`, you may include `auth`:
+If `CORDUM_GITHUB_ALLOW_INLINE_AUTH=true`, you may include `auth`. Inline secrets (for example `token`) require `CORDUM_GITHUB_ALLOW_INLINE_SECRETS=true`; prefer `*_env` fields for production.
 
 ```json
 {
@@ -163,7 +166,7 @@ If `CORDUM_GITHUB_ALLOW_INLINE_AUTH=true`, you may include `auth`:
 
 - **Default policy**: read is allowed, write requires approval.
 - **Allow/deny lists**: enforce repo and action allowlists to limit scope.
-- **Inline auth**: disabled by default; use profiles for production.
+- **Inline auth**: disabled by default; inline secrets require `CORDUM_GITHUB_ALLOW_INLINE_SECRETS=true` (keep it off in production).
 
 ## License
 

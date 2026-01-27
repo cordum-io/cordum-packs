@@ -22,6 +22,7 @@ cd path/to/cordum-packs/packs/prometheus-query
 
 CORDUM_GATEWAY_URL=http://localhost:8081 \
 CORDUM_API_KEY=super-secret-key \
+CORDUM_TENANT_ID=default \
 CORDUM_NATS_URL=nats://localhost:4222 \
 CORDUM_REDIS_URL=redis://localhost:6379 \
 CORDUM_PROMETHEUS_BASE_URL=https://prom.example \
@@ -91,3 +92,4 @@ All actions use `job.prometheus-query.read`:
 
 - Use `CORDUM_PROMETHEUS_ALLOW_ACTIONS` and `CORDUM_PROMETHEUS_DENY_ACTIONS` to constrain actions.
 - All requests are tagged `read` and routed through the Safety Kernel.
+- Inline auth is disabled by default; inline secrets require `CORDUM_PROMETHEUS_ALLOW_INLINE_SECRETS=true` (keep it off in production).

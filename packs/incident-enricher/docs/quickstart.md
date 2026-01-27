@@ -50,5 +50,7 @@ INGESTER_URL=http://localhost:8088 ./scripts/demo.sh
 Fetch artifacts via the gateway:
 
 ```
-curl -H "X-API-Key: $CORDUM_API_KEY" "$CORDUM_GATEWAY_URL/api/v1/artifacts/<artifact_ptr>"
+curl -H "X-API-Key: $CORDUM_API_KEY" \
+  -H "X-Tenant-ID: ${CORDUM_TENANT_ID:-default}" \
+  "$CORDUM_GATEWAY_URL/api/v1/artifacts/<artifact_ptr>"
 ```

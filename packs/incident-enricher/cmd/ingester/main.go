@@ -22,7 +22,7 @@ const defaultAddr = ":8088"
 
 func main() {
 	cfg := config.Load("ingester")
-	gw := gatewayclient.New(cfg.GatewayURL, cfg.APIKey)
+	gw := gatewayclient.New(cfg.GatewayURL, cfg.APIKey, cfg.TenantID)
 
 	addr := strings.TrimSpace(os.Getenv("INGESTER_ADDR"))
 	if addr == "" {
