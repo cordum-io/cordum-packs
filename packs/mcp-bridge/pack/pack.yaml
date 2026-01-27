@@ -14,7 +14,7 @@ compatibility:
 topics:
   - name: job.mcp-bridge.tool
     requires: ["network:egress"]
-    riskTags: ["write"]
+    riskTags: ["write", "network"]
     capability: cordum.mcp.bridge
 
 resources:
@@ -50,11 +50,11 @@ tests:
       request:
         tenantId: default
         topic: job.mcp-bridge.tool
-        riskTags: ["read"]
+        riskTags: ["read", "network"]
       expectDecision: ALLOW
     - name: write_requires_approval
       request:
         tenantId: default
         topic: job.mcp-bridge.tool
-        riskTags: ["write"]
+        riskTags: ["write", "network"]
       expectDecision: REQUIRE_APPROVAL
