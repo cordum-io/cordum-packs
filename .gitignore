@@ -34,3 +34,6 @@ licenses/
 keys/
 secrets/
 .home
+.worktrees/
+packs/cap
+packs/cordum
