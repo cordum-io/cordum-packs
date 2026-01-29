@@ -155,11 +155,17 @@ def main(argv: list[str]) -> int:
     catalog = load_catalog(Path(args.catalog))
     catalog["url"] = args.catalog_url
 
+    unique_users = {
+        key: len(download_ips[key].union(catalog_ips[key]))
+        for key in windows
+    }
+
     payload = {
         "generated_at": now.isoformat().replace("+00:00", "Z"),
         "windows_minutes": windows,
         "unique_downloaders": {key: len(value) for key, value in download_ips.items()},
         "unique_catalog_viewers": {key: len(value) for key, value in catalog_ips.items()},
+        "unique_users": unique_users,
         "downloads": downloads,
         "catalog": catalog,
     }

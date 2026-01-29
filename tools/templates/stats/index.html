@@ -131,7 +131,7 @@
         </div>
 
         <div class="footer">
-          Live users are computed from unique IPs downloading pack archives.
+          Live users are computed from unique IPs viewing the catalog or downloading pack archives.
           Protected stats endpoint. Contact Cordum operators if you need access.
         </div>
       </div>
@@ -157,7 +157,7 @@
         }
 
         function applyStats(payload) {
-          const users = payload.unique_downloaders || {};
+          const users = payload.unique_users || payload.unique_downloaders || {};
           const downloads = payload.downloads || {};
           setText("live-users", formatNumber(users["5m"]));
           setText("active-users", formatNumber(users["1h"]));

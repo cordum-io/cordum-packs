@@ -3,7 +3,7 @@
 Tags: stats, telemetry, packs
 
 This repo ships a lightweight stats page for `packs.cordum.io/stats/`. It shows live user counts
-based on unique IPs downloading pack archives (`/packs/*/pack.tgz`) and reading `catalog.json`.
+based on unique IPs viewing `catalog.json` or downloading pack archives (`/packs/*/pack.tgz`).
 
 ## How it works
 
