@@ -15,6 +15,7 @@ import yaml
 ROOT = Path(__file__).resolve().parents[1]
 PACKS_DIR = ROOT / "packs"
 PUBLIC_DIR = ROOT / "public"
+STATS_TEMPLATE = ROOT / "tools" / "templates" / "stats" / "index.html"
 
 
 def find_manifest(pack_dir: Path) -> tuple[dict, Path]:
@@ -162,6 +163,20 @@ def write_catalog(entries: list, output_path: Path) -> None:
     output_path.write_text(json.dumps(payload, indent=2, sort_keys=False) + "\n", encoding="utf-8")
 
 
+def write_stats_page(public_dir: Path, pack_count: int, updated_at: str, catalog_url: str) -> None:
+    if not STATS_TEMPLATE.exists():
+        return
+    target = public_dir / "stats" / "index.html"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    template = STATS_TEMPLATE.read_text(encoding="utf-8")
+    rendered = (
+        template.replace("{{pack_count}}", str(pack_count))
+        .replace("{{updated_at}}", updated_at)
+        .replace("{{catalog_url}}", catalog_url)
+    )
+    target.write_text(rendered, encoding="utf-8")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Build Cordum pack bundles and catalog.")
     parser.add_argument("--packs-dir", default=str(PACKS_DIR), help="Directory containing pack folders.")
@@ -191,7 +206,11 @@ def main() -> int:
 
     entries = build_catalog(packs_dir, base_url)
     public_dir.mkdir(parents=True, exist_ok=True)
-    write_catalog(entries, public_dir / "catalog.json")
+    catalog_path = public_dir / "catalog.json"
+    write_catalog(entries, catalog_path)
+    catalog_payload = json.loads(catalog_path.read_text(encoding="utf-8"))
+    updated_at = str(catalog_payload.get("updated_at") or "")
+    write_stats_page(public_dir, len(entries), updated_at, f"{base_url}/catalog.json")
 
     domain = str(args.domain).strip()
     if domain:
