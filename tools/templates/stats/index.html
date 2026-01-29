@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Cordum Packs Stats</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f7f4ef;
+        --card: #ffffff;
+        --ink: #1f2a2e;
+        --muted: #5b6a72;
+        --accent: #0f7f7a;
+        --border: #d9e0e5;
+      }
+      body {
+        margin: 0;
+        font-family: "IBM Plex Sans", "Segoe UI", Arial, sans-serif;
+        background: radial-gradient(circle at top, #ffffff 0%, var(--bg) 60%);
+        color: var(--ink);
+      }
+      .page {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 40px 20px;
+      }
+      .card {
+        width: min(720px, 100%);
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 24px;
+        padding: 32px;
+        box-shadow: 0 24px 60px rgba(15, 24, 32, 0.08);
+      }
+      .eyebrow {
+        text-transform: uppercase;
+        letter-spacing: 0.3em;
+        font-size: 10px;
+        color: var(--muted);
+      }
+      h1 {
+        margin: 12px 0 8px;
+        font-size: 28px;
+      }
+      p {
+        margin: 0 0 18px;
+        color: var(--muted);
+      }
+      .stats {
+        display: grid;
+        gap: 16px;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        margin-top: 24px;
+      }
+      .stat {
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        padding: 16px;
+        background: #fcfbf9;
+      }
+      .stat .label {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.2em;
+        color: var(--muted);
+      }
+      .stat .value {
+        margin-top: 8px;
+        font-size: 20px;
+        font-weight: 600;
+        color: var(--ink);
+      }
+      a {
+        color: var(--accent);
+        font-weight: 600;
+        text-decoration: none;
+      }
+      a:hover {
+        text-decoration: underline;
+      }
+      .footer {
+        margin-top: 28px;
+        font-size: 12px;
+        color: var(--muted);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <div class="card">
+        <div class="eyebrow">Cordum Packs</div>
+        <h1>Public Packs Stats</h1>
+        <p>Snapshot of the current packs catalog published to this domain.</p>
+
+        <div class="stats">
+          <div class="stat">
+            <div class="label">Live Users (5m)</div>
+            <div class="value" id="live-users">—</div>
+          </div>
+          <div class="stat">
+            <div class="label">Active Users (1h)</div>
+            <div class="value" id="active-users">—</div>
+          </div>
+          <div class="stat">
+            <div class="label">Unique Users (24h)</div>
+            <div class="value" id="unique-24h">—</div>
+          </div>
+          <div class="stat">
+            <div class="label">Unique Users (7d)</div>
+            <div class="value" id="unique-7d">—</div>
+          </div>
+          <div class="stat">
+            <div class="label">Pack Count</div>
+            <div class="value" id="pack-count">{{pack_count}}</div>
+          </div>
+          <div class="stat">
+            <div class="label">Catalog Updated</div>
+            <div class="value" id="catalog-updated">{{updated_at}}</div>
+          </div>
+          <div class="stat">
+            <div class="label">Catalog</div>
+            <div class="value"><a id="catalog-link" href="{{catalog_url}}">catalog.json</a></div>
+          </div>
+          <div class="stat">
+            <div class="label">Pack Downloads (24h)</div>
+            <div class="value" id="downloads-24h">—</div>
+          </div>
+        </div>
+
+        <div class="footer">
+          Live users are computed from unique IPs viewing the catalog or downloading pack archives.
+          Protected stats endpoint. Contact Cordum operators if you need access.
+        </div>
+      </div>
+    </div>
+
+    <script>
+      (function () {
+        const endpoints = ["./stats.json", "/stats/stats.json"];
+        const fallback = () => {};
+
+        function setText(id, value) {
+          const el = document.getElementById(id);
+          if (!el) return;
+          el.textContent = value;
+        }
+
+        function formatNumber(value) {
+          if (value === null || value === undefined) return "—";
+          if (typeof value === "number" && Number.isFinite(value)) {
+            return value.toLocaleString("en-US");
+          }
+          return String(value);
+        }
+
+        function applyStats(payload) {
+          const users = payload.unique_users || payload.unique_downloaders || {};
+          const downloads = payload.downloads || {};
+          setText("live-users", formatNumber(users["5m"]));
+          setText("active-users", formatNumber(users["1h"]));
+          setText("unique-24h", formatNumber(users["24h"]));
+          setText("unique-7d", formatNumber(users["7d"]));
+          setText("downloads-24h", formatNumber(downloads["24h"]));
+
+          if (payload.catalog) {
+            setText("pack-count", formatNumber(payload.catalog.pack_count));
+            setText("catalog-updated", payload.catalog.updated_at || "—");
+            const link = document.getElementById("catalog-link");
+            if (link && payload.catalog.url) {
+              link.href = payload.catalog.url;
+            }
+          }
+        }
+
+        function fetchStats(urls) {
+          if (!urls.length) return fallback();
+          const [head, ...rest] = urls;
+          fetch(head, { cache: "no-store" })
+            .then((resp) => {
+              if (!resp.ok) throw new Error(`status ${resp.status}`);
+              return resp.json();
+            })
+            .then((data) => applyStats(data))
+            .catch(() => fetchStats(rest));
+        }
+
+        fetchStats(endpoints);
+      })();
+    </script>
+  </body>
+</html>
