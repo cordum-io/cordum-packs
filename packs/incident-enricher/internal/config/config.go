@@ -22,6 +22,7 @@ type Env struct {
 	RedisURL            string
 	GatewayURL          string
 	APIKey              string
+	TenantID            string
 	WorkerPool          string
 	WorkerID            string
 	MaxParallelJobs     int
@@ -47,6 +48,7 @@ func Load(service string) Env {
 		defaultGatewayURL,
 	)
 	cfg.APIKey = strings.TrimSpace(os.Getenv("CORDUM_API_KEY"))
+	cfg.TenantID = getenv("CORDUM_TENANT_ID", "default")
 
 	redisURL := strings.TrimSpace(os.Getenv("REDIS_URL"))
 	if redisURL == "" {
