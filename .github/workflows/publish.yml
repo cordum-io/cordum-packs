@@ -176,9 +176,15 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
+    env:
+      PACKS_BASE_URL: ${{ secrets.PACKS_BASE_URL }}
+      PACKS_DOMAIN: ${{ secrets.PACKS_DOMAIN }}
     environment:
       name: production
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Download public artifact
         uses: actions/download-artifact@v4
         with:
@@ -224,6 +230,75 @@ jobs:
 
           ssh -i ~/.ssh/cordum_packs_deploy "$DEPLOY_USER@$DEPLOY_HOST" \
             "sudo mkdir -p $DEPLOY_ROOT && sudo rsync -a --delete $DEPLOY_TMP/ $DEPLOY_ROOT/"
+
+      - name: Install stats generator
+        env:
+          DEPLOY_HOST: ${{ secrets.PACKS_DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.PACKS_DEPLOY_USER }}
+          DEPLOY_ROOT: ${{ secrets.PACKS_DEPLOY_ROOT }}
+        run: |
+          set -euo pipefail
+          DEPLOY_HOST="${DEPLOY_HOST:-92.205.177.179}"
+          DEPLOY_USER="${DEPLOY_USER:-sysadmin}"
+          DEPLOY_ROOT="${DEPLOY_ROOT:-/var/www/packs.cordum.io}"
+
+          PACKS_BASE_URL="${PACKS_BASE_URL:-}"
+          if [ -z "$PACKS_BASE_URL" ]; then
+            if [ -n "${PACKS_DOMAIN:-}" ]; then
+              PACKS_BASE_URL="https://${PACKS_DOMAIN}"
+            else
+              PACKS_BASE_URL="https://packs.cordum.io"
+            fi
+          fi
+          PACKS_BASE_URL="${PACKS_BASE_URL%/}"
+          CATALOG_URL="${PACKS_BASE_URL}/catalog.json"
+
+          scp -i ~/.ssh/cordum_packs_deploy tools/stats/packs_log_stats.py \
+            "$DEPLOY_USER@$DEPLOY_HOST:/tmp/cordum-packs-stats.py"
+
+          ssh -i ~/.ssh/cordum_packs_deploy "$DEPLOY_USER@$DEPLOY_HOST" \
+            "sudo mv /tmp/cordum-packs-stats.py /usr/local/bin/cordum-packs-stats \
+            && sudo chmod 755 /usr/local/bin/cordum-packs-stats"
+
+          cron_line="*/5 * * * * root /usr/local/bin/cordum-packs-stats --catalog \"$DEPLOY_ROOT/catalog.json\" --catalog-url \"$CATALOG_URL\" --output \"$DEPLOY_ROOT/stats/stats.json\" >/var/log/cordum-packs-stats.log 2>&1"
+          ssh -i ~/.ssh/cordum_packs_deploy "$DEPLOY_USER@$DEPLOY_HOST" \
+            "printf '%s\n' \"$cron_line\" | sudo tee /etc/cron.d/cordum-packs-stats >/dev/null"
+
+      - name: Generate stats snapshot
+        env:
+          DEPLOY_HOST: ${{ secrets.PACKS_DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.PACKS_DEPLOY_USER }}
+          DEPLOY_ROOT: ${{ secrets.PACKS_DEPLOY_ROOT }}
+        run: |
+          set -euo pipefail
+          DEPLOY_HOST="${DEPLOY_HOST:-92.205.177.179}"
+          DEPLOY_USER="${DEPLOY_USER:-sysadmin}"
+          DEPLOY_ROOT="${DEPLOY_ROOT:-/var/www/packs.cordum.io}"
+
+          PACKS_BASE_URL="${PACKS_BASE_URL:-}"
+          if [ -z "$PACKS_BASE_URL" ]; then
+            if [ -n "${PACKS_DOMAIN:-}" ]; then
+              PACKS_BASE_URL="https://${PACKS_DOMAIN}"
+            else
+              PACKS_BASE_URL="https://packs.cordum.io"
+            fi
+          fi
+          PACKS_BASE_URL="${PACKS_BASE_URL%/}"
+          CATALOG_URL="${PACKS_BASE_URL}/catalog.json"
+
+          ssh -i ~/.ssh/cordum_packs_deploy "$DEPLOY_USER@$DEPLOY_HOST" \
+            "sudo /usr/local/bin/cordum-packs-stats --catalog \"$DEPLOY_ROOT/catalog.json\" --catalog-url \"$CATALOG_URL\" --output \"$DEPLOY_ROOT/stats/stats.json\""
+
+      - name: Reload Nginx
+        env:
+          DEPLOY_HOST: ${{ secrets.PACKS_DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.PACKS_DEPLOY_USER }}
+          RELOAD_NGINX: ${{ secrets.PACKS_RELOAD_NGINX }}
+        run: |
+          set -euo pipefail
+          DEPLOY_HOST="${DEPLOY_HOST:-92.205.177.179}"
+          DEPLOY_USER="${DEPLOY_USER:-sysadmin}"
+          RELOAD_NGINX="${RELOAD_NGINX:-1}"
 
           if [ "$RELOAD_NGINX" = "1" ]; then
             ssh -i ~/.ssh/cordum_packs_deploy "$DEPLOY_USER@$DEPLOY_HOST" "sudo nginx -t && sudo systemctl reload nginx"
