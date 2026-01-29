@@ -8,7 +8,7 @@ require (
 	github.com/cordum-io/cap/v2 v2.0.16
 	github.com/cordum/cordum/sdk v0.2.0
 	github.com/google/uuid v1.6.0
-	github.com/redis/go-redis/v9 v9.7.0
+	github.com/redis/go-redis/v9 v9.7.3
 	github.com/robfig/cron/v3 v3.0.1
 )
 
