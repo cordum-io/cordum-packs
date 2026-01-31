@@ -24,3 +24,5 @@ require (
 	google.golang.org/grpc v1.78.0 // indirect
 )
 
+
+replace github.com/cordum/cordum/sdk => ../cordum/sdk
