@@ -29,4 +29,4 @@ require (
 )
 
 
-replace github.com/cordum/cordum/sdk => github.com/cordum-io/cordum/sdk v0.2.0
+replace github.com/cordum/cordum/sdk => ../sdk
