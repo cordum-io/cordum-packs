@@ -3,7 +3,8 @@ module github.com/cordum-io/cordum-packs/packs/incident-enricher
 go 1.24.0
 
 require (
-	github.com/cordum-io/cap/v2 v2.0.16
+	github.com/cordum-io/cap/v2 v2.0.19
+	github.com/cordum/cordum/sdk v0.2.0
 	github.com/nats-io/nats.go v1.48.0
 	github.com/redis/go-redis/v9 v9.17.3
 	google.golang.org/protobuf v1.36.11
@@ -19,6 +20,8 @@ require (
 	golang.org/x/net v0.49.0 // indirect
 	golang.org/x/sys v0.40.0 // indirect
 	golang.org/x/text v0.33.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20240318140521-94a12d6c2237 // indirect
-	google.golang.org/grpc v1.64.1 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20251029180050-ab9386a59fda // indirect
+	google.golang.org/grpc v1.78.0 // indirect
 )
+
+replace github.com/cordum/cordum/sdk => ../cordum/sdk

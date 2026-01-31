@@ -74,6 +74,7 @@ type Config struct {
 	CallTimeout             time.Duration
 	ProtocolVersion         string
 	MaxParallel             int32
+	ResultTTL               time.Duration
 	AllowInlineServer       bool
 	AllowInlineUnsafeServer bool
 	AllowInlineAuth         bool
@@ -96,6 +97,7 @@ func Load() (Config, error) {
 		ClientVersion:           envOr("CORDUM_MCP_CLIENT_VERSION", defaultClientVersion),
 		ProtocolVersion:         envOr("CORDUM_MCP_CLIENT_PROTOCOL_VERSION", defaultProtocolVersion),
 		CallTimeout:             defaultCallTimeout,
+		ResultTTL:               parseDuration("CORDUM_MCP_CLIENT_RESULT_TTL", "CORDUM_MCP_CLIENT_RESULT_TTL_SECONDS", 0),
 		AllowInlineServer:       boolEnv("CORDUM_MCP_CLIENT_ALLOW_INLINE_SERVER", false),
 		AllowInlineUnsafeServer: boolEnv("CORDUM_MCP_CLIENT_ALLOW_INLINE_UNSAFE_SERVER", false),
 		AllowInlineAuth:         boolEnv("CORDUM_MCP_CLIENT_ALLOW_INLINE_AUTH", false),
@@ -153,6 +155,20 @@ func boolEnv(key string, fallback bool) bool {
 			return true
 		case "0", "false", "no", "n":
 			return false
+		}
+	}
+	return fallback
+}
+
+func parseDuration(primaryKey, secondaryKey string, fallback time.Duration) time.Duration {
+	if raw := strings.TrimSpace(os.Getenv(primaryKey)); raw != "" {
+		if d, err := time.ParseDuration(raw); err == nil {
+			return d
+		}
+	}
+	if raw := strings.TrimSpace(os.Getenv(secondaryKey)); raw != "" {
+		if seconds, err := strconv.ParseInt(raw, 10, 64); err == nil && seconds >= 0 {
+			return time.Duration(seconds) * time.Second
 		}
 	}
 	return fallback

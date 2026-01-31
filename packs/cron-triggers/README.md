@@ -52,6 +52,9 @@ Write actions (use `job.cron-triggers.write`):
 
 ## Action parameters
 
+`profile`, `params`, and `request_id` are optional. If `profile` is omitted, the worker uses
+the default profile (or fails if none is configured).
+
 `schedules.create` params:
 
 ```json

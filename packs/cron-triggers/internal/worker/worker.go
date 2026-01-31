@@ -8,15 +8,15 @@ import (
 	"log"
 	"path"
 	"strings"
+	"sync/atomic"
 	"time"
 
-	agentv1 "github.com/cordum-io/cap/v2/cordum/agent/v1"
 	"github.com/cordum/cordum/sdk/client"
 	"github.com/cordum/cordum/sdk/runtime"
+	"github.com/nats-io/nats.go"
 	"github.com/redis/go-redis/v9"
 
 	"github.com/cordum-io/cordum-packs/packs/cron-triggers/internal/config"
-	"github.com/cordum-io/cordum-packs/packs/cron-triggers/internal/gatewayclient"
 	"github.com/cordum-io/cordum-packs/packs/cron-triggers/internal/scheduler"
 )
 
@@ -39,9 +39,12 @@ const (
 
 type Worker struct {
 	cfg       config.Config
-	gateway   *gatewayclient.Client
 	redis     *redis.Client
-	worker    *runtime.Worker
+	agent     *runtime.Agent
+	natsConn  *nats.Conn
+	workerID  string
+	sem       chan struct{}
+	active    int32
 	store     *scheduler.Store
 	scheduler *scheduler.Scheduler
 }
@@ -81,21 +84,23 @@ func New(cfg config.Config) (*Worker, error) {
 	}
 	redisClient := redis.NewClient(opts)
 
-	worker, err := runtime.NewWorker(runtime.Config{
-		Pool:            cfg.Pool,
-		Subjects:        cfg.Subjects,
-		Queue:           cfg.Queue,
-		NatsURL:         cfg.NatsURL,
-		MaxParallelJobs: cfg.MaxParallel,
-		Capabilities:    []string{"cron-triggers"},
-		Labels:          map[string]string{"adapter": "cron-triggers"},
-		Type:            "cron-triggers",
-	})
+	workerID := runtime.ResolveWorkerID("", "cron-triggers")
+	nc, err := nats.Connect(cfg.NatsURL, nats.Name(workerID), nats.Timeout(5*time.Second))
 	if err != nil {
 		return nil, err
 	}
+	resultStore, err := runtime.NewRedisBlobStoreWithTTL(cfg.RedisURL, cfg.ResultTTL)
+	if err != nil {
+		return nil, err
+	}
+	agent := &runtime.Agent{
+		NATS:     nc,
+		Store:    resultStore,
+		RedisURL: cfg.RedisURL,
+		SenderID: workerID,
+	}
 
-	store := scheduler.NewStore(redisClient)
+	schedStore := scheduler.NewStore(redisClient)
 	allowSeconds := false
 	for _, profile := range cfg.Profiles {
 		if profile.AllowSeconds {
@@ -105,7 +110,7 @@ func New(cfg config.Config) (*Worker, error) {
 	}
 
 	sched := scheduler.New(
-		store,
+		schedStore,
 		client.New(cfg.GatewayURL, cfg.APIKey),
 		cfg.Profiles,
 		cfg.SyncInterval,
@@ -114,19 +119,24 @@ func New(cfg config.Config) (*Worker, error) {
 		allowSeconds,
 	)
 
-	return &Worker{
+	w := &Worker{
 		cfg:       cfg,
-		gateway:   gatewayclient.New(cfg.GatewayURL, cfg.APIKey, cfg.TenantID),
 		redis:     redisClient,
-		worker:    worker,
-		store:     store,
+		agent:     agent,
+		natsConn:  nc,
+		workerID:  workerID,
+		store:     schedStore,
 		scheduler: sched,
-	}, nil
+	}
+	if cfg.MaxParallel > 0 {
+		w.sem = make(chan struct{}, cfg.MaxParallel)
+	}
+	return w, nil
 }
 
 func (w *Worker) Close() error {
-	if w.worker != nil {
-		_ = w.worker.Close()
+	if w.agent != nil {
+		_ = w.agent.Close()
 	}
 	if w.redis != nil {
 		_ = w.redis.Close()
@@ -140,36 +150,73 @@ func (w *Worker) Run(ctx context.Context) error {
 			log.Printf("cron scheduler stopped: %v", err)
 		}
 	}()
-	return w.worker.Run(ctx, w.handleJob)
+	if w.agent == nil {
+		return fmt.Errorf("runtime agent unavailable")
+	}
+	subjects := w.cfg.Subjects
+	if len(subjects) == 0 {
+		subjects = []string{topicRead, topicWrite}
+	}
+	for _, subject := range subjects {
+		runtime.Register(w.agent, subject, w.handleJob)
+	}
+	runtime.Register(w.agent, runtime.DirectSubject(w.workerID), w.handleJob)
+
+	if err := w.agent.Start(); err != nil {
+		return err
+	}
+	if w.natsConn != nil {
+		heartbeatFn := func() ([]byte, error) {
+			active := int(atomic.LoadInt32(&w.active))
+			return runtime.HeartbeatPayload(w.workerID, w.cfg.Pool, active, int(w.cfg.MaxParallel), 0)
+		}
+		if payload, err := heartbeatFn(); err == nil {
+			_ = runtime.EmitHeartbeat(w.natsConn, payload)
+		}
+		go runtime.HeartbeatLoop(ctx, w.natsConn, heartbeatFn)
+	}
+
+	<-ctx.Done()
+	return ctx.Err()
 }
 
-func (w *Worker) handleJob(ctx context.Context, req *agentv1.JobRequest) (*agentv1.JobResult, error) {
-	jobID := req.GetJobId()
-	ctxPtr := req.GetContextPtr()
-	if ctxPtr == "" && req.Env != nil {
-		ctxPtr = req.Env["context_ptr"]
+func (w *Worker) handleJob(ctx runtime.Context, payload map[string]any) (callResult, error) {
+	if w.sem != nil {
+		w.sem <- struct{}{}
+		atomic.AddInt32(&w.active, 1)
+		defer func() {
+			<-w.sem
+			atomic.AddInt32(&w.active, -1)
+		}()
+	} else {
+		atomic.AddInt32(&w.active, 1)
+		defer atomic.AddInt32(&w.active, -1)
 	}
-	input, err := w.fetchInput(ctx, ctxPtr)
-	if err != nil {
-		return w.failJob(jobID, err)
+
+	jobID := ctx.Job.GetJobId()
+	payload = normalizePayload(payload)
+
+	var input JobInput
+	if err := decodePayload(payload, &input); err != nil {
+		return callResult{}, err
 	}
 
 	action := strings.ToLower(strings.TrimSpace(input.Action))
 	if action == "" {
-		return w.failJob(jobID, fmt.Errorf("action required"))
+		return callResult{}, fmt.Errorf("action required")
 	}
 
 	intent, err := classifyAction(action)
 	if err != nil {
-		return w.failJob(jobID, err)
+		return callResult{}, err
 	}
-	if err := w.enforceTopic(req.GetTopic(), intent); err != nil {
-		return w.failJob(jobID, err)
+	if err := w.enforceTopic(ctx.Job.GetTopic(), intent); err != nil {
+		return callResult{}, err
 	}
 
 	profile, err := w.resolveProfile(input.Profile)
 	if err != nil {
-		return w.failJob(jobID, err)
+		return callResult{}, err
 	}
 
 	params := input.Params
@@ -178,7 +225,7 @@ func (w *Worker) handleJob(ctx context.Context, req *agentv1.JobRequest) (*agent
 	}
 
 	start := time.Now()
-	result, err := w.execute(ctx, profile, action, params)
+	result, err := w.execute(context.Background(), profile, action, params)
 	statusCode := 200
 	if err != nil {
 		statusCode = 400
@@ -196,233 +243,235 @@ func (w *Worker) handleJob(ctx context.Context, req *agentv1.JobRequest) (*agent
 	if err != nil {
 		call.Error = err.Error()
 	}
-	return w.finishJob(jobID, call, err)
+	return call, err
 }
 
 func (w *Worker) execute(ctx context.Context, profile config.Profile, action string, params map[string]any) (any, error) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	timeout := w.cfg.RequestTimeout
+	if timeout <= 0 {
+		timeout = 20 * time.Second
+	}
+	reqCtx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+
 	switch action {
 	case actionSchedulesList:
-		return w.listSchedules(ctx, profile)
+		schedules, err := w.store.List(reqCtx)
+		if err != nil {
+			return nil, err
+		}
+		out := make([]scheduler.Schedule, 0, len(schedules))
+		for _, schedule := range schedules {
+			if scheduleProfile(schedule) == profile.Name {
+				out = append(out, schedule)
+			}
+		}
+		return out, nil
 	case actionSchedulesGet:
-		return w.getSchedule(ctx, profile, params)
+		var payload scheduleParams
+		if err := decodeParams(params, &payload); err != nil {
+			return nil, err
+		}
+		id := strings.TrimSpace(payload.ID)
+		if id == "" {
+			return nil, fmt.Errorf("id required")
+		}
+		schedule, err := w.store.Get(reqCtx, id)
+		if err != nil {
+			return nil, err
+		}
+		if scheduleProfile(schedule) != profile.Name {
+			return nil, scheduler.ErrScheduleNotFound
+		}
+		return schedule, nil
 	case actionSchedulesCreate:
-		return w.createSchedule(ctx, profile, params)
+		var payload scheduleParams
+		if err := decodeParams(params, &payload); err != nil {
+			return nil, err
+		}
+		workflowID := resolveWorkflowID(payload.WorkflowID, payload.Workflow)
+		if workflowID == "" {
+			return nil, fmt.Errorf("workflow_id required")
+		}
+		if !workflowAllowed(profile, workflowID) {
+			return nil, fmt.Errorf("workflow not allowed")
+		}
+		cronExpr := strings.TrimSpace(payload.Cron)
+		if cronExpr == "" {
+			return nil, fmt.Errorf("cron required")
+		}
+		enabled := true
+		if payload.Enabled != nil {
+			enabled = *payload.Enabled
+		}
+		schedule := scheduler.Schedule{
+			ID:             strings.TrimSpace(payload.ID),
+			Name:           strings.TrimSpace(payload.Name),
+			Profile:        profile.Name,
+			Cron:           cronExpr,
+			WorkflowID:     workflowID,
+			Input:          payload.Input,
+			Enabled:        enabled,
+			Timezone:       strings.TrimSpace(payload.Timezone),
+			DryRun:         payload.DryRun,
+			IdempotencyKey: strings.TrimSpace(payload.IdempotencyKey),
+		}
+		if _, err := w.scheduler.SpecFor(schedule, profile); err != nil {
+			return nil, err
+		}
+		if schedule.ID != "" {
+			if _, err := w.store.Get(reqCtx, schedule.ID); err == nil {
+				return nil, fmt.Errorf("schedule already exists")
+			} else if !errors.Is(err, scheduler.ErrScheduleNotFound) {
+				return nil, err
+			}
+		}
+		saved, err := w.store.Save(reqCtx, schedule)
+		if err != nil {
+			return nil, err
+		}
+		if err := w.scheduler.Sync(reqCtx); err != nil {
+			log.Printf("cron scheduler sync failed: %v", err)
+		}
+		return saved, nil
 	case actionSchedulesUpdate:
-		return w.updateSchedule(ctx, profile, params)
+		var payload scheduleParams
+		if err := decodeParams(params, &payload); err != nil {
+			return nil, err
+		}
+		id := strings.TrimSpace(payload.ID)
+		if id == "" {
+			return nil, fmt.Errorf("id required")
+		}
+		schedule, err := w.store.Get(reqCtx, id)
+		if err != nil {
+			return nil, err
+		}
+		if scheduleProfile(schedule) != profile.Name {
+			return nil, scheduler.ErrScheduleNotFound
+		}
+		if paramExists(params, "name") {
+			schedule.Name = strings.TrimSpace(payload.Name)
+		}
+		if paramExists(params, "cron") {
+			schedule.Cron = strings.TrimSpace(payload.Cron)
+		}
+		if paramExists(params, "workflow_id") || paramExists(params, "workflow") {
+			workflowID := resolveWorkflowID(payload.WorkflowID, payload.Workflow)
+			if workflowID == "" {
+				return nil, fmt.Errorf("workflow_id required")
+			}
+			schedule.WorkflowID = workflowID
+		}
+		if paramExists(params, "input") {
+			schedule.Input = payload.Input
+		}
+		if paramExists(params, "enabled") {
+			if payload.Enabled == nil {
+				return nil, fmt.Errorf("enabled must be boolean")
+			}
+			schedule.Enabled = *payload.Enabled
+		}
+		if paramExists(params, "timezone") {
+			schedule.Timezone = strings.TrimSpace(payload.Timezone)
+		}
+		if paramExists(params, "dry_run") {
+			schedule.DryRun = payload.DryRun
+		}
+		if paramExists(params, "idempotency_key") {
+			schedule.IdempotencyKey = strings.TrimSpace(payload.IdempotencyKey)
+		}
+		if !workflowAllowed(profile, schedule.WorkflowID) {
+			return nil, fmt.Errorf("workflow not allowed")
+		}
+		if _, err := w.scheduler.SpecFor(schedule, profile); err != nil {
+			return nil, err
+		}
+		saved, err := w.store.Save(reqCtx, schedule)
+		if err != nil {
+			return nil, err
+		}
+		if err := w.scheduler.Sync(reqCtx); err != nil {
+			log.Printf("cron scheduler sync failed: %v", err)
+		}
+		return saved, nil
 	case actionSchedulesDelete:
-		return w.deleteSchedule(ctx, profile, params)
-	case actionSchedulesEnable, actionSchedulesResume:
-		return w.setScheduleEnabled(ctx, profile, params, true)
-	case actionSchedulesDisable, actionSchedulesPause:
-		return w.setScheduleEnabled(ctx, profile, params, false)
+		var payload scheduleParams
+		if err := decodeParams(params, &payload); err != nil {
+			return nil, err
+		}
+		id := strings.TrimSpace(payload.ID)
+		if id == "" {
+			return nil, fmt.Errorf("id required")
+		}
+		schedule, err := w.store.Get(reqCtx, id)
+		if err != nil {
+			return nil, err
+		}
+		if scheduleProfile(schedule) != profile.Name {
+			return nil, scheduler.ErrScheduleNotFound
+		}
+		if err := w.store.Delete(reqCtx, id); err != nil {
+			return nil, err
+		}
+		if err := w.scheduler.Sync(reqCtx); err != nil {
+			log.Printf("cron scheduler sync failed: %v", err)
+		}
+		return map[string]any{"deleted": true, "id": id}, nil
+	case actionSchedulesEnable, actionSchedulesDisable, actionSchedulesPause, actionSchedulesResume:
+		var payload scheduleParams
+		if err := decodeParams(params, &payload); err != nil {
+			return nil, err
+		}
+		id := strings.TrimSpace(payload.ID)
+		if id == "" {
+			return nil, fmt.Errorf("id required")
+		}
+		schedule, err := w.store.Get(reqCtx, id)
+		if err != nil {
+			return nil, err
+		}
+		if scheduleProfile(schedule) != profile.Name {
+			return nil, scheduler.ErrScheduleNotFound
+		}
+		switch action {
+		case actionSchedulesEnable, actionSchedulesResume:
+			schedule.Enabled = true
+		default:
+			schedule.Enabled = false
+		}
+		saved, err := w.store.Save(reqCtx, schedule)
+		if err != nil {
+			return nil, err
+		}
+		if err := w.scheduler.Sync(reqCtx); err != nil {
+			log.Printf("cron scheduler sync failed: %v", err)
+		}
+		return saved, nil
 	default:
 		return nil, fmt.Errorf("unsupported action: %s", action)
 	}
 }
 
-func (w *Worker) listSchedules(ctx context.Context, profile config.Profile) (any, error) {
-	schedules, err := w.store.List(ctx)
-	if err != nil {
-		return nil, err
-	}
-	filtered := make([]scheduler.Schedule, 0, len(schedules))
-	for _, schedule := range schedules {
-		if scheduleProfile(schedule) != profile.Name {
-			continue
-		}
-		filtered = append(filtered, schedule)
-	}
-	return map[string]any{"schedules": filtered}, nil
-}
-
-func (w *Worker) getSchedule(ctx context.Context, profile config.Profile, params map[string]any) (any, error) {
-	id := strings.TrimSpace(stringParam(params, "id"))
-	if id == "" {
-		return nil, fmt.Errorf("id required")
-	}
-	schedule, err := w.store.Get(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-	if scheduleProfile(schedule) != profile.Name {
-		return nil, fmt.Errorf("schedule not found")
-	}
-	return schedule, nil
-}
-
-func (w *Worker) createSchedule(ctx context.Context, profile config.Profile, params map[string]any) (any, error) {
-	var payload scheduleParams
-	if err := decodeParams(params, &payload); err != nil {
-		return nil, err
-	}
-	workflowID := resolveWorkflowID(payload.WorkflowID, payload.Workflow)
-	if workflowID == "" {
-		return nil, fmt.Errorf("workflow_id required")
-	}
-	if !workflowAllowed(profile, workflowID) {
-		return nil, fmt.Errorf("workflow not allowed: %s", workflowID)
-	}
-	cronSpec := strings.TrimSpace(payload.Cron)
-	if cronSpec == "" {
-		return nil, fmt.Errorf("cron required")
-	}
-
-	enabled := true
-	if payload.Enabled != nil {
-		enabled = *payload.Enabled
-	}
-
-	timezone := strings.TrimSpace(payload.Timezone)
-	if timezone == "" {
-		timezone = profile.DefaultTimezone
-	}
-
-	schedule := scheduler.Schedule{
-		ID:             strings.TrimSpace(payload.ID),
-		Name:           strings.TrimSpace(payload.Name),
-		Profile:        profile.Name,
-		Cron:           cronSpec,
-		WorkflowID:     workflowID,
-		Input:          payload.Input,
-		Enabled:        enabled,
-		Timezone:       timezone,
-		DryRun:         payload.DryRun,
-		IdempotencyKey: strings.TrimSpace(payload.IdempotencyKey),
-	}
-	if _, err := w.scheduler.SpecFor(schedule, profile); err != nil {
-		return nil, err
-	}
-
-	stored, err := w.store.Save(ctx, schedule)
-	if err != nil {
-		return nil, err
-	}
-	_ = w.scheduler.Sync(context.Background())
-	return stored, nil
-}
-
-func (w *Worker) updateSchedule(ctx context.Context, profile config.Profile, params map[string]any) (any, error) {
-	var payload scheduleParams
-	if err := decodeParams(params, &payload); err != nil {
-		return nil, err
-	}
-	id := strings.TrimSpace(payload.ID)
-	if id == "" {
-		return nil, fmt.Errorf("id required")
-	}
-
-	schedule, err := w.store.Get(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-	if scheduleProfile(schedule) != profile.Name {
-		return nil, fmt.Errorf("schedule not found")
-	}
-
-	if strings.TrimSpace(payload.Name) != "" {
-		schedule.Name = strings.TrimSpace(payload.Name)
-	}
-	if strings.TrimSpace(payload.Cron) != "" {
-		schedule.Cron = strings.TrimSpace(payload.Cron)
-	}
-	workflowID := resolveWorkflowID(payload.WorkflowID, payload.Workflow)
-	if workflowID != "" {
-		if !workflowAllowed(profile, workflowID) {
-			return nil, fmt.Errorf("workflow not allowed: %s", workflowID)
-		}
-		schedule.WorkflowID = workflowID
-	}
-	if paramExists(params, "input") {
-		schedule.Input = payload.Input
-	}
-	if payload.Enabled != nil {
-		schedule.Enabled = *payload.Enabled
-	}
-	if paramExists(params, "dry_run") {
-		schedule.DryRun = payload.DryRun
-	}
-	if strings.TrimSpace(payload.Timezone) != "" {
-		schedule.Timezone = strings.TrimSpace(payload.Timezone)
-	}
-	if strings.TrimSpace(payload.IdempotencyKey) != "" {
-		schedule.IdempotencyKey = strings.TrimSpace(payload.IdempotencyKey)
-	}
-	if _, err := w.scheduler.SpecFor(schedule, profile); err != nil {
-		return nil, err
-	}
-
-	stored, err := w.store.Save(ctx, schedule)
-	if err != nil {
-		return nil, err
-	}
-	_ = w.scheduler.Sync(context.Background())
-	return stored, nil
-}
-
-func (w *Worker) deleteSchedule(ctx context.Context, profile config.Profile, params map[string]any) (any, error) {
-	id := strings.TrimSpace(stringParam(params, "id"))
-	if id == "" {
-		return nil, fmt.Errorf("id required")
-	}
-	schedule, err := w.store.Get(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-	if scheduleProfile(schedule) != profile.Name {
-		return nil, fmt.Errorf("schedule not found")
-	}
-	if err := w.store.Delete(ctx, id); err != nil {
-		return nil, err
-	}
-	_ = w.scheduler.Sync(context.Background())
-	return map[string]any{"deleted": id}, nil
-}
-
-func (w *Worker) setScheduleEnabled(ctx context.Context, profile config.Profile, params map[string]any, enabled bool) (any, error) {
-	id := strings.TrimSpace(stringParam(params, "id"))
-	if id == "" {
-		return nil, fmt.Errorf("id required")
-	}
-	schedule, err := w.store.Get(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-	if scheduleProfile(schedule) != profile.Name {
-		return nil, fmt.Errorf("schedule not found")
-	}
-	schedule.Enabled = enabled
-	stored, err := w.store.Save(ctx, schedule)
-	if err != nil {
-		return nil, err
-	}
-	_ = w.scheduler.Sync(context.Background())
-	return stored, nil
-}
-
-func (w *Worker) fetchInput(ctx context.Context, ptr string) (JobInput, error) {
-	if strings.TrimSpace(ptr) == "" {
-		return JobInput{}, fmt.Errorf("context_ptr missing")
-	}
-	mem, err := w.gateway.GetMemory(ctx, ptr)
-	if err != nil {
-		return JobInput{}, err
-	}
-	payload, ok := mem.JSON.(map[string]any)
-	if !ok {
-		return JobInput{}, fmt.Errorf("unexpected context format")
+func normalizePayload(payload map[string]any) map[string]any {
+	if payload == nil {
+		return map[string]any{}
 	}
 	if ctxPayload, ok := payload["context"].(map[string]any); ok {
-		payload = ctxPayload
+		return ctxPayload
 	}
+	return payload
+}
+
+func decodePayload(payload map[string]any, out any) error {
 	data, err := json.Marshal(payload)
 	if err != nil {
-		return JobInput{}, err
+		return err
 	}
-	var input JobInput
-	if err := json.Unmarshal(data, &input); err != nil {
-		return JobInput{}, err
-	}
-	return input, nil
+	return json.Unmarshal(data, out)
 }
 
 func (w *Worker) resolveProfile(name string) (config.Profile, error) {
@@ -457,37 +506,6 @@ func (w *Worker) enforceTopic(topic string, intent string) error {
 		return fmt.Errorf("unknown intent")
 	}
 	return nil
-}
-
-func (w *Worker) finishJob(jobID string, result callResult, err error) (*agentv1.JobResult, error) {
-	ptr, storeErr := w.storeResult(context.Background(), jobID, result)
-	if storeErr != nil {
-		return &agentv1.JobResult{JobId: jobID, Status: agentv1.JobStatus_JOB_STATUS_FAILED, ErrorMessage: storeErr.Error()}, storeErr
-	}
-	status := agentv1.JobStatus_JOB_STATUS_SUCCEEDED
-	if err != nil {
-		status = agentv1.JobStatus_JOB_STATUS_FAILED
-	}
-	return &agentv1.JobResult{JobId: jobID, Status: status, ResultPtr: ptr}, err
-}
-
-func (w *Worker) failJob(jobID string, err error) (*agentv1.JobResult, error) {
-	return &agentv1.JobResult{JobId: jobID, Status: agentv1.JobStatus_JOB_STATUS_FAILED, ErrorMessage: err.Error()}, err
-}
-
-func (w *Worker) storeResult(ctx context.Context, jobID string, payload any) (string, error) {
-	if w.redis == nil {
-		return "", fmt.Errorf("redis client unavailable")
-	}
-	data, err := json.Marshal(payload)
-	if err != nil {
-		return "", err
-	}
-	key := "res:" + jobID
-	if err := w.redis.Set(ctx, key, data, w.cfg.ResultTTL).Err(); err != nil {
-		return "", err
-	}
-	return "redis://" + key, nil
 }
 
 func classifyAction(action string) (string, error) {

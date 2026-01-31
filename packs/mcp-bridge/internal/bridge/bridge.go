@@ -11,11 +11,11 @@ import (
 	"net/url"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
-	"github.com/cordum-io/cap/v2/cordum/agent/v1"
 	"github.com/cordum/cordum/sdk/runtime"
-	"github.com/redis/go-redis/v9"
+	"github.com/nats-io/nats.go"
 
 	"github.com/cordum-io/cordum-packs/packs/mcp-bridge/internal/mcp"
 )
@@ -51,8 +51,11 @@ type Config struct {
 type Bridge struct {
 	cfg       Config
 	client    *gatewayClient
-	redis     *redis.Client
-	worker    *runtime.Worker
+	agent     *runtime.Agent
+	natsConn  *nats.Conn
+	workerID  string
+	sem       chan struct{}
+	active    int32
 	pending   map[string]chan callResult
 	mu        sync.Mutex
 	tools     []mcp.Tool
@@ -99,33 +102,36 @@ func New(cfg Config) (*Bridge, error) {
 	if cfg.PollInterval <= 0 {
 		cfg.PollInterval = 750 * time.Millisecond
 	}
-
-	opts, err := redis.ParseURL(cfg.RedisURL)
-	if err != nil {
-		return nil, fmt.Errorf("parse redis url: %w", err)
+	if cfg.MaxParallel <= 0 {
+		cfg.MaxParallel = 1
 	}
-	client := redis.NewClient(opts)
 
-	worker, err := runtime.NewWorker(runtime.Config{
-		Pool:            cfg.Pool,
-		Subjects:        cfg.Subjects,
-		Queue:           cfg.Queue,
-		NatsURL:         cfg.NatsURL,
-		MaxParallelJobs: cfg.MaxParallel,
-		Capabilities:    []string{"mcp-bridge"},
-		Labels:          map[string]string{"adapter": "mcp-bridge"},
-		Type:            "mcp-bridge",
-	})
+	workerID := runtime.ResolveWorkerID("", "mcp-bridge")
+	nc, err := nats.Connect(cfg.NatsURL, nats.Name(workerID), nats.Timeout(5*time.Second))
 	if err != nil {
 		return nil, err
 	}
+	store, err := runtime.NewRedisBlobStoreWithTTL(cfg.RedisURL, 0)
+	if err != nil {
+		return nil, err
+	}
+	agent := &runtime.Agent{
+		NATS:     nc,
+		Store:    store,
+		RedisURL: cfg.RedisURL,
+		SenderID: workerID,
+	}
 
 	b := &Bridge{
-		cfg:     cfg,
-		client:  newGatewayClient(cfg.GatewayURL, cfg.APIKey, cfg.TenantID),
-		redis:   client,
-		worker:  worker,
-		pending: map[string]chan callResult{},
+		cfg:      cfg,
+		client:   newGatewayClient(cfg.GatewayURL, cfg.APIKey, cfg.TenantID),
+		agent:    agent,
+		natsConn: nc,
+		workerID: workerID,
+		pending:  map[string]chan callResult{},
+	}
+	if cfg.MaxParallel > 0 {
+		b.sem = make(chan struct{}, cfg.MaxParallel)
 	}
 	b.tools = b.buildTools()
 	b.templates = b.buildResourceTemplates()
@@ -133,17 +139,41 @@ func New(cfg Config) (*Bridge, error) {
 }
 
 func (b *Bridge) Close() error {
-	if b.worker != nil {
-		_ = b.worker.Close()
-	}
-	if b.redis != nil {
-		_ = b.redis.Close()
+	if b.agent != nil {
+		_ = b.agent.Close()
 	}
 	return nil
 }
 
 func (b *Bridge) RunWorker(ctx context.Context) error {
-	return b.worker.Run(ctx, b.handleJob)
+	if b.agent == nil {
+		return fmt.Errorf("runtime agent unavailable")
+	}
+	subjects := b.cfg.Subjects
+	if len(subjects) == 0 {
+		subjects = []string{"job.mcp-bridge.*"}
+	}
+	for _, subject := range subjects {
+		runtime.Register(b.agent, subject, b.handleJob)
+	}
+	runtime.Register(b.agent, runtime.DirectSubject(b.workerID), b.handleJob)
+
+	if err := b.agent.Start(); err != nil {
+		return err
+	}
+	if b.natsConn != nil {
+		heartbeatFn := func() ([]byte, error) {
+			active := int(atomic.LoadInt32(&b.active))
+			return runtime.HeartbeatPayload(b.workerID, b.cfg.Pool, active, int(b.cfg.MaxParallel), 0)
+		}
+		if payload, err := heartbeatFn(); err == nil {
+			_ = runtime.EmitHeartbeat(b.natsConn, payload)
+		}
+		go runtime.HeartbeatLoop(ctx, b.natsConn, heartbeatFn)
+	}
+
+	<-ctx.Done()
+	return ctx.Err()
 }
 
 func (b *Bridge) Initialize(ctx context.Context, params map[string]any) (mcp.InitializeResult, error) {
@@ -208,36 +238,41 @@ func (b *Bridge) supportsTool(name string) bool {
 	return false
 }
 
-func (b *Bridge) handleJob(ctx context.Context, req *v1.JobRequest) (*v1.JobResult, error) {
-	jobID := req.GetJobId()
-	payload, err := b.fetchJobContext(ctx, req.GetContextPtr())
-	if err != nil {
-		b.complete(jobID, nil, err)
-		return &v1.JobResult{JobId: jobID, Status: v1.JobStatus_JOB_STATUS_FAILED, ErrorMessage: err.Error()}, err
+func (b *Bridge) handleJob(ctx runtime.Context, payload map[string]any) (map[string]any, error) {
+	if b.sem != nil {
+		b.sem <- struct{}{}
+		atomic.AddInt32(&b.active, 1)
+		defer func() {
+			<-b.sem
+			atomic.AddInt32(&b.active, -1)
+		}()
+	} else {
+		atomic.AddInt32(&b.active, 1)
+		defer atomic.AddInt32(&b.active, -1)
 	}
+
+	jobID := ctx.Job.GetJobId()
+	payload = normalizePayload(payload)
 	toolName, args, err := extractToolCall(payload)
 	if err != nil {
 		b.complete(jobID, nil, err)
-		return &v1.JobResult{JobId: jobID, Status: v1.JobStatus_JOB_STATUS_FAILED, ErrorMessage: err.Error()}, err
+		return nil, err
 	}
-	output, err := b.executeTool(ctx, toolName, args)
+	callCtx, cancel := context.WithTimeout(context.Background(), b.cfg.CallTimeout)
+	defer cancel()
+	output, err := b.executeTool(callCtx, toolName, args)
 	if err != nil {
-		b.complete(jobID, map[string]any{"job_id": jobID, "error": err.Error()}, err)
-		return &v1.JobResult{JobId: jobID, Status: v1.JobStatus_JOB_STATUS_FAILED, ErrorMessage: err.Error()}, err
+		resultPayload := map[string]any{"job_id": jobID, "error": err.Error()}
+		b.complete(jobID, resultPayload, err)
+		return nil, err
 	}
 	resultPayload := map[string]any{
 		"job_id": jobID,
 		"tool":   toolName,
 		"output": output,
 	}
-	ptr, storeErr := b.storeResult(ctx, jobID, resultPayload)
-	if storeErr != nil {
-		err = storeErr
-		b.complete(jobID, resultPayload, err)
-		return &v1.JobResult{JobId: jobID, Status: v1.JobStatus_JOB_STATUS_FAILED, ErrorMessage: err.Error()}, err
-	}
 	b.complete(jobID, resultPayload, nil)
-	return &v1.JobResult{JobId: jobID, Status: v1.JobStatus_JOB_STATUS_SUCCEEDED, ResultPtr: ptr}, nil
+	return resultPayload, nil
 }
 
 func (b *Bridge) submitToolJob(ctx context.Context, name string, args map[string]any) (any, error) {
@@ -304,50 +339,33 @@ func (b *Bridge) complete(jobID string, payload any, err error) {
 	ch <- callResult{payload: payload, err: err, isError: err != nil}
 }
 
-func (b *Bridge) fetchJobContext(ctx context.Context, ptr string) (map[string]any, error) {
-	if ptr == "" {
-		return nil, fmt.Errorf("context_ptr missing")
+func normalizePayload(payload map[string]any) map[string]any {
+	if payload == nil {
+		return map[string]any{}
 	}
-	mem, err := b.client.GetMemory(ctx, ptr)
-	if err != nil {
-		return nil, err
+	if ctxPayload, ok := payload["context"].(map[string]any); ok {
+		return ctxPayload
 	}
-	payload, ok := mem.JSON.(map[string]any)
-	if !ok {
-		return nil, fmt.Errorf("unexpected context format")
-	}
-	return payload, nil
+	return payload
 }
 
 func extractToolCall(payload map[string]any) (string, map[string]any, error) {
-	ctx, ok := payload["context"].(map[string]any)
-	if !ok {
+	if payload == nil {
 		return "", nil, fmt.Errorf("tool context missing")
 	}
-	name, _ := ctx["tool"].(string)
+	ctxPayload := payload
+	if ctx, ok := payload["context"].(map[string]any); ok {
+		ctxPayload = ctx
+	}
+	name, _ := ctxPayload["tool"].(string)
 	if name == "" {
 		return "", nil, fmt.Errorf("tool name missing")
 	}
 	args := map[string]any{}
-	if raw, ok := ctx["args"].(map[string]any); ok {
+	if raw, ok := ctxPayload["args"].(map[string]any); ok {
 		args = raw
 	}
 	return name, args, nil
-}
-
-func (b *Bridge) storeResult(ctx context.Context, jobID string, payload any) (string, error) {
-	if b.redis == nil {
-		return "", fmt.Errorf("redis client unavailable")
-	}
-	data, err := json.Marshal(payload)
-	if err != nil {
-		return "", err
-	}
-	key := "res:" + jobID
-	if err := b.redis.Set(ctx, key, data, 0).Err(); err != nil {
-		return "", err
-	}
-	return "redis://" + key, nil
 }
 
 func (b *Bridge) executeTool(ctx context.Context, name string, args map[string]any) (any, error) {
