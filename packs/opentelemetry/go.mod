@@ -26,3 +26,4 @@ require (
 	google.golang.org/protobuf v1.36.10 // indirect
 )
 
+replace github.com/cordum/cordum/sdk => github.com/cordum-io/cordum/sdk v0.2.0
