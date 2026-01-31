@@ -27,7 +27,7 @@ jobs:
         if: matrix.language == 'go'
         uses: actions/setup-go@v5
         with:
-          go-version-file: packs/sdk/go.mod
+          go-version-file: sdk/go.mod
           cache: false
 
       - name: Initialize CodeQL
