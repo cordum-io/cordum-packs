@@ -9,21 +9,24 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"time"
 )
 
 type Client struct {
-	BaseURL string
-	APIKey  string
-	HTTP    *http.Client
+	BaseURL  string
+	APIKey   string
+	TenantID string
+	HTTP     *http.Client
 }
 
 func New(baseURL, apiKey, tenantID string) *Client {
 	return &Client{
-		BaseURL: strings.TrimRight(strings.TrimSpace(baseURL), "/"),
-		APIKey:  strings.TrimSpace(apiKey),
-		HTTP:    &http.Client{Timeout: 15 * time.Second},
+		BaseURL:  strings.TrimRight(strings.TrimSpace(baseURL), "/"),
+		APIKey:   strings.TrimSpace(apiKey),
+		TenantID: strings.TrimSpace(tenantID),
+		HTTP:     &http.Client{Timeout: 15 * time.Second},
 	}
 }
 
@@ -108,6 +111,13 @@ func (c *Client) doJSON(ctx context.Context, method, path string, body any, out 
 	}
 	if c.APIKey != "" {
 		req.Header.Set("X-API-Key", c.APIKey)
+	}
+	tenantID := strings.TrimSpace(c.TenantID)
+	if tenantID == "" {
+		tenantID = strings.TrimSpace(os.Getenv("CORDUM_TENANT_ID"))
+	}
+	if tenantID != "" {
+		req.Header.Set("X-Tenant-ID", tenantID)
 	}
 	for k, v := range headers {
 		req.Header.Set(k, v)

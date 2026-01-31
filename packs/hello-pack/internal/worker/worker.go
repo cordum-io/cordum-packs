@@ -5,23 +5,24 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"sync/atomic"
 	"time"
 
-	agentv1 "github.com/cordum-io/cap/v2/cordum/agent/v1"
 	"github.com/cordum/cordum/sdk/runtime"
-	"github.com/redis/go-redis/v9"
+	"github.com/nats-io/nats.go"
 
 	"github.com/cordum-io/cordum-packs/packs/hello-pack/internal/config"
-	"github.com/cordum-io/cordum-packs/packs/hello-pack/internal/gatewayclient"
 )
 
 const topicEcho = "job.hello-pack.echo"
 
 type Worker struct {
-	cfg     config.Config
-	gateway *gatewayclient.Client
-	redis   *redis.Client
-	worker  *runtime.Worker
+	cfg      config.Config
+	agent    *runtime.Agent
+	natsConn *nats.Conn
+	workerID string
+	sem      chan struct{}
+	active   int32
 }
 
 type HelloInput struct {
@@ -47,97 +48,106 @@ func New(cfg config.Config) (*Worker, error) {
 		return nil, fmt.Errorf("redis url required")
 	}
 
-	opts, err := redis.ParseURL(cfg.RedisURL)
-	if err != nil {
-		return nil, fmt.Errorf("parse redis url: %w", err)
-	}
-	redisClient := redis.NewClient(opts)
-
-	worker, err := runtime.NewWorker(runtime.Config{
-		Pool:            cfg.Pool,
-		Subjects:        cfg.Subjects,
-		Queue:           cfg.Queue,
-		NatsURL:         cfg.NatsURL,
-		MaxParallelJobs: cfg.MaxParallel,
-		Capabilities:    []string{"hello-pack"},
-		Labels:          map[string]string{"adapter": "hello-pack"},
-		Type:            "hello-pack",
-	})
+	workerID := runtime.ResolveWorkerID("", "hello-pack")
+	nc, err := nats.Connect(cfg.NatsURL, nats.Name(workerID), nats.Timeout(5*time.Second))
 	if err != nil {
 		return nil, err
 	}
 
-	return &Worker{
-		cfg:     cfg,
-		gateway: gatewayclient.New(cfg.GatewayURL, cfg.APIKey, cfg.TenantID),
-		redis:   redisClient,
-		worker:  worker,
-	}, nil
+	store, err := runtime.NewRedisBlobStoreWithTTL(cfg.RedisURL, cfg.ResultTTL)
+	if err != nil {
+		return nil, err
+	}
+
+	agent := &runtime.Agent{
+		NATS:     nc,
+		Store:    store,
+		RedisURL: cfg.RedisURL,
+		SenderID: workerID,
+	}
+
+	w := &Worker{
+		cfg:      cfg,
+		agent:    agent,
+		natsConn: nc,
+		workerID: workerID,
+	}
+	if cfg.MaxParallel > 0 {
+		w.sem = make(chan struct{}, cfg.MaxParallel)
+	}
+	return w, nil
 }
 
 func (w *Worker) Close() error {
-	if w.worker != nil {
-		_ = w.worker.Close()
-	}
-	if w.redis != nil {
-		_ = w.redis.Close()
+	if w.agent != nil {
+		_ = w.agent.Close()
 	}
 	return nil
 }
 
 func (w *Worker) Run(ctx context.Context) error {
-	return w.worker.Run(ctx, w.handleJob)
+	if w.agent == nil {
+		return fmt.Errorf("runtime agent unavailable")
+	}
+	subjects := w.cfg.Subjects
+	if len(subjects) == 0 {
+		subjects = []string{topicEcho}
+	}
+	for _, subject := range subjects {
+		runtime.Register(w.agent, subject, w.handleJob)
+	}
+	runtime.Register(w.agent, runtime.DirectSubject(w.workerID), w.handleJob)
+
+	if err := w.agent.Start(); err != nil {
+		return err
+	}
+
+	if w.natsConn != nil {
+		heartbeatFn := func() ([]byte, error) {
+			active := int(atomic.LoadInt32(&w.active))
+			return runtime.HeartbeatPayload(w.workerID, w.cfg.Pool, active, int(w.cfg.MaxParallel), 0)
+		}
+		if payload, err := heartbeatFn(); err == nil {
+			_ = runtime.EmitHeartbeat(w.natsConn, payload)
+		}
+		go runtime.HeartbeatLoop(ctx, w.natsConn, heartbeatFn)
+	}
+
+	<-ctx.Done()
+	return ctx.Err()
 }
 
-func (w *Worker) handleJob(ctx context.Context, req *agentv1.JobRequest) (*agentv1.JobResult, error) {
-	jobID := req.GetJobId()
-	ctxPtr := req.GetContextPtr()
-	if ctxPtr == "" && req.Env != nil {
-		ctxPtr = req.Env["context_ptr"]
-	}
-	payload, err := w.fetchPayload(ctx, ctxPtr)
-	if err != nil {
-		return w.failJob(jobID, err)
-	}
-
-	if req.GetTopic() != topicEcho {
-		return w.failJob(jobID, fmt.Errorf("unsupported topic: %s", req.GetTopic()))
+func (w *Worker) handleJob(ctx runtime.Context, payload map[string]any) (HelloOutput, error) {
+	if w.sem != nil {
+		w.sem <- struct{}{}
+		atomic.AddInt32(&w.active, 1)
+		defer func() {
+			<-w.sem
+			atomic.AddInt32(&w.active, -1)
+		}()
 	}
 
+	jobID := ctx.Job.GetJobId()
+	topic := ctx.Job.GetTopic()
+	if topic != topicEcho {
+		return HelloOutput{}, fmt.Errorf("unsupported topic: %s", topic)
+	}
+
+	payload = normalizePayload(payload)
 	var input HelloInput
 	if err := decodePayload(payload, &input); err != nil {
-		return w.failJob(jobID, err)
+		return HelloOutput{}, err
 	}
 	if strings.TrimSpace(input.Message) == "" {
-		return w.failJob(jobID, fmt.Errorf("message required"))
+		return HelloOutput{}, fmt.Errorf("message required")
 	}
 
-	result := HelloOutput{
+	return HelloOutput{
 		Echo:       fmt.Sprintf("%s", strings.TrimSpace(input.Message)),
 		JobID:      jobID,
 		ReceivedAt: time.Now().UTC().Format(time.RFC3339),
 		Input:      payload,
-	}
-
-	return w.finishJob(jobID, result, nil)
-}
-
-func (w *Worker) fetchPayload(ctx context.Context, ptr string) (map[string]any, error) {
-	if strings.TrimSpace(ptr) == "" {
-		return nil, fmt.Errorf("context_ptr missing")
-	}
-	mem, err := w.gateway.GetMemory(ctx, ptr)
-	if err != nil {
-		return nil, err
-	}
-	payload, ok := mem.JSON.(map[string]any)
-	if !ok {
-		return nil, fmt.Errorf("unexpected context format")
-	}
-	if ctxPayload, ok := payload["context"].(map[string]any); ok {
-		payload = ctxPayload
-	}
-	return payload, nil
+	}, nil
 }
 
 func decodePayload(payload map[string]any, out any) error {
@@ -148,33 +158,12 @@ func decodePayload(payload map[string]any, out any) error {
 	return json.Unmarshal(data, out)
 }
 
-func (w *Worker) finishJob(jobID string, result any, err error) (*agentv1.JobResult, error) {
-	ptr, storeErr := w.storeResult(context.Background(), jobID, result)
-	if storeErr != nil {
-		return &agentv1.JobResult{JobId: jobID, Status: agentv1.JobStatus_JOB_STATUS_FAILED, ErrorMessage: storeErr.Error()}, storeErr
+func normalizePayload(payload map[string]any) map[string]any {
+	if payload == nil {
+		return map[string]any{}
 	}
-	status := agentv1.JobStatus_JOB_STATUS_SUCCEEDED
-	if err != nil {
-		status = agentv1.JobStatus_JOB_STATUS_FAILED
+	if ctxPayload, ok := payload["context"].(map[string]any); ok {
+		return ctxPayload
 	}
-	return &agentv1.JobResult{JobId: jobID, Status: status, ResultPtr: ptr}, err
-}
-
-func (w *Worker) failJob(jobID string, err error) (*agentv1.JobResult, error) {
-	return &agentv1.JobResult{JobId: jobID, Status: agentv1.JobStatus_JOB_STATUS_FAILED, ErrorMessage: err.Error()}, err
-}
-
-func (w *Worker) storeResult(ctx context.Context, jobID string, payload any) (string, error) {
-	if w.redis == nil {
-		return "", fmt.Errorf("redis client unavailable")
-	}
-	data, err := json.Marshal(payload)
-	if err != nil {
-		return "", err
-	}
-	key := "res:" + jobID
-	if err := w.redis.Set(ctx, key, data, w.cfg.ResultTTL).Err(); err != nil {
-		return "", err
-	}
-	return "redis://" + key, nil
+	return payload
 }

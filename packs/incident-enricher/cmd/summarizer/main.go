@@ -4,26 +4,27 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"log"
 	"os"
 	"os/signal"
 	"strings"
+	"sync/atomic"
 	"syscall"
 	"time"
 	"unicode/utf8"
 
-	agentv1 "github.com/cordum-io/cap/v2/cordum/agent/v1"
-	"github.com/cordum-io/cap/v2/sdk/go/worker"
+	"github.com/cordum/cordum/sdk/runtime"
+	"github.com/nats-io/nats.go"
+
 	"github.com/cordum-io/cordum-packs/packs/incident-enricher/internal/artifacts"
 	"github.com/cordum-io/cordum-packs/packs/incident-enricher/internal/config"
 	"github.com/cordum-io/cordum-packs/packs/incident-enricher/internal/gatewayclient"
 	"github.com/cordum-io/cordum-packs/packs/incident-enricher/internal/llm"
 	"github.com/cordum-io/cordum-packs/packs/incident-enricher/internal/policyconstraints"
-	"github.com/cordum-io/cordum-packs/packs/incident-enricher/internal/store"
 	"github.com/cordum-io/cordum-packs/packs/incident-enricher/internal/types"
-	"github.com/nats-io/nats.go"
 )
+
+const summarizerTimeout = 2 * time.Minute
 
 type summarizerInput struct {
 	Evidence types.EvidenceBundle `json:"evidence"`
@@ -32,34 +33,62 @@ type summarizerInput struct {
 func main() {
 	cfg := config.Load("summarizer")
 
-	nc, err := nats.Connect(cfg.NATSURL)
+	workerID := runtime.ResolveWorkerID(cfg.WorkerID, cfg.Service)
+	nc, err := nats.Connect(cfg.NATSURL, nats.Name(workerID), nats.Timeout(5*time.Second))
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer nc.Close()
 
-	mem, err := store.New(cfg.RedisURL, cfg.DataTTL)
+	store, err := runtime.NewRedisBlobStoreWithTTL(cfg.RedisURL, cfg.DataTTL)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	gw := gatewayclient.New(cfg.GatewayURL, cfg.APIKey, cfg.TenantID)
 
-	handler := func(ctx context.Context, req *agentv1.JobRequest) (*agentv1.JobResult, error) {
-		start := time.Now()
-		ctxPtr := req.GetContextPtr()
-		if ctxPtr == "" && req.Env != nil {
-			ctxPtr = req.Env["context_ptr"]
+	agent := &runtime.Agent{
+		NATS:     nc,
+		Store:    store,
+		RedisURL: cfg.RedisURL,
+		SenderID: workerID,
+	}
+
+	var (
+		sem    chan struct{}
+		active int32
+	)
+	if cfg.MaxParallelJobs > 0 {
+		sem = make(chan struct{}, cfg.MaxParallelJobs)
+	}
+
+	handler := func(rctx runtime.Context, payload map[string]any) (types.Summary, error) {
+		if sem != nil {
+			sem <- struct{}{}
+			atomic.AddInt32(&active, 1)
+			defer func() {
+				<-sem
+				atomic.AddInt32(&active, -1)
+			}()
+		} else {
+			atomic.AddInt32(&active, 1)
+			defer atomic.AddInt32(&active, -1)
 		}
+
+		payload = normalizePayload(payload)
 		var input summarizerInput
-		if err := mem.GetContextJSON(ctx, ctxPtr, &input); err != nil {
-			return nil, err
+		if err := decodePayload(payload, &input); err != nil {
+			return types.Summary{}, err
 		}
 		if input.Evidence.IncidentID == "" {
-			return nil, errors.New("missing evidence in input")
+			return types.Summary{}, errors.New("missing evidence in input")
 		}
-		redaction := policyconstraints.RedactionLevel(req.Env)
-		evidenceText := collectEvidenceText(ctx, gw, input.Evidence, cfg.LLMMaxEvidenceItems, cfg.LLMMaxEvidenceBytes)
+
+		callCtx, cancel := context.WithTimeout(context.Background(), summarizerTimeout)
+		defer cancel()
+
+		redaction := policyconstraints.RedactionLevel(rctx.Job.GetEnv())
+		evidenceText := collectEvidenceText(callCtx, gw, input.Evidence, cfg.LLMMaxEvidenceItems, cfg.LLMMaxEvidenceBytes)
 		settings := llm.Settings{
 			Provider:       cfg.LLMProvider,
 			OpenAIAPIKey:   cfg.OpenAIAPIKey,
@@ -75,53 +104,56 @@ func main() {
 			Bundle:   input.Evidence,
 			Evidence: evidenceText,
 		}
-		summary, err := llm.Summarize(ctx, settings, llmInput, redaction)
+		summary, err := llm.Summarize(callCtx, settings, llmInput, redaction)
 		if err != nil {
-			return nil, err
+			return types.Summary{}, err
 		}
-		maxBytes := policyconstraints.MaxArtifactBytes(req.Env)
-		ptr, _, err := artifacts.UploadText(ctx, gw, summary.SummaryMarkdown, "text/markdown", "audit", map[string]string{
+		maxBytes := policyconstraints.MaxArtifactBytes(rctx.Job.GetEnv())
+		ptr, _, err := artifacts.UploadText(callCtx, gw, summary.SummaryMarkdown, "text/markdown", "audit", map[string]string{
 			"kind":        "summary",
 			"incident_id": summary.IncidentID,
 		}, maxBytes)
 		if err != nil {
-			return nil, err
+			return types.Summary{}, err
 		}
 		summary.ArtifactPtr = ptr
-
-		resultPtr, err := mem.PutResultJSON(ctx, req.GetJobId(), summary)
-		if err != nil {
-			return nil, err
-		}
-		return &agentv1.JobResult{
-			JobId:        req.GetJobId(),
-			Status:       agentv1.JobStatus_JOB_STATUS_SUCCEEDED,
-			ResultPtr:    resultPtr,
-			WorkerId:     cfg.WorkerID,
-			ExecutionMs:  time.Since(start).Milliseconds(),
-			ArtifactPtrs: []string{ptr},
-		}, nil
+		return summary, nil
 	}
 
-	subject := fmt.Sprintf("worker.%s.jobs", cfg.WorkerID)
-	w := &worker.Worker{
-		NATS:     nc,
-		Subject:  subject,
-		Handler:  handler,
-		SenderID: cfg.WorkerID,
-	}
-	if err := w.Start(); err != nil {
+	runtime.Register(agent, "job.incident-enricher.summarize", handler)
+	runtime.Register(agent, runtime.DirectSubject(workerID), handler)
+
+	if err := agent.Start(); err != nil {
 		log.Fatal(err)
 	}
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
-	go worker.HeartbeatLoop(ctx, nc, func() ([]byte, error) {
-		return worker.HeartbeatPayload(cfg.WorkerID, cfg.WorkerPool, 0, cfg.MaxParallelJobs, 0)
+	go runtime.HeartbeatLoop(ctx, nc, func() ([]byte, error) {
+		activeJobs := int(atomic.LoadInt32(&active))
+		return runtime.HeartbeatPayload(workerID, cfg.WorkerPool, activeJobs, cfg.MaxParallelJobs, 0)
 	})
 
-	log.Printf("summarizer listening on %s for job.incident-enricher.summarize (worker_id=%s pool=%s)", subject, cfg.WorkerID, cfg.WorkerPool)
+	log.Printf("summarizer listening for job.incident-enricher.summarize (worker_id=%s pool=%s)", workerID, cfg.WorkerPool)
 	<-ctx.Done()
+}
+
+func normalizePayload(payload map[string]any) map[string]any {
+	if payload == nil {
+		return map[string]any{}
+	}
+	if ctxPayload, ok := payload["context"].(map[string]any); ok {
+		return ctxPayload
+	}
+	return payload
+}
+
+func decodePayload(payload map[string]any, out any) error {
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(data, out)
 }
 
 func collectEvidenceText(ctx context.Context, gw *gatewayclient.Client, bundle types.EvidenceBundle, maxItems, maxBytes int) []llm.EvidenceText {

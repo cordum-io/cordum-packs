@@ -2,86 +2,119 @@ package main
 
 import (
 	"context"
-	"fmt"
+	"encoding/json"
 	"log"
 	"os"
 	"os/signal"
+	"sync/atomic"
 	"syscall"
 	"time"
 
-	agentv1 "github.com/cordum-io/cap/v2/cordum/agent/v1"
-	"github.com/cordum-io/cap/v2/sdk/go/worker"
+	"github.com/cordum/cordum/sdk/runtime"
+	"github.com/nats-io/nats.go"
+
 	"github.com/cordum-io/cordum-packs/packs/incident-enricher/internal/config"
 	"github.com/cordum-io/cordum-packs/packs/incident-enricher/internal/gatewayclient"
 	"github.com/cordum-io/cordum-packs/packs/incident-enricher/internal/incidents"
 	"github.com/cordum-io/cordum-packs/packs/incident-enricher/internal/policyconstraints"
-	"github.com/cordum-io/cordum-packs/packs/incident-enricher/internal/store"
 	"github.com/cordum-io/cordum-packs/packs/incident-enricher/internal/types"
-	"github.com/nats-io/nats.go"
 )
+
+const fetcherTimeout = 45 * time.Second
 
 func main() {
 	cfg := config.Load("fetcher")
 
-	nc, err := nats.Connect(cfg.NATSURL)
+	workerID := runtime.ResolveWorkerID(cfg.WorkerID, cfg.Service)
+	nc, err := nats.Connect(cfg.NATSURL, nats.Name(workerID), nats.Timeout(5*time.Second))
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer nc.Close()
 
-	mem, err := store.New(cfg.RedisURL, cfg.DataTTL)
+	store, err := runtime.NewRedisBlobStoreWithTTL(cfg.RedisURL, cfg.DataTTL)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	gw := gatewayclient.New(cfg.GatewayURL, cfg.APIKey, cfg.TenantID)
 
-	handler := func(ctx context.Context, req *agentv1.JobRequest) (*agentv1.JobResult, error) {
-		start := time.Now()
-		ctxPtr := req.GetContextPtr()
-		if ctxPtr == "" && req.Env != nil {
-			ctxPtr = req.Env["context_ptr"]
-		}
-		var input types.IncidentInput
-		if err := mem.GetContextJSON(ctx, ctxPtr, &input); err != nil {
-			return nil, err
-		}
-		maxBytes := policyconstraints.MaxArtifactBytes(req.Env)
-		bundle, artifacts, err := incidents.MockEvidence(ctx, gw, input, maxBytes)
-		if err != nil {
-			return nil, err
-		}
-		resultPtr, err := mem.PutResultJSON(ctx, req.GetJobId(), bundle)
-		if err != nil {
-			return nil, err
-		}
-		return &agentv1.JobResult{
-			JobId:        req.GetJobId(),
-			Status:       agentv1.JobStatus_JOB_STATUS_SUCCEEDED,
-			ResultPtr:    resultPtr,
-			WorkerId:     cfg.WorkerID,
-			ExecutionMs:  time.Since(start).Milliseconds(),
-			ArtifactPtrs: artifacts,
-		}, nil
+	agent := &runtime.Agent{
+		NATS:     nc,
+		Store:    store,
+		RedisURL: cfg.RedisURL,
+		SenderID: workerID,
 	}
 
-	subject := fmt.Sprintf("worker.%s.jobs", cfg.WorkerID)
-	w := &worker.Worker{
-		NATS:     nc,
-		Subject:  subject,
-		Handler:  handler,
-		SenderID: cfg.WorkerID,
+	var (
+		sem    chan struct{}
+		active int32
+	)
+	if cfg.MaxParallelJobs > 0 {
+		sem = make(chan struct{}, cfg.MaxParallelJobs)
 	}
-	if err := w.Start(); err != nil {
+
+	handler := func(rctx runtime.Context, payload map[string]any) (types.EvidenceBundle, error) {
+		if sem != nil {
+			sem <- struct{}{}
+			atomic.AddInt32(&active, 1)
+			defer func() {
+				<-sem
+				atomic.AddInt32(&active, -1)
+			}()
+		} else {
+			atomic.AddInt32(&active, 1)
+			defer atomic.AddInt32(&active, -1)
+		}
+
+		payload = normalizePayload(payload)
+		var input types.IncidentInput
+		if err := decodePayload(payload, &input); err != nil {
+			return types.EvidenceBundle{}, err
+		}
+
+		maxBytes := policyconstraints.MaxArtifactBytes(rctx.Job.GetEnv())
+		callCtx, cancel := context.WithTimeout(context.Background(), fetcherTimeout)
+		defer cancel()
+		bundle, _, err := incidents.MockEvidence(callCtx, gw, input, maxBytes)
+		if err != nil {
+			return types.EvidenceBundle{}, err
+		}
+		return bundle, nil
+	}
+
+	runtime.Register(agent, "job.incident-enricher.fetch", handler)
+	runtime.Register(agent, runtime.DirectSubject(workerID), handler)
+
+	if err := agent.Start(); err != nil {
 		log.Fatal(err)
 	}
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
-	go worker.HeartbeatLoop(ctx, nc, func() ([]byte, error) {
-		return worker.HeartbeatPayload(cfg.WorkerID, cfg.WorkerPool, 0, cfg.MaxParallelJobs, 0)
+	go runtime.HeartbeatLoop(ctx, nc, func() ([]byte, error) {
+		activeJobs := int(atomic.LoadInt32(&active))
+		return runtime.HeartbeatPayload(workerID, cfg.WorkerPool, activeJobs, cfg.MaxParallelJobs, 0)
 	})
 
-	log.Printf("fetcher listening on %s for job.incident-enricher.fetch (worker_id=%s pool=%s)", subject, cfg.WorkerID, cfg.WorkerPool)
+	log.Printf("fetcher listening for job.incident-enricher.fetch (worker_id=%s pool=%s)", workerID, cfg.WorkerPool)
 	<-ctx.Done()
+}
+
+func normalizePayload(payload map[string]any) map[string]any {
+	if payload == nil {
+		return map[string]any{}
+	}
+	if ctxPayload, ok := payload["context"].(map[string]any); ok {
+		return ctxPayload
+	}
+	return payload
+}
+
+func decodePayload(payload map[string]any, out any) error {
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(data, out)
 }

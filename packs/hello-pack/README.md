@@ -43,6 +43,8 @@ curl -sS -X POST http://localhost:8081/api/v1/workflows/hello-pack.echo/runs \
   -d '{"message":"hello from pack","author":"demo"}'
 ```
 
+`author` is optional; omit it if you want the default to be used by the worker.
+
 ## Uninstall
 
 ```bash

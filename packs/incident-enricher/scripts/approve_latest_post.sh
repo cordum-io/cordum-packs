@@ -3,10 +3,14 @@ set -euo pipefail
 
 GATEWAY_URL=${CORDUM_GATEWAY_URL:-${CORDUM_GATEWAY:-http://localhost:8081}}
 API_KEY=${CORDUM_API_KEY:-}
+TENANT_ID=${CORDUM_TENANT_ID:-default}
 
 headers=()
 if [ -n "$API_KEY" ]; then
   headers+=("-H" "X-API-Key: $API_KEY")
+fi
+if [ -n "$TENANT_ID" ]; then
+  headers+=("-H" "X-Tenant-ID: $TENANT_ID")
 fi
 
 response=$(curl -fsS "${headers[@]}" "$GATEWAY_URL/api/v1/approvals?limit=100")
@@ -16,7 +20,7 @@ if ! command -v "$pybin" >/dev/null 2>&1; then
   pybin="python"
 fi
 
-job_id=$(echo "$response" | "$pybin" - <<'PY'
+job_id=$(echo "$response" | "$pybin" -c '
 import json
 import sys
 
@@ -31,7 +35,7 @@ if not filtered:
     sys.exit(2)
 filtered.sort(key=lambda j: j.get("updated_at", 0), reverse=True)
 print(filtered[0].get("id", ""))
-PY
+'
 ) || {
   echo "no pending approvals for job.incident-enricher.post" >&2
   exit 1
