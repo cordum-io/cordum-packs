@@ -91,12 +91,12 @@ func New(cfg config.Config) (*Worker, error) {
 		return nil, fmt.Errorf("redis url required")
 	}
 
-	workerID := runtime.ResolveWorkerID("", "msteams")
+	workerID := resolveWorkerID("", "msteams")
 	nc, err := nats.Connect(cfg.NatsURL, nats.Name(workerID), nats.Timeout(5*time.Second))
 	if err != nil {
 		return nil, err
 	}
-	store, err := runtime.NewRedisBlobStoreWithTTL(cfg.RedisURL, cfg.ResultTTL)
+	store, err := newRedisBlobStoreWithTTL(cfg.RedisURL, cfg.ResultTTL)
 	if err != nil {
 		return nil, err
 	}

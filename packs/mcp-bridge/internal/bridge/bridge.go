@@ -106,12 +106,12 @@ func New(cfg Config) (*Bridge, error) {
 		cfg.MaxParallel = 1
 	}
 
-	workerID := runtime.ResolveWorkerID("", "mcp-bridge")
+	workerID := resolveWorkerID("", "mcp-bridge")
 	nc, err := nats.Connect(cfg.NatsURL, nats.Name(workerID), nats.Timeout(5*time.Second))
 	if err != nil {
 		return nil, err
 	}
-	store, err := runtime.NewRedisBlobStoreWithTTL(cfg.RedisURL, 0)
+	store, err := newRedisBlobStoreWithTTL(cfg.RedisURL, 0)
 	if err != nil {
 		return nil, err
 	}

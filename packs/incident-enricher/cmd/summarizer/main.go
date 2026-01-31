@@ -33,14 +33,14 @@ type summarizerInput struct {
 func main() {
 	cfg := config.Load("summarizer")
 
-	workerID := runtime.ResolveWorkerID(cfg.WorkerID, cfg.Service)
+	workerID := resolveWorkerID(cfg.WorkerID, cfg.Service)
 	nc, err := nats.Connect(cfg.NATSURL, nats.Name(workerID), nats.Timeout(5*time.Second))
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer nc.Close()
 
-	store, err := runtime.NewRedisBlobStoreWithTTL(cfg.RedisURL, cfg.DataTTL)
+	store, err := newRedisBlobStoreWithTTL(cfg.RedisURL, cfg.DataTTL)
 	if err != nil {
 		log.Fatal(err)
 	}
