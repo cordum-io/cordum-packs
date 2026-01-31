@@ -54,6 +54,7 @@ go run ./cmd/cordum-mcp-client
 - `CORDUM_MCP_CLIENT_NAME` (default `cordum-mcp-client`)
 - `CORDUM_MCP_CLIENT_VERSION` (default `0.1.0`)
 - `CORDUM_MCP_CLIENT_CALL_TIMEOUT` (default `60s`)
+- `CORDUM_MCP_CLIENT_RESULT_TTL` (optional; example `24h`)
 - `CORDUM_MCP_CLIENT_PROTOCOL_VERSION` (default `2025-11-25`)
 - `CORDUM_MCP_CLIENT_SERVERS` (JSON array of named MCP servers)
 - `CORDUM_MCP_CLIENT_ALLOW_INLINE_SERVER` (default `false`)
