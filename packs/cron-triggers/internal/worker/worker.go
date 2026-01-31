@@ -84,12 +84,12 @@ func New(cfg config.Config) (*Worker, error) {
 	}
 	redisClient := redis.NewClient(opts)
 
-	workerID := runtime.ResolveWorkerID("", "cron-triggers")
+	workerID := resolveWorkerID("", "cron-triggers")
 	nc, err := nats.Connect(cfg.NatsURL, nats.Name(workerID), nats.Timeout(5*time.Second))
 	if err != nil {
 		return nil, err
 	}
-	resultStore, err := runtime.NewRedisBlobStoreWithTTL(cfg.RedisURL, cfg.ResultTTL)
+	resultStore, err := newRedisBlobStoreWithTTL(cfg.RedisURL, cfg.ResultTTL)
 	if err != nil {
 		return nil, err
 	}

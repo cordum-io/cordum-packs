@@ -37,7 +37,7 @@ type posterInput struct {
 func main() {
 	cfg := config.Load("poster")
 
-	workerID := runtime.ResolveWorkerID(cfg.WorkerID, cfg.Service)
+	workerID := resolveWorkerID(cfg.WorkerID, cfg.Service)
 	nc, err := nats.Connect(cfg.NATSURL, nats.Name(workerID), nats.Timeout(5*time.Second))
 	if err != nil {
 		log.Fatal(err)
@@ -49,7 +49,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	blobStore, err := runtime.NewRedisBlobStoreWithTTL(cfg.RedisURL, cfg.DataTTL)
+	blobStore, err := newRedisBlobStoreWithTTL(cfg.RedisURL, cfg.DataTTL)
 	if err != nil {
 		log.Fatal(err)
 	}
