@@ -24,7 +24,7 @@ const (
 type AppAuth struct {
 	AppID             string `json:"app_id"`
 	AppIDEnv          string `json:"app_id_env"`
-	PrivateKey        string `json:"app_private_key"`
+	PrivateKey        string `json:"app_private_key"` // #nosec G117 -- runtime-supplied credential field; no hardcoded secret value
 	PrivateKeyEnv     string `json:"app_private_key_env"`
 	InstallationID    string `json:"app_installation_id"`
 	InstallationIDEnv string `json:"app_installation_id_env"`
@@ -50,7 +50,7 @@ type Profile struct {
 
 type Config struct {
 	GatewayURL         string
-	APIKey             string
+	APIKey             string // #nosec G117 -- runtime-supplied credential field; no hardcoded secret value
 	TenantID           string
 	NatsURL            string
 	RedisURL           string

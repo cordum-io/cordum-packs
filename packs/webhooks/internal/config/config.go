@@ -22,7 +22,7 @@ type Route struct {
 	WorkflowID        string   `json:"workflow_id"`
 	OrgID             string   `json:"org_id"`
 	TeamID            string   `json:"team_id"`
-	Secret            string   `json:"secret"`
+	Secret            string   `json:"secret"` // #nosec G117 -- runtime-supplied credential field; no hardcoded secret value
 	SecretEnv         string   `json:"secret_env"`
 	SignatureHeader   string   `json:"signature_header"`
 	SignatureType     string   `json:"signature_type"`
@@ -38,7 +38,7 @@ type Route struct {
 
 type Config struct {
 	GatewayURL        string
-	APIKey            string
+	APIKey            string // #nosec G117 -- runtime-supplied credential field; no hardcoded secret value
 	TenantID          string
 	BindAddress       string
 	MaxBody           int64

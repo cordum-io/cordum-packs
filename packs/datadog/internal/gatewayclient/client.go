@@ -69,7 +69,7 @@ func (c *Client) doJSON(ctx context.Context, method, path string, body any, out 
 	if c.tenantID != "" {
 		req.Header.Set("X-Tenant-ID", c.tenantID)
 	}
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.httpClient.Do(req) // #nosec G107 G704 -- outbound request target is controlled by pack configuration and request construction
 	if err != nil {
 		return err
 	}

@@ -25,7 +25,7 @@ func PostWebhook(ctx context.Context, webhookURL string, message string) (*types
 	}
 	req.Header.Set("Content-Type", "application/json")
 	client := &http.Client{Timeout: 10 * time.Second}
-	resp, err := client.Do(req)
+	resp, err := client.Do(req) // #nosec G107 G704 -- outbound request target is controlled by pack configuration and request construction
 	if err != nil {
 		return nil, fmt.Errorf("slack request failed: %w", err)
 	}

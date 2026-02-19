@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"strings"
@@ -239,6 +240,10 @@ func newHTTPClient(server Server) (*httpClient, error) {
 	if strings.TrimSpace(server.URL) == "" {
 		return nil, fmt.Errorf("http url required")
 	}
+	baseURL, err := validateHTTPURL(server.URL)
+	if err != nil {
+		return nil, err
+	}
 	headers := map[string]string{}
 	for key, value := range server.Headers {
 		if strings.TrimSpace(key) == "" {
@@ -247,7 +252,7 @@ func newHTTPClient(server Server) (*httpClient, error) {
 		headers[key] = value
 	}
 	return &httpClient{
-		baseURL: strings.TrimRight(server.URL, "/"),
+		baseURL: strings.TrimRight(baseURL, "/"),
 		headers: headers,
 		client:  &http.Client{Timeout: 30 * time.Second},
 	}, nil
@@ -270,7 +275,7 @@ func (c *httpClient) Request(ctx context.Context, method string, params any) (*R
 		req.Header.Set(key, value)
 	}
 	req.Header.Set("Content-Type", "application/json")
-	resp, err := c.client.Do(req)
+	resp, err := c.client.Do(req) // #nosec G107 G704 -- c.baseURL is validated by validateHTTPURL in newHTTPClient
 	if err != nil {
 		return nil, err
 	}
@@ -304,7 +309,7 @@ func (c *httpClient) Notify(ctx context.Context, method string, params any) erro
 		req.Header.Set(key, value)
 	}
 	req.Header.Set("Content-Type", "application/json")
-	resp, err := c.client.Do(req)
+	resp, err := c.client.Do(req) // #nosec G107 G704 -- c.baseURL is validated by validateHTTPURL in newHTTPClient
 	if err != nil {
 		return err
 	}
@@ -319,4 +324,25 @@ func (c *httpClient) Close() error {
 func EncodeBasicAuth(username, password string) string {
 	payload := username + ":" + password
 	return "Basic " + base64.StdEncoding.EncodeToString([]byte(payload))
+}
+
+func validateHTTPURL(raw string) (string, error) {
+	target, err := url.Parse(strings.TrimSpace(raw))
+	if err != nil {
+		return "", fmt.Errorf("invalid http url: %w", err)
+	}
+	if target == nil || target.Host == "" {
+		return "", fmt.Errorf("http url must include host")
+	}
+	scheme := strings.ToLower(strings.TrimSpace(target.Scheme))
+	if scheme != "http" && scheme != "https" {
+		return "", fmt.Errorf("http url scheme must be http or https")
+	}
+	if target.User != nil {
+		return "", fmt.Errorf("http url must not include credentials")
+	}
+	target.Scheme = scheme
+	target.Fragment = ""
+	target.RawFragment = ""
+	return target.String(), nil
 }

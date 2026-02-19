@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"path"
 	"strings"
 	"time"
 )
@@ -78,9 +79,9 @@ func NewClient(baseURL, token string, opts Options) *Client {
 }
 
 func (c *Client) Do(ctx context.Context, method, path string, query url.Values, body any) (*Response, error) {
-	endpoint := c.baseURL + path
-	if len(query) > 0 {
-		endpoint += "?" + query.Encode()
+	endpoint, err := resolveEndpoint(c.baseURL, path, query)
+	if err != nil {
+		return nil, err
 	}
 
 	var payload io.Reader
@@ -115,7 +116,7 @@ func (c *Client) Do(ctx context.Context, method, path string, query url.Values, 
 		}
 	}
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.httpClient.Do(req) // #nosec G107 G704 -- endpoint is constrained to validated base URL and relative request path in resolveEndpoint
 	if err != nil {
 		return nil, err
 	}
@@ -213,4 +214,87 @@ func requestIDFromHeaders(header http.Header) string {
 		return val
 	}
 	return ""
+}
+
+func resolveEndpoint(baseURL, endpointPath string, query url.Values) (string, error) {
+	base, err := validateBaseURL(baseURL)
+	if err != nil {
+		return "", err
+	}
+
+	ref, err := parseRelativePath(endpointPath)
+	if err != nil {
+		return "", err
+	}
+
+	endpoint := *base
+	endpoint.Path = joinURLPath(base.Path, ref.Path)
+	endpoint.RawPath = ""
+
+	values := ref.Query()
+	for key, vals := range query {
+		values.Del(key)
+		for _, val := range vals {
+			values.Add(key, val)
+		}
+	}
+	endpoint.RawQuery = values.Encode()
+
+	if endpoint.Scheme != base.Scheme || endpoint.Host != base.Host {
+		return "", fmt.Errorf("endpoint host override is not allowed")
+	}
+
+	return endpoint.String(), nil
+}
+
+func validateBaseURL(raw string) (*url.URL, error) {
+	base, err := url.Parse(strings.TrimSpace(raw))
+	if err != nil {
+		return nil, fmt.Errorf("invalid base url: %w", err)
+	}
+	if base == nil || base.Host == "" {
+		return nil, fmt.Errorf("base url must include host")
+	}
+	scheme := strings.ToLower(strings.TrimSpace(base.Scheme))
+	if scheme != "http" && scheme != "https" {
+		return nil, fmt.Errorf("base url scheme must be http or https")
+	}
+	if base.User != nil {
+		return nil, fmt.Errorf("base url must not include credentials")
+	}
+	base.Scheme = scheme
+	base.Fragment = ""
+	base.RawFragment = ""
+	base.RawQuery = ""
+	return base, nil
+}
+
+func parseRelativePath(raw string) (*url.URL, error) {
+	trimmed := strings.TrimSpace(raw)
+	if trimmed == "" {
+		return nil, fmt.Errorf("endpoint path is required")
+	}
+	if strings.HasPrefix(trimmed, "//") {
+		return nil, fmt.Errorf("endpoint path must not override host")
+	}
+	ref, err := url.Parse(trimmed)
+	if err != nil {
+		return nil, fmt.Errorf("invalid endpoint path: %w", err)
+	}
+	if ref.IsAbs() || ref.Host != "" {
+		return nil, fmt.Errorf("endpoint path must be relative")
+	}
+	return ref, nil
+}
+
+func joinURLPath(basePath, relPath string) string {
+	basePath = strings.TrimSuffix(basePath, "/")
+	cleanRel := path.Clean("/" + strings.TrimPrefix(relPath, "/"))
+	if cleanRel == "." {
+		cleanRel = "/"
+	}
+	if basePath == "" || basePath == "/" {
+		return cleanRel
+	}
+	return basePath + cleanRel
 }

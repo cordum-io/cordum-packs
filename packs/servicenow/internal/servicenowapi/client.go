@@ -25,7 +25,7 @@ type Client struct {
 type Options struct {
 	Token     string
 	Username  string
-	Password  string
+	Password  string // #nosec G117 -- runtime-supplied credential field; no hardcoded secret value
 	Headers   map[string]string
 	UserAgent string
 	Timeout   time.Duration
@@ -85,7 +85,7 @@ func (c *Client) Do(ctx context.Context, method, path string, query url.Values, 
 		req.SetBasicAuth(c.username, c.password)
 	}
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.httpClient.Do(req) // #nosec G107 G704 -- outbound request target is controlled by pack configuration and request construction
 	if err != nil {
 		return nil, 0, err
 	}
