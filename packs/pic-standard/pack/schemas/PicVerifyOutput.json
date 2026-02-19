@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "PIC Verify Output",
+  "description": "Result of PIC Standard verification with workflow routing decision.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "allowed": {
+      "type": "boolean",
+      "description": "Whether PIC verification succeeded for this proposed action."
+    },
+    "eval_ms": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Time in milliseconds the PIC bridge took to evaluate the proposal."
+    },
+    "next": {
+      "type": "string",
+      "enum": ["proceed", "fail", "require_approval"],
+      "description": "Workflow routing decision. 'fail' means the workflow must abort; 'require_approval' means route to a human approval step; 'proceed' means continue."
+    },
+    "impact": {
+      "type": ["string", "null"],
+      "minLength": 1,
+      "description": "PIC impact classification (e.g. \"money\", \"privacy\", \"irreversible\"), or null if not classified."
+    },
+    "reason": {
+      "type": ["string", "null"],
+      "minLength": 1,
+      "description": "Human-readable reason for the decision, or null if no details available."
+    }
+  },
+  "required": ["allowed", "eval_ms", "next", "impact", "reason"]
+}

@@ -1,0 +1,21 @@
+id: pic-standard.pic_verify
+name: PIC Standard Verification
+description: Verify tool calls against PIC provenance & intent contracts.
+version: "0.1.0"
+timeout_sec: 10
+steps:
+  verify:
+    id: verify
+    name: PIC verification gate
+    type: worker
+    topic: job.pic-standard.verify
+    input_schema_id: pic-standard/PicVerifyInput
+    output_schema_id: pic-standard/PicVerifyOutput
+    input:
+      tool_name: "${input.tool_name}"
+      tool_args: "${input.tool_args}"
+    meta:
+      pack_id: pic-standard
+      capability: pic-standard.verify
+      risk_tags: ["read", "network"]
+      requires: ["network:egress"]

@@ -1,0 +1,64 @@
+apiVersion: cordum.io/v1alpha1
+kind: Pack
+
+metadata:
+  id: pic-standard
+  version: 0.1.0
+  title: PIC Standard Verifier
+  description: Provenance & Intent Contract verification gate for governed workflows.
+
+compatibility:
+  protocolVersion: 1
+  minCoreVersion: 0.1.0
+
+topics:
+  - name: job.pic-standard.verify
+    capability: pic-standard.verify
+    requires: ["network:egress"]
+    riskTags: ["read", "network"]
+
+resources:
+  schemas:
+    - id: pic-standard/PicVerifyInput
+      path: schemas/PicVerifyInput.json
+    - id: pic-standard/PicVerifyOutput
+      path: schemas/PicVerifyOutput.json
+  workflows:
+    - id: pic-standard.pic_verify
+      path: workflows/pic_verify.yaml
+
+overlays:
+  config:
+    - name: pools
+      scope: system
+      key: pools
+      strategy: json_merge_patch
+      path: overlays/pools.patch.yaml
+    - name: timeouts
+      scope: system
+      key: timeouts
+      strategy: json_merge_patch
+      path: overlays/timeouts.patch.yaml
+  policy:
+    - name: pic-standard-safety
+      strategy: bundle_fragment
+      path: overlays/policy.fragment.yaml
+
+tests:
+  policySimulations:
+    - name: allow_verify
+      request:
+        tenantId: default
+        topic: job.pic-standard.verify
+        capability: pic-standard.verify
+        riskTags: ["read", "network"]
+        requires: ["network:egress"]
+      expectDecision: ALLOW
+    - name: deny_secrets
+      request:
+        tenantId: default
+        topic: job.pic-standard.verify
+        capability: pic-standard.verify
+        riskTags: ["secrets"]
+        requires: ["network:egress"]
+      expectDecision: DENY

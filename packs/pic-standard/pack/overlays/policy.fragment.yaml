@@ -1,0 +1,19 @@
+version: v1
+rules:
+  - id: pic-standard-allow
+    match:
+      topics:
+        - job.pic-standard.verify
+      pack_ids:
+        - pic-standard
+    decision: allow
+    reason: allow PIC verification jobs
+
+  - id: pic-standard-deny-secrets
+    match:
+      topics:
+        - job.pic-standard.verify
+      risk_tags:
+        - secrets
+    decision: deny
+    reason: PIC verification must not handle secret material

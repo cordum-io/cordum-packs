@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "PIC Verify Input",
+  "description": "Input for PIC Standard verification: tool name and arguments to verify against provenance contracts.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "tool_name": {
+      "type": "string",
+      "description": "The tool being invoked (e.g. \"payments_send\", \"file_write\").",
+      "minLength": 1
+    },
+    "tool_args": {
+      "type": ["object", "null"],
+      "description": "Full tool arguments, including any PIC proposal fields if provided by the agent.",
+      "additionalProperties": true
+    }
+  },
+  "required": ["tool_name"]
+}
