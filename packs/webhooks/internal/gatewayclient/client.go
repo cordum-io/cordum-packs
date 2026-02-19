@@ -78,7 +78,7 @@ func (c *Client) StartRun(ctx context.Context, workflowID string, payload any, o
 	}
 	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.httpClient.Do(req) // #nosec G107 G704 -- outbound request target is controlled by pack configuration and request construction
 	if err != nil {
 		return "", err
 	}

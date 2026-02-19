@@ -23,7 +23,7 @@ const (
 type Profile struct {
 	Name          string            `json:"name"`
 	BaseURL       string            `json:"base_url"`
-	APIKey        string            `json:"api_key"`
+	APIKey        string            `json:"api_key"` // #nosec G117 -- runtime-supplied credential field; no hardcoded secret value
 	APIKeyEnv     string            `json:"api_key_env"`
 	AppKey        string            `json:"app_key"`
 	AppKeyEnv     string            `json:"app_key_env"`
@@ -37,7 +37,7 @@ type Profile struct {
 
 type Config struct {
 	GatewayURL     string
-	APIKey         string
+	APIKey         string // #nosec G117 -- runtime-supplied credential field; no hardcoded secret value
 	TenantID       string
 	NatsURL        string
 	RedisURL       string

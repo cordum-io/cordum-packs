@@ -109,7 +109,7 @@ func (p *AppTokenProvider) Token(ctx context.Context) (string, error) {
 	req.Header.Set("Authorization", "Bearer "+jwtToken)
 	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := p.httpClient.Do(req)
+	resp, err := p.httpClient.Do(req) // #nosec G107 G704 -- outbound request target is controlled by pack configuration and request construction
 	if err != nil {
 		return "", err
 	}
@@ -211,7 +211,7 @@ func (c *Client) Do(ctx context.Context, method, path string, query url.Values, 
 	if err != nil {
 		return Response{}, err
 	}
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.httpClient.Do(req) // #nosec G107 G704 -- outbound request target is controlled by pack configuration and request construction
 	if err != nil {
 		return Response{}, err
 	}

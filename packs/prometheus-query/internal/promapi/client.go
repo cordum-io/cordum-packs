@@ -78,7 +78,7 @@ func (c *Client) Do(ctx context.Context, method, path string, params url.Values)
 		req.SetBasicAuth(c.basicUser, c.basicPass)
 	}
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.httpClient.Do(req) // #nosec G107 G704 -- outbound request target is controlled by pack configuration and request construction
 	if err != nil {
 		return nil, 0, err
 	}

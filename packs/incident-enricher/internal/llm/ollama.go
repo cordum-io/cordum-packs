@@ -75,7 +75,7 @@ func SummarizeOllama(ctx context.Context, settings Settings, input Input) (types
 	}
 	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := httpClient.Do(req)
+	resp, err := httpClient.Do(req) // #nosec G107 G704 -- outbound request target is controlled by pack configuration and request construction
 	if err != nil {
 		return types.Summary{}, fmt.Errorf("ollama request: %w", err)
 	}

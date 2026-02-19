@@ -27,7 +27,7 @@ type Profile struct {
 	TokenEnv      string            `json:"token_env"`
 	Username      string            `json:"username"`
 	UsernameEnv   string            `json:"username_env"`
-	Password      string            `json:"password"`
+	Password      string            `json:"password"` // #nosec G117 -- runtime-supplied credential field; no hardcoded secret value
 	PasswordEnv   string            `json:"password_env"`
 	AllowActions  []string          `json:"allow_actions"`
 	DenyActions   []string          `json:"deny_actions"`
@@ -39,7 +39,7 @@ type Profile struct {
 
 type Config struct {
 	GatewayURL     string
-	APIKey         string
+	APIKey         string // #nosec G117 -- runtime-supplied credential field; no hardcoded secret value
 	TenantID       string
 	NatsURL        string
 	RedisURL       string

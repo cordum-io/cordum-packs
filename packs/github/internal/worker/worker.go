@@ -44,7 +44,7 @@ type InlineAuth struct {
 	TokenEnv          string `json:"token_env"`
 	AppID             string `json:"app_id"`
 	AppIDEnv          string `json:"app_id_env"`
-	PrivateKey        string `json:"app_private_key"`
+	PrivateKey        string `json:"app_private_key"` // #nosec G117 -- runtime-supplied credential field; no hardcoded secret value
 	PrivateKeyEnv     string `json:"app_private_key_env"`
 	InstallationID    string `json:"app_installation_id"`
 	InstallationIDEnv string `json:"app_installation_id_env"`
