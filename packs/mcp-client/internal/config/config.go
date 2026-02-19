@@ -23,24 +23,24 @@ const (
 )
 
 type OAuthConfig struct {
-	TokenURL        string   `json:"token_url"`
-	ClientID        string   `json:"client_id"`
-	ClientSecret    string   `json:"client_secret"`
-	ClientSecretEnv string   `json:"client_secret_env"`
-	Scopes          []string `json:"scopes"`
-	Audience        string   `json:"audience"`
+	TokenURL            string   `json:"token_url"`
+	ClientID            string   `json:"client_id"`
+	ClientCredential    string   `json:"client_secret"`
+	ClientCredentialEnv string   `json:"client_secret_env"`
+	Scopes              []string `json:"scopes"`
+	Audience            string   `json:"audience"`
 }
 
 type AuthConfig struct {
-	APIKey           string       `json:"api_key"`
-	APIKeyEnv        string       `json:"api_key_env"`
-	APIKeyHeader     string       `json:"api_key_header"`
-	Bearer           string       `json:"bearer"`
-	BearerEnv        string       `json:"bearer_env"`
-	BasicUsername    string       `json:"basic_username"`
-	BasicPassword    string       `json:"basic_password"`
-	BasicPasswordEnv string       `json:"basic_password_env"`
-	OAuth            *OAuthConfig `json:"oauth"`
+	APICredential       string       `json:"api_key"`
+	APICredentialEnv    string       `json:"api_key_env"`
+	APICredentialHeader string       `json:"api_key_header"`
+	Bearer              string       `json:"bearer"`
+	BearerEnv           string       `json:"bearer_env"`
+	BasicUsername       string       `json:"basic_username"`
+	BasicPassword       string       `json:"basic_password"`
+	BasicPasswordEnv    string       `json:"basic_password_env"`
+	OAuth               *OAuthConfig `json:"oauth"`
 }
 
 type ServerConfig struct {
@@ -60,7 +60,7 @@ type ServerConfig struct {
 
 type Config struct {
 	GatewayURL              string
-	APIKey                  string
+	GatewayCredential       string
 	TenantID                string
 	NatsURL                 string
 	RedisURL                string
@@ -85,7 +85,7 @@ type Config struct {
 func Load() (Config, error) {
 	cfg := Config{
 		GatewayURL:              envOr("CORDUM_GATEWAY_URL", defaultGatewayURL),
-		APIKey:                  envOr("CORDUM_API_KEY", ""),
+		GatewayCredential:       envOr("CORDUM_API_KEY", ""),
 		TenantID:                envOr("CORDUM_TENANT_ID", "default"),
 		NatsURL:                 envOr("CORDUM_NATS_URL", defaultNatsURL),
 		RedisURL:                envOr("CORDUM_REDIS_URL", defaultRedisURL),

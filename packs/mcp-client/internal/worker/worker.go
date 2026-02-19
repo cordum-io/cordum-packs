@@ -276,9 +276,11 @@ func (w *Worker) resolveServer(input JobInput) (config.ServerConfig, error) {
 		if strings.TrimSpace(server.URL) == "" {
 			return config.ServerConfig{}, fmt.Errorf("http url required")
 		}
-		if _, err := url.ParseRequestURI(server.URL); err != nil {
-			return config.ServerConfig{}, fmt.Errorf("invalid url: %w", err)
+		validatedURL, err := validateHTTPURL(server.URL)
+		if err != nil {
+			return config.ServerConfig{}, err
 		}
+		server.URL = validatedURL
 	default:
 		return config.ServerConfig{}, fmt.Errorf("unsupported transport: %s", server.Transport)
 	}
@@ -429,14 +431,14 @@ func mergeStringMap(base, overlay map[string]string) map[string]string {
 
 func mergeAuth(base, overlay config.AuthConfig) config.AuthConfig {
 	out := base
-	if overlay.APIKey != "" {
-		out.APIKey = overlay.APIKey
+	if overlay.APICredential != "" {
+		out.APICredential = overlay.APICredential
 	}
-	if overlay.APIKeyEnv != "" {
-		out.APIKeyEnv = overlay.APIKeyEnv
+	if overlay.APICredentialEnv != "" {
+		out.APICredentialEnv = overlay.APICredentialEnv
 	}
-	if overlay.APIKeyHeader != "" {
-		out.APIKeyHeader = overlay.APIKeyHeader
+	if overlay.APICredentialHeader != "" {
+		out.APICredentialHeader = overlay.APICredentialHeader
 	}
 	if overlay.Bearer != "" {
 		out.Bearer = overlay.Bearer
@@ -473,9 +475,9 @@ func validateInlineAuth(auth config.AuthConfig, allowInline, allowSecrets bool) 
 }
 
 func hasAuthValues(auth config.AuthConfig) bool {
-	if strings.TrimSpace(auth.APIKey) != "" ||
-		strings.TrimSpace(auth.APIKeyEnv) != "" ||
-		strings.TrimSpace(auth.APIKeyHeader) != "" ||
+	if strings.TrimSpace(auth.APICredential) != "" ||
+		strings.TrimSpace(auth.APICredentialEnv) != "" ||
+		strings.TrimSpace(auth.APICredentialHeader) != "" ||
 		strings.TrimSpace(auth.Bearer) != "" ||
 		strings.TrimSpace(auth.BearerEnv) != "" ||
 		strings.TrimSpace(auth.BasicUsername) != "" ||
@@ -488,14 +490,14 @@ func hasAuthValues(auth config.AuthConfig) bool {
 	}
 	return strings.TrimSpace(auth.OAuth.TokenURL) != "" ||
 		strings.TrimSpace(auth.OAuth.ClientID) != "" ||
-		strings.TrimSpace(auth.OAuth.ClientSecret) != "" ||
-		strings.TrimSpace(auth.OAuth.ClientSecretEnv) != "" ||
+		strings.TrimSpace(auth.OAuth.ClientCredential) != "" ||
+		strings.TrimSpace(auth.OAuth.ClientCredentialEnv) != "" ||
 		len(auth.OAuth.Scopes) > 0 ||
 		strings.TrimSpace(auth.OAuth.Audience) != ""
 }
 
 func hasAuthSecrets(auth config.AuthConfig) bool {
-	if strings.TrimSpace(auth.APIKey) != "" ||
+	if strings.TrimSpace(auth.APICredential) != "" ||
 		strings.TrimSpace(auth.Bearer) != "" ||
 		strings.TrimSpace(auth.BasicPassword) != "" {
 		return true
@@ -503,7 +505,7 @@ func hasAuthSecrets(auth config.AuthConfig) bool {
 	if auth.OAuth == nil {
 		return false
 	}
-	return strings.TrimSpace(auth.OAuth.ClientSecret) != ""
+	return strings.TrimSpace(auth.OAuth.ClientCredential) != ""
 }
 
 func mergeOAuth(base, overlay *config.OAuthConfig) {
@@ -516,11 +518,11 @@ func mergeOAuth(base, overlay *config.OAuthConfig) {
 	if overlay.ClientID != "" {
 		base.ClientID = overlay.ClientID
 	}
-	if overlay.ClientSecret != "" {
-		base.ClientSecret = overlay.ClientSecret
+	if overlay.ClientCredential != "" {
+		base.ClientCredential = overlay.ClientCredential
 	}
-	if overlay.ClientSecretEnv != "" {
-		base.ClientSecretEnv = overlay.ClientSecretEnv
+	if overlay.ClientCredentialEnv != "" {
+		base.ClientCredentialEnv = overlay.ClientCredentialEnv
 	}
 	if len(overlay.Scopes) > 0 {
 		base.Scopes = append([]string{}, overlay.Scopes...)
@@ -557,7 +559,7 @@ func isAllowedMethod(method string) bool {
 }
 
 func applyAuth(ctx context.Context, server *mcpclient.Server, auth config.AuthConfig) error {
-	apiKey := resolveSecret(auth.APIKey, auth.APIKeyEnv)
+	apiKey := resolveSecret(auth.APICredential, auth.APICredentialEnv)
 	bearer := resolveSecret(auth.Bearer, auth.BearerEnv)
 	basicPassword := resolveSecret(auth.BasicPassword, auth.BasicPasswordEnv)
 	basicUser := strings.TrimSpace(auth.BasicUsername)
@@ -575,8 +577,8 @@ func applyAuth(ctx context.Context, server *mcpclient.Server, auth config.AuthCo
 	}
 	if apiKey != "" {
 		header := defaultAuthHeader
-		if strings.TrimSpace(auth.APIKeyHeader) != "" {
-			header = strings.TrimSpace(auth.APIKeyHeader)
+		if strings.TrimSpace(auth.APICredentialHeader) != "" {
+			header = strings.TrimSpace(auth.APICredentialHeader)
 		}
 		server.Headers = mergeStringMap(server.Headers, map[string]string{header: apiKey})
 		server.Env = mergeStringMap(server.Env, map[string]string{"MCP_API_KEY": apiKey})
@@ -602,8 +604,29 @@ func resolveSecret(value, envKey string) string {
 	return strings.TrimSpace(value)
 }
 
+func validateHTTPURL(raw string) (string, error) {
+	target, err := url.Parse(strings.TrimSpace(raw))
+	if err != nil {
+		return "", fmt.Errorf("invalid url: %w", err)
+	}
+	if target == nil || target.Host == "" {
+		return "", fmt.Errorf("url must include host")
+	}
+	scheme := strings.ToLower(strings.TrimSpace(target.Scheme))
+	if scheme != "http" && scheme != "https" {
+		return "", fmt.Errorf("url scheme must be http or https")
+	}
+	if target.User != nil {
+		return "", fmt.Errorf("url must not include credentials")
+	}
+	target.Scheme = scheme
+	target.Fragment = ""
+	target.RawFragment = ""
+	return target.String(), nil
+}
+
 type oauthTokenResponse struct {
-	AccessToken string `json:"access_token"`
+	AccessValue string `json:"access_token"`
 	TokenType   string `json:"token_type"`
 }
 
@@ -614,7 +637,11 @@ func fetchOAuthToken(ctx context.Context, cfg *config.OAuthConfig) (string, erro
 	if strings.TrimSpace(cfg.TokenURL) == "" {
 		return "", fmt.Errorf("oauth token_url required")
 	}
-	clientSecret := resolveSecret(cfg.ClientSecret, cfg.ClientSecretEnv)
+	tokenURL, err := validateHTTPURL(cfg.TokenURL)
+	if err != nil {
+		return "", fmt.Errorf("invalid oauth token_url: %w", err)
+	}
+	clientSecret := resolveSecret(cfg.ClientCredential, cfg.ClientCredentialEnv)
 	if strings.TrimSpace(cfg.ClientID) == "" || strings.TrimSpace(clientSecret) == "" {
 		return "", fmt.Errorf("oauth client credentials required")
 	}
@@ -628,12 +655,12 @@ func fetchOAuthToken(ctx context.Context, cfg *config.OAuthConfig) (string, erro
 	if strings.TrimSpace(cfg.Audience) != "" {
 		form.Set("audience", cfg.Audience)
 	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, cfg.TokenURL, strings.NewReader(form.Encode()))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, tokenURL, strings.NewReader(form.Encode()))
 	if err != nil {
 		return "", err
 	}
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := http.DefaultClient.Do(req) // #nosec G107 G704 -- tokenURL is validated by validateHTTPURL before request execution
 	if err != nil {
 		return "", err
 	}
@@ -645,5 +672,5 @@ func fetchOAuthToken(ctx context.Context, cfg *config.OAuthConfig) (string, erro
 	if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
 		return "", err
 	}
-	return strings.TrimSpace(payload.AccessToken), nil
+	return strings.TrimSpace(payload.AccessValue), nil
 }
