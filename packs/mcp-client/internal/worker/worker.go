@@ -626,7 +626,7 @@ func validateHTTPURL(raw string) (string, error) {
 }
 
 type oauthTokenResponse struct {
-	AccessValue string `json:"access_token"`
+	AccessValue string `json:"access_token"` // #nosec G117 -- OAuth response payload field; value is received at runtime
 	TokenType   string `json:"token_type"`
 }
 

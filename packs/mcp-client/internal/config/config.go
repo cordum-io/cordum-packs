@@ -25,14 +25,14 @@ const (
 type OAuthConfig struct {
 	TokenURL            string   `json:"token_url"`
 	ClientID            string   `json:"client_id"`
-	ClientCredential    string   `json:"client_secret"`
+	ClientCredential    string   `json:"client_secret"` // #nosec G117 -- runtime-supplied credential field; no hardcoded secret
 	ClientCredentialEnv string   `json:"client_secret_env"`
 	Scopes              []string `json:"scopes"`
 	Audience            string   `json:"audience"`
 }
 
 type AuthConfig struct {
-	APICredential       string       `json:"api_key"`
+	APICredential       string       `json:"api_key"` // #nosec G117 -- runtime-supplied credential field; no hardcoded secret
 	APICredentialEnv    string       `json:"api_key_env"`
 	APICredentialHeader string       `json:"api_key_header"`
 	Bearer              string       `json:"bearer"`
