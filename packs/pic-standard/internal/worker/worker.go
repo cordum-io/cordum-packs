@@ -134,12 +134,13 @@ func (w *Worker) Run(ctx context.Context) error {
 }
 
 func (w *Worker) handleJob(ctx runtime.Context, payload map[string]any) (policy.Output, error) {
-	atomic.AddInt32(&w.active, 1)
-	defer atomic.AddInt32(&w.active, -1)
-
 	if w.sem != nil {
 		w.sem <- struct{}{}
-		defer func() { <-w.sem }()
+		atomic.AddInt32(&w.active, 1)
+		defer func() {
+			<-w.sem
+			atomic.AddInt32(&w.active, -1)
+		}()
 	}
 
 	jobID := ctx.Job.GetJobId()
