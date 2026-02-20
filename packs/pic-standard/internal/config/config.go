@@ -25,7 +25,7 @@ const (
 type Config struct {
 	// Common Cordum settings
 	GatewayURL     string
-	APIKey         string
+	APIKey         string // #nosec G117 -- runtime-supplied credential field; no hardcoded secret
 	TenantID       string
 	NatsURL        string
 	RedisURL       string
