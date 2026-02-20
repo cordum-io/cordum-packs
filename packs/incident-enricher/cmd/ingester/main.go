@@ -50,7 +50,7 @@ func main() {
 		Handler:           mux,
 		ReadHeaderTimeout: 5 * time.Second,
 	}
-	log.Printf("ingester listening on %s", addr)
+	log.Printf("ingester listening on %s", addr) // #nosec G706 -- static format string with trusted bind address value
 	if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		log.Fatal(err)
 	}

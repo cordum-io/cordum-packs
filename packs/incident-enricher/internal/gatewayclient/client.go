@@ -16,7 +16,7 @@ import (
 
 type Client struct {
 	BaseURL  string
-	APIKey   string
+	APIKey   string // #nosec G117 -- runtime-supplied credential field; no hardcoded secret value
 	TenantID string
 	HTTP     *http.Client
 }
@@ -122,7 +122,7 @@ func (c *Client) doJSON(ctx context.Context, method, path string, body any, out 
 	for k, v := range headers {
 		req.Header.Set(k, v)
 	}
-	resp, err := c.HTTP.Do(req)
+	resp, err := c.HTTP.Do(req) // #nosec G107 G704 -- outbound request target is controlled by pack configuration and request construction
 	if err != nil {
 		return fmt.Errorf("request failed: %w", err)
 	}
