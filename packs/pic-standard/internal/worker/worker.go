@@ -34,6 +34,7 @@ type Worker struct {
 	sem      chan struct{}
 	active   int32
 	log      *slog.Logger
+	runCtx   context.Context
 }
 
 func New(cfg config.Config, logger *slog.Logger) (*Worker, error) {
@@ -97,6 +98,7 @@ func (w *Worker) Run(ctx context.Context) error {
 	if w.agent == nil {
 		return fmt.Errorf("runtime agent unavailable")
 	}
+	w.runCtx = ctx
 
 	subjects := w.cfg.Subjects
 	if len(subjects) == 0 {
@@ -158,7 +160,7 @@ func (w *Worker) handleJob(ctx runtime.Context, payload map[string]any) (policy.
 	}
 
 	// Call PIC bridge (fail-closed: never returns error)
-	bridgeResp := w.pic.VerifyToolCall(context.Background(), input.ToolName, input.ToolArgs)
+	bridgeResp := w.pic.VerifyToolCall(w.runCtx, input.ToolName, input.ToolArgs)
 
 	w.log.Info("pic verify",
 		"job_id", jobID,
