@@ -1,0 +1,4 @@
+topics:
+  "job.pic-standard.verify":
+    timeout_seconds: 10
+    max_retries: 1

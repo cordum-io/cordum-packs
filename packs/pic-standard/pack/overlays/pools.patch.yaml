@@ -1,0 +1,7 @@
+pools:
+  pic-standard-primary:
+    requires:
+      - network:egress
+
+topics:
+  "job.pic-standard.verify": "pic-standard-primary"
