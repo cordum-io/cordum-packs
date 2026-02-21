@@ -33,7 +33,7 @@ func main() {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: level}))
 
 	// Startup health check (warn only, don't crash)
-	pic := picclient.New(cfg.BridgeURL, cfg.BridgeTimeout)
+	pic := picclient.New(cfg.BridgeURL, cfg.BridgeTimeout, cfg.BridgeToken)
 	if err := pic.HealthCheck(context.Background()); err != nil {
 		logger.Warn("PIC bridge not reachable at startup", "bridge_url", cfg.BridgeURL, "error", err)
 	} else {

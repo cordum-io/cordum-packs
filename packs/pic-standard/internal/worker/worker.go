@@ -71,7 +71,7 @@ func New(cfg config.Config, logger *slog.Logger) (*Worker, error) {
 		SenderID: workerID,
 	}
 
-	pic := picclient.New(cfg.BridgeURL, cfg.BridgeTimeout)
+	pic := picclient.New(cfg.BridgeURL, cfg.BridgeTimeout, cfg.BridgeToken)
 
 	w := &Worker{
 		cfg:      cfg,
