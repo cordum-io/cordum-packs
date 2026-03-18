@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"os"
 	"os/signal"
 	"strings"
@@ -13,6 +13,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/cordum/cordum/sdk/logging"
 	"github.com/cordum/cordum/sdk/runtime"
 	"github.com/nats-io/nats.go"
 	"github.com/redis/go-redis/v9"
@@ -35,23 +36,27 @@ type posterInput struct {
 }
 
 func main() {
+	logging.Init("incident-enricher")
 	cfg := config.Load("poster")
 
 	workerID := resolveWorkerID(cfg.WorkerID, cfg.Service)
 	nc, err := nats.Connect(cfg.NATSURL, nats.Name(workerID), nats.Timeout(5*time.Second))
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("nats connect failed", "error", err)
+		os.Exit(1)
 	}
 	defer nc.Close()
 
 	mem, err := store.New(cfg.RedisURL, cfg.DataTTL)
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("store init failed", "error", err)
+		os.Exit(1)
 	}
 
 	blobStore, err := newRedisBlobStoreWithTTL(cfg.RedisURL, cfg.DataTTL)
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("redis blob store init failed", "error", err)
+		os.Exit(1)
 	}
 
 	gw := gatewayclient.New(cfg.GatewayURL, cfg.APIKey, cfg.TenantID)
@@ -178,7 +183,8 @@ func main() {
 	runtime.Register(agent, runtime.DirectSubject(workerID), handler)
 
 	if err := agent.Start(); err != nil {
-		log.Fatal(err)
+		slog.Error("agent start failed", "error", err)
+		os.Exit(1)
 	}
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
@@ -188,7 +194,7 @@ func main() {
 		return runtime.HeartbeatPayload(workerID, cfg.WorkerPool, activeJobs, cfg.MaxParallelJobs, 0)
 	})
 
-	log.Printf("poster listening for job.incident-enricher.post (worker_id=%s pool=%s)", workerID, cfg.WorkerPool)
+	slog.Info("listening", "topic", "job.incident-enricher.post", "workerId", workerID, "pool", cfg.WorkerPool)
 	<-ctx.Done()
 }
 

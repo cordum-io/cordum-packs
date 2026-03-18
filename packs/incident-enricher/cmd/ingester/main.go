@@ -7,11 +7,13 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"strings"
 	"time"
+
+	"github.com/cordum/cordum/sdk/logging"
 
 	"github.com/cordum-io/cordum-packs/packs/incident-enricher/internal/config"
 	"github.com/cordum-io/cordum-packs/packs/incident-enricher/internal/gatewayclient"
@@ -21,6 +23,7 @@ import (
 const defaultAddr = ":8088"
 
 func main() {
+	logging.Init("incident-enricher")
 	cfg := config.Load("ingester")
 	gw := gatewayclient.New(cfg.GatewayURL, cfg.APIKey, cfg.TenantID)
 
@@ -50,9 +53,10 @@ func main() {
 		Handler:           mux,
 		ReadHeaderTimeout: 5 * time.Second,
 	}
-	log.Printf("ingester listening on %s", addr)
+	slog.Info("listening", "addr", addr)
 	if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-		log.Fatal(err)
+		slog.Error("server failed", "error", err)
+		os.Exit(1)
 	}
 }
 
@@ -90,7 +94,7 @@ func handleWebhook(w http.ResponseWriter, r *http.Request, gw *gatewayclient.Cli
 	idempotency := idempotencyKeyFromRequest(r)
 	runID, err := gw.StartRun(r.Context(), workflowID, toMap(input), idempotency)
 	if err != nil {
-		log.Printf("start run failed: %v", err)
+		slog.Warn("start run failed", "error", err)
 		http.Error(w, err.Error(), http.StatusBadGateway)
 		return
 	}

@@ -2,6 +2,7 @@ package runtime
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"strings"
 	"time"
@@ -19,7 +20,14 @@ type TTLRedisBlobStore struct {
 func NewRedisBlobStoreWithTTL(redisURL string, ttl time.Duration) (*TTLRedisBlobStore, error) {
 	opts, err := redis.ParseURL(redisURL)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("parse redis url: %w", err)
+	}
+	tlsCfg, tlsErr := RedisTLSConfigFromEnv()
+	if tlsErr != nil {
+		return nil, fmt.Errorf("redis tls config: %w", tlsErr)
+	}
+	if tlsCfg != nil {
+		opts.TLSConfig = tlsCfg
 	}
 	client := redis.NewClient(opts)
 	return &TTLRedisBlobStore{client: client, ttl: ttl}, nil

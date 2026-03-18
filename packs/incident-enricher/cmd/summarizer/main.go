@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"log"
+	"log/slog"
 	"os"
 	"os/signal"
 	"strings"
@@ -13,6 +13,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/cordum/cordum/sdk/logging"
 	"github.com/cordum/cordum/sdk/runtime"
 	"github.com/nats-io/nats.go"
 
@@ -31,18 +32,21 @@ type summarizerInput struct {
 }
 
 func main() {
+	logging.Init("incident-enricher")
 	cfg := config.Load("summarizer")
 
 	workerID := resolveWorkerID(cfg.WorkerID, cfg.Service)
 	nc, err := nats.Connect(cfg.NATSURL, nats.Name(workerID), nats.Timeout(5*time.Second))
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("nats connect failed", "error", err)
+		os.Exit(1)
 	}
 	defer nc.Close()
 
 	store, err := newRedisBlobStoreWithTTL(cfg.RedisURL, cfg.DataTTL)
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("redis blob store init failed", "error", err)
+		os.Exit(1)
 	}
 
 	gw := gatewayclient.New(cfg.GatewayURL, cfg.APIKey, cfg.TenantID)
@@ -124,7 +128,8 @@ func main() {
 	runtime.Register(agent, runtime.DirectSubject(workerID), handler)
 
 	if err := agent.Start(); err != nil {
-		log.Fatal(err)
+		slog.Error("agent start failed", "error", err)
+		os.Exit(1)
 	}
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
@@ -134,7 +139,7 @@ func main() {
 		return runtime.HeartbeatPayload(workerID, cfg.WorkerPool, activeJobs, cfg.MaxParallelJobs, 0)
 	})
 
-	log.Printf("summarizer listening for job.incident-enricher.summarize (worker_id=%s pool=%s)", workerID, cfg.WorkerPool)
+	slog.Info("listening", "topic", "job.incident-enricher.summarize", "workerId", workerID, "pool", cfg.WorkerPool)
 	<-ctx.Done()
 }
 
@@ -174,7 +179,7 @@ func collectEvidenceText(ctx context.Context, gw *gatewayclient.Client, bundle t
 		}
 		content, meta, err := gw.GetArtifact(ctx, item.ArtifactPtr)
 		if err != nil {
-			log.Printf("summarizer: fetch artifact %s: %v", item.ArtifactPtr, err)
+			slog.Warn("fetch artifact failed", "artifactPtr", item.ArtifactPtr, "error", err)
 			continue
 		}
 		contentType := item.ContentType

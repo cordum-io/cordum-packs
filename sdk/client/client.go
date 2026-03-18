@@ -3,14 +3,20 @@ package client
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
+
+	sdkruntime "github.com/cordum/cordum/sdk/runtime"
 )
 
 // Client is a minimal HTTP client for the API gateway.
@@ -19,22 +25,114 @@ type Client struct {
 	APIKey     string
 	TenantID   string
 	HTTPClient *http.Client
+	Logger     *slog.Logger
 }
 
-// New returns a client with a default HTTP timeout.
+// TLSOptions controls TLS behavior for HTTP clients that connect to the
+// Cordum gateway. Zero value means "use system defaults".
+type TLSOptions struct {
+	// CACertPath is the path to a PEM-encoded CA certificate bundle used to
+	// verify the server certificate. Empty uses the system pool.
+	CACertPath string
+	// InsecureSkipVerify disables server certificate verification.
+	// Use only for development or testing.
+	InsecureSkipVerify bool
+}
+
+// New returns a client with env-driven TLS configuration. When no TLS
+// customization is configured, the client uses the platform defaults.
 func New(baseURL, apiKey string) *Client {
+	tlsCfg, err := sdkruntime.TLSConfigFromEnv()
+	if err != nil {
+		slog.Warn("tls config failed, using system defaults", "error", err)
+		return newClient(baseURL, apiKey, nil)
+	}
+	return newClient(baseURL, apiKey, buildTLSTransportFromConfig(tlsCfg))
+}
+
+// NewWithTLS returns a client with explicit TLS configuration.
+// TLS configuration errors (invalid CA path, bad PEM) are logged to stderr and
+// the client falls back to system defaults. Use [NewWithTLSErr] for strict
+// error handling.
+func NewWithTLS(baseURL, apiKey string, opts TLSOptions) *Client {
+	client, err := NewWithTLSErr(baseURL, apiKey, opts)
+	if err != nil {
+		slog.Warn("tls config failed, using system defaults", "error", err)
+		return newClient(baseURL, apiKey, nil)
+	}
+	return client
+}
+
+// NewWithTLSErr returns a client with explicit TLS configuration and strict
+// error handling. It returns an error if the TLS configuration is invalid.
+func NewWithTLSErr(baseURL, apiKey string, opts TLSOptions) (*Client, error) {
+	transport, err := BuildTLSTransportErr(opts)
+	if err != nil {
+		return nil, fmt.Errorf("tls config: %w", err)
+	}
+	return newClient(baseURL, apiKey, transport), nil
+}
+
+func newClient(baseURL, apiKey string, transport *http.Transport) *Client {
 	tenantID := strings.TrimSpace(os.Getenv("CORDUM_TENANT_ID"))
 	if tenantID == "" {
 		tenantID = "default"
 	}
-	return &Client{
-		BaseURL:  baseURL,
-		APIKey:   apiKey,
-		TenantID: tenantID,
-		HTTPClient: &http.Client{
-			Timeout: 15 * time.Second,
-		},
+	httpClient := &http.Client{
+		Timeout: 15 * time.Second,
 	}
+	if transport != nil {
+		httpClient.Transport = transport
+	}
+	return &Client{
+		BaseURL:    baseURL,
+		APIKey:     apiKey,
+		TenantID:   tenantID,
+		HTTPClient: httpClient,
+		Logger:     slog.Default(),
+	}
+}
+
+// BuildTLSTransport returns an [http.Transport] configured from the given
+// options, or nil when no TLS customization is needed.
+func BuildTLSTransport(opts TLSOptions) *http.Transport {
+	transport, err := BuildTLSTransportErr(opts)
+	if err != nil {
+		slog.Warn("tls transport config failed", "error", err)
+		return nil
+	}
+	return transport
+}
+
+// BuildTLSTransportErr returns an [http.Transport] configured from the given
+// options, or (nil, nil) when no TLS customization is needed.
+func BuildTLSTransportErr(opts TLSOptions) (*http.Transport, error) {
+	if opts.CACertPath == "" && !opts.InsecureSkipVerify {
+		return nil, nil
+	}
+	tlsCfg := &tls.Config{MinVersion: tls.VersionTLS12} // #nosec G402 -- operator-controlled TLS settings.
+	if opts.InsecureSkipVerify {
+		tlsCfg.InsecureSkipVerify = true // #nosec G402 -- operator opt-in for dev/testing.
+	}
+	if opts.CACertPath != "" {
+		caCert, err := os.ReadFile(filepath.Clean(opts.CACertPath)) // #nosec G304 -- operator-configured path.
+		if err != nil {
+			return nil, fmt.Errorf("read ca cert %s: %w", opts.CACertPath, err)
+		}
+		pool := x509.NewCertPool()
+		if !pool.AppendCertsFromPEM(caCert) {
+			return nil, fmt.Errorf("parse ca cert %s: no valid PEM certificates found", opts.CACertPath)
+		}
+		tlsCfg.RootCAs = pool
+	}
+	return buildTLSTransportFromConfig(tlsCfg), nil
+}
+
+func buildTLSTransportFromConfig(tlsCfg *tls.Config) *http.Transport {
+	if tlsCfg == nil {
+		return nil
+	}
+	return &http.Transport{TLSClientConfig: tlsCfg}
 }
 
 // Step is a generic workflow step payload.

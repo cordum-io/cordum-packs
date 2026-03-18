@@ -3,19 +3,24 @@ package main
 import (
 	"context"
 	"errors"
-	"log"
+	"log/slog"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/cordum/cordum/sdk/logging"
 
 	"github.com/cordum-io/cordum-packs/packs/jira/internal/config"
 	"github.com/cordum-io/cordum-packs/packs/jira/internal/worker"
 )
 
 func main() {
+	logging.Init("jira")
+
 	cfg, err := config.Load()
 	if err != nil {
-		log.Fatalf("config error: %v", err)
+		slog.Error("config error", "error", err)
+		os.Exit(1)
 	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
@@ -23,11 +28,13 @@ func main() {
 
 	w, err := worker.New(cfg)
 	if err != nil {
-		log.Fatalf("worker init failed: %v", err)
+		slog.Error("worker init failed", "error", err)
+		os.Exit(1)
 	}
 	defer w.Close()
 
 	if err := w.Run(ctx); err != nil && !errors.Is(err, context.Canceled) {
-		log.Fatalf("worker stopped: %v", err)
+		slog.Error("worker stopped", "error", err)
+		os.Exit(1)
 	}
 }

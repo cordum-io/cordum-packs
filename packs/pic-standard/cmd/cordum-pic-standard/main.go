@@ -6,31 +6,22 @@ import (
 	"log/slog"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 
 	"github.com/cordum-io/cordum-packs/packs/pic-standard/internal/config"
 	"github.com/cordum-io/cordum-packs/packs/pic-standard/internal/picclient"
 	"github.com/cordum-io/cordum-packs/packs/pic-standard/internal/worker"
+	"github.com/cordum/cordum/sdk/logging"
 )
 
 func main() {
+	logger := logging.Init("pic-standard")
+
 	cfg, err := config.Load()
 	if err != nil {
 		slog.Error("config error", "error", err)
 		os.Exit(1)
 	}
-
-	level := slog.LevelInfo
-	switch strings.ToLower(cfg.LogLevel) {
-	case "debug":
-		level = slog.LevelDebug
-	case "warn", "warning":
-		level = slog.LevelWarn
-	case "error":
-		level = slog.LevelError
-	}
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: level}))
 
 	// Startup health check (warn only, don't crash)
 	pic := picclient.New(cfg.BridgeURL, cfg.BridgeTimeout, cfg.BridgeToken)

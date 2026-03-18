@@ -3,9 +3,10 @@ package runtime
 import (
 	"context"
 	"crypto/ecdsa"
+	"crypto/tls"
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"os"
 	"strings"
 	"sync"
@@ -39,6 +40,9 @@ type Config struct {
 	HeartbeatEvery  time.Duration
 	PublicKeys      map[string]*ecdsa.PublicKey
 	PrivateKey      *ecdsa.PrivateKey
+	// NATSTLSConfig overrides environment-derived TLS settings for the NATS
+	// connection. When nil, NewWorker resolves TLS from NATS_TLS_* / CORDUM_TLS_*.
+	NATSTLSConfig *tls.Config
 }
 
 // Worker subscribes to subjects and publishes job results.
@@ -57,11 +61,24 @@ type Worker struct {
 
 	cancelMu sync.Mutex
 	cancel   context.CancelFunc
-	logger   *log.Logger
+	logger   *slog.Logger
+}
+
+// Option configures a Worker.
+type Option func(*Worker)
+
+// WithLogger sets the structured logger for the worker. If not provided,
+// slog.Default() is used.
+func WithLogger(l *slog.Logger) Option {
+	return func(w *Worker) {
+		if l != nil {
+			w.logger = l
+		}
+	}
 }
 
 // NewWorker builds a worker with a NATS connection.
-func NewWorker(cfg Config) (*Worker, error) {
+func NewWorker(cfg Config, opts ...Option) (*Worker, error) {
 	subjects := trimSubjects(cfg.Subjects)
 	if len(subjects) == 0 {
 		if strings.TrimSpace(cfg.Type) == "" {
@@ -85,7 +102,21 @@ func NewWorker(cfg Config) (*Worker, error) {
 	}
 
 	connectTimeout := defaultConnectTimeout
-	conn, err := nats.Connect(natsURL, nats.Name(workerID), nats.Timeout(connectTimeout))
+	natsOpts := []nats.Option{nats.Name(workerID), nats.Timeout(connectTimeout)}
+
+	tlsCfg := cfg.NATSTLSConfig
+	if tlsCfg == nil {
+		var tlsErr error
+		tlsCfg, tlsErr = NATSTLSConfigFromEnv()
+		if tlsErr != nil {
+			return nil, fmt.Errorf("nats tls config: %w", tlsErr)
+		}
+	}
+	if tlsCfg != nil {
+		natsOpts = append(natsOpts, nats.Secure(tlsCfg))
+	}
+
+	conn, err := nats.Connect(natsURL, natsOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -102,7 +133,12 @@ func NewWorker(cfg Config) (*Worker, error) {
 		queue:    strings.TrimSpace(cfg.Queue),
 		workerID: workerID,
 		pool:     pool,
-		logger:   log.New(os.Stdout, "cordum-runtime ", log.LstdFlags),
+	}
+	for _, opt := range opts {
+		opt(w)
+	}
+	if w.logger == nil {
+		w.logger = slog.Default()
 	}
 	if maxParallel > 0 {
 		w.sem = make(chan struct{}, maxParallel)
@@ -177,21 +213,21 @@ func (w *Worker) dispatch(ctx context.Context, msg *nats.Msg, handler func(conte
 
 		var packet agentv1.BusPacket
 		if err := proto.Unmarshal(msg.Data, &packet); err != nil {
-			w.logger.Printf("worker: decode packet failed: %v", err)
+			w.logger.Error("decode packet failed", "error", err)
 			return
 		}
 		if w.cfg.PublicKeys != nil {
 			pub, ok := w.cfg.PublicKeys[packet.GetSenderId()]
 			if !ok {
-				w.logger.Printf("worker: no public key for sender %s", packet.GetSenderId())
+				w.logger.Error("no public key for sender", "senderId", packet.GetSenderId())
 				return
 			}
 			if len(packet.GetSignature()) == 0 {
-				w.logger.Printf("worker: missing signature for sender %s", packet.GetSenderId())
+				w.logger.Error("missing signature", "senderId", packet.GetSenderId())
 				return
 			}
 			if err := capsdk.VerifyPacketSignature(&packet, pub); err != nil {
-				w.logger.Printf("worker: invalid signature from sender %s: %v", packet.GetSenderId(), err)
+				w.logger.Error("invalid signature", "senderId", packet.GetSenderId(), "error", err)
 				return
 			}
 		}
@@ -200,6 +236,9 @@ func (w *Worker) dispatch(ctx context.Context, msg *nats.Msg, handler func(conte
 		if req == nil || req.GetJobId() == "" {
 			return
 		}
+
+		jobLogger := w.logger.With("jobId", req.GetJobId(), "traceId", packet.GetTraceId())
+		jobLogger.Debug("job received", "topic", req.GetTopic())
 
 		start := time.Now()
 		res, err := handler(ctx, req)
@@ -241,17 +280,19 @@ func (w *Worker) dispatch(ctx context.Context, msg *nats.Msg, handler func(conte
 		}
 		if w.cfg.PrivateKey != nil {
 			if err := capsdk.SignPacket(out, w.cfg.PrivateKey); err != nil {
-				w.logger.Printf("worker: sign result failed: %v", err)
+				jobLogger.Error("sign result failed", "error", err)
 				return
 			}
 		}
 		data, mErr := capsdk.MarshalDeterministic(out)
 		if mErr != nil {
-			w.logger.Printf("worker: marshal result failed: %v", mErr)
+			jobLogger.Error("marshal result failed", "error", mErr)
 			return
 		}
 		if err := w.conn.Publish(capsdk.SubjectResult, data); err != nil {
-			w.logger.Printf("worker: publish result failed: %v", err)
+			jobLogger.Error("publish result failed", "error", err)
+		} else {
+			jobLogger.Debug("job completed", "status", res.Status.String(), "durationMs", execMs)
 		}
 	}()
 }
