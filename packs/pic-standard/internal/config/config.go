@@ -25,7 +25,7 @@ const (
 type Config struct {
 	// Common Cordum settings
 	GatewayURL     string
-	APIKey         string
+	APIKey         string // #nosec G117 -- runtime-supplied credential field; no hardcoded secret
 	TenantID       string
 	NatsURL        string
 	RedisURL       string
@@ -39,6 +39,7 @@ type Config struct {
 	// PIC-specific settings
 	BridgeURL              string
 	BridgeTimeout          time.Duration
+	BridgeToken            string // #nosec G117 -- runtime-supplied credential field; no hardcoded secret
 	LogLevel               string
 	RequireApprovalImpacts []string
 }
@@ -62,6 +63,7 @@ func Load() (Config, error) {
 
 		BridgeURL:     envOr("CORDUM_PIC_STANDARD_BRIDGE_URL", defaultBridgeURL),
 		BridgeTimeout: defaultBridgeTimeout,
+		BridgeToken:   envOr("CORDUM_PIC_STANDARD_BRIDGE_TOKEN", ""),
 		LogLevel:      envOr("CORDUM_PIC_STANDARD_LOG_LEVEL", defaultLogLevel),
 
 		RequireApprovalImpacts: []string{},

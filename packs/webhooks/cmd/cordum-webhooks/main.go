@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -12,12 +12,15 @@ import (
 	"github.com/cordum-io/cordum-packs/packs/webhooks/internal/config"
 	"github.com/cordum-io/cordum-packs/packs/webhooks/internal/gatewayclient"
 	"github.com/cordum-io/cordum-packs/packs/webhooks/internal/server"
+	"github.com/cordum/cordum/sdk/logging"
 )
 
 func main() {
+	logging.Init("webhooks")
 	cfg, err := config.Load()
 	if err != nil {
-		log.Fatalf("config error: %v", err)
+		slog.Error("config error", "error", err)
+		os.Exit(1)
 	}
 
 	client := gatewayclient.New(cfg.GatewayURL, cfg.APIKey, cfg.TenantID)
@@ -39,8 +42,9 @@ func main() {
 		_ = httpServer.Shutdown(shutdownCtx)
 	}()
 
-	log.Printf("cordum-webhooks listening on %s", cfg.BindAddress)
+	slog.Info("cordum-webhooks listening", "address", cfg.BindAddress)
 	if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-		log.Fatalf("server stopped: %v", err)
+		slog.Error("server stopped", "error", err)
+		os.Exit(1)
 	}
 }

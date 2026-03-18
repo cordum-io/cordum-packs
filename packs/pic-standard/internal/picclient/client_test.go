@@ -36,7 +36,7 @@ func TestVerifyToolCall_Success(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	c := New(srv.URL, 5*time.Second)
+	c := New(srv.URL, 5*time.Second, "")
 	resp := c.VerifyToolCall(context.Background(), "file_write", map[string]any{"path": "/tmp/x"})
 
 	if !resp.Allowed {
@@ -67,7 +67,7 @@ func TestVerifyToolCall_Denial(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	c := New(srv.URL, 5*time.Second)
+	c := New(srv.URL, 5*time.Second, "")
 	resp := c.VerifyToolCall(context.Background(), "exec", nil)
 
 	if resp.Allowed {
@@ -89,7 +89,7 @@ func TestVerifyToolCall_Timeout(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	c := New(srv.URL, 100*time.Millisecond)
+	c := New(srv.URL, 100*time.Millisecond, "")
 	resp := c.VerifyToolCall(context.Background(), "slow_tool", nil)
 
 	if resp.Allowed {
@@ -107,7 +107,7 @@ func TestVerifyToolCall_MalformedJSON(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	c := New(srv.URL, 5*time.Second)
+	c := New(srv.URL, 5*time.Second, "")
 	resp := c.VerifyToolCall(context.Background(), "some_tool", nil)
 
 	if resp.Allowed {
@@ -125,7 +125,7 @@ func TestVerifyToolCall_Non2xx(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	c := New(srv.URL, 5*time.Second)
+	c := New(srv.URL, 5*time.Second, "")
 	resp := c.VerifyToolCall(context.Background(), "some_tool", nil)
 
 	if resp.Allowed {
@@ -145,7 +145,7 @@ func TestVerifyToolCall_Non2xxLargeBody(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	c := New(srv.URL, 5*time.Second)
+	c := New(srv.URL, 5*time.Second, "")
 	resp := c.VerifyToolCall(context.Background(), "some_tool", nil)
 
 	if resp.Allowed {
@@ -163,7 +163,7 @@ func TestVerifyToolCall_Non2xxLargeBody(t *testing.T) {
 }
 
 func TestVerifyToolCall_EmptyToolName(t *testing.T) {
-	c := New("http://localhost:9999", 5*time.Second)
+	c := New("http://localhost:9999", 5*time.Second, "")
 	resp := c.VerifyToolCall(context.Background(), "", nil)
 
 	if resp.Allowed {
@@ -184,7 +184,7 @@ func TestVerifyToolCall_InconsistentResponse_AllowedFalseNoError(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	c := New(srv.URL, 5*time.Second)
+	c := New(srv.URL, 5*time.Second, "")
 	resp := c.VerifyToolCall(context.Background(), "some_tool", nil)
 
 	if resp.Allowed {
@@ -205,7 +205,7 @@ func TestVerifyToolCall_InconsistentResponse_AllowedTrueWithError(t *testing.T) 
 	}))
 	defer srv.Close()
 
-	c := New(srv.URL, 5*time.Second)
+	c := New(srv.URL, 5*time.Second, "")
 	resp := c.VerifyToolCall(context.Background(), "some_tool", nil)
 
 	if resp.Allowed {
@@ -220,7 +220,7 @@ func TestVerifyToolCall_InconsistentResponse_AllowedTrueWithError(t *testing.T) 
 }
 
 func TestVerifyToolCall_Unreachable(t *testing.T) {
-	c := New("http://127.0.0.1:1", 500*time.Millisecond)
+	c := New("http://127.0.0.1:1", 500*time.Millisecond, "")
 	resp := c.VerifyToolCall(context.Background(), "some_tool", nil)
 
 	if resp.Allowed {
@@ -243,7 +243,7 @@ func TestHealthCheck_OK(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	c := New(srv.URL, 5*time.Second)
+	c := New(srv.URL, 5*time.Second, "")
 	if err := c.HealthCheck(context.Background()); err != nil {
 		t.Fatalf("expected healthy, got %v", err)
 	}
@@ -256,22 +256,68 @@ func TestHealthCheck_Unhealthy(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	c := New(srv.URL, 5*time.Second)
+	c := New(srv.URL, 5*time.Second, "")
 	if err := c.HealthCheck(context.Background()); err == nil {
 		t.Fatalf("expected error for unhealthy bridge")
 	}
 }
 
 func TestHealthCheck_Unreachable(t *testing.T) {
-	c := New("http://127.0.0.1:1", 500*time.Millisecond)
+	c := New("http://127.0.0.1:1", 500*time.Millisecond, "")
 	if err := c.HealthCheck(context.Background()); err == nil {
 		t.Fatalf("expected error for unreachable bridge")
 	}
 }
 
 func TestNew_TrailingSlash(t *testing.T) {
-	c := New("http://localhost:3100/", 5*time.Second)
+	c := New("http://localhost:3100/", 5*time.Second, "")
 	if c.baseURL != "http://localhost:3100" {
 		t.Fatalf("expected trailing slash stripped, got %q", c.baseURL)
+	}
+}
+
+func TestVerifyToolCall_WithAuthToken(t *testing.T) {
+	headerChecked := false
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		auth := r.Header.Get("Authorization")
+		if auth != "Bearer test-token-123" {
+			t.Errorf("expected Authorization: Bearer test-token-123, got %q", auth)
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		headerChecked = true
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(VerifyResponse{Allowed: true})
+	}))
+	defer srv.Close()
+
+	c := New(srv.URL, 5*time.Second, "test-token-123")
+	resp := c.VerifyToolCall(context.Background(), "file_write", nil)
+
+	if !resp.Allowed {
+		t.Fatalf("expected allowed=true, got false")
+	}
+	if !headerChecked {
+		t.Fatalf("auth header was never checked by server")
+	}
+}
+
+func TestVerifyToolCall_NoAuthToken(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if auth := r.Header.Get("Authorization"); auth != "" {
+			t.Errorf("expected no Authorization header, got %q", auth)
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(VerifyResponse{Allowed: true})
+	}))
+	defer srv.Close()
+
+	c := New(srv.URL, 5*time.Second, "")
+	resp := c.VerifyToolCall(context.Background(), "file_write", nil)
+
+	if !resp.Allowed {
+		t.Fatalf("expected allowed=true, got false")
 	}
 }

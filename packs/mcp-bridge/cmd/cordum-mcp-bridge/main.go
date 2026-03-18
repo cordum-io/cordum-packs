@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"errors"
-	"log"
+	"log/slog"
 	"os"
 	"os/signal"
 	"strconv"
@@ -13,29 +13,33 @@ import (
 
 	"github.com/cordum-io/cordum-packs/packs/mcp-bridge/internal/bridge"
 	"github.com/cordum-io/cordum-packs/packs/mcp-bridge/internal/mcp"
+	"github.com/cordum/cordum/sdk/logging"
 )
 
 func main() {
+	logging.Init("mcp-bridge")
 	cfg := loadConfig()
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
 	b, err := bridge.New(cfg)
 	if err != nil {
-		log.Fatalf("bridge init failed: %v", err)
+		slog.Error("bridge init failed", "error", err)
+		os.Exit(1)
 	}
 	defer b.Close()
 
 	go func() {
 		if err := b.RunWorker(ctx); err != nil {
-			log.Printf("worker stopped: %v", err)
+			slog.Error("worker stopped", "error", err)
 			stop()
 		}
 	}()
 
 	server := mcp.NewServer(b, os.Stdin, os.Stdout)
 	if err := server.Run(ctx); err != nil && !errorsIsCanceled(err) {
-		log.Fatalf("mcp server stopped: %v", err)
+		slog.Error("mcp server stopped", "error", err)
+		os.Exit(1)
 	}
 }
 

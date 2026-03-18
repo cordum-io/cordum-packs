@@ -35,14 +35,17 @@ type VerifyError struct {
 type Client struct {
 	baseURL    string
 	timeout    time.Duration
+	authToken  string
 	httpClient *http.Client
 }
 
-// New creates a PIC bridge client.
-func New(baseURL string, timeout time.Duration) *Client {
+// New creates a PIC bridge client. If authToken is non-empty, all requests
+// include an Authorization: Bearer header.
+func New(baseURL string, timeout time.Duration, authToken string) *Client {
 	return &Client{
 		baseURL:    strings.TrimRight(baseURL, "/"),
 		timeout:    timeout,
+		authToken:  authToken,
 		httpClient: &http.Client{},
 	}
 }
@@ -83,6 +86,9 @@ func (c *Client) VerifyToolCall(ctx context.Context, toolName string, toolArgs m
 		return failClosed(fmt.Sprintf("create request: %v", err))
 	}
 	req.Header.Set("Content-Type", "application/json")
+	if c.authToken != "" {
+		req.Header.Set("Authorization", "Bearer "+c.authToken)
+	}
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -130,6 +136,9 @@ func (c *Client) HealthCheck(ctx context.Context) error {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.baseURL+"/health", nil)
 	if err != nil {
 		return fmt.Errorf("create health request: %w", err)
+	}
+	if c.authToken != "" {
+		req.Header.Set("Authorization", "Bearer "+c.authToken)
 	}
 
 	resp, err := c.httpClient.Do(req)
