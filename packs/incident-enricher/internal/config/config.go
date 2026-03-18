@@ -21,7 +21,7 @@ type Env struct {
 	NATSURL             string
 	RedisURL            string
 	GatewayURL          string
-	APIKey              string
+	APIKey              string // #nosec G117 -- runtime-supplied credential field; no hardcoded secret value
 	TenantID            string
 	WorkerPool          string
 	WorkerID            string

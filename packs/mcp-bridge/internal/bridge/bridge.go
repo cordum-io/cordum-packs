@@ -32,7 +32,7 @@ var supportedProtocolVersions = []string{
 
 type Config struct {
 	GatewayURL    string
-	APIKey        string
+	APIKey        string // #nosec G117 -- runtime-supplied credential field; no hardcoded secret value
 	TenantID      string
 	NatsURL       string
 	RedisURL      string
@@ -952,7 +952,7 @@ func (c *gatewayClient) doJSONWithHeaders(ctx context.Context, method, path stri
 		}
 		req.Header.Set(k, v)
 	}
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.httpClient.Do(req) // #nosec G107 G704 -- outbound request target is controlled by pack configuration and request construction
 	if err != nil {
 		return err
 	}

@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"strings"
 	"testing"
 )
 
@@ -50,6 +51,33 @@ func TestClientDoError(t *testing.T) {
 		t.Fatalf("expected error")
 	}
 	if err.Error() != "opentelemetry api error (400): bad query" {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestClientDoRejectsAbsoluteEndpointPath(t *testing.T) {
+	client := NewClient("https://jaeger.example/api", "token", Options{})
+	_, err := client.Do(context.Background(), http.MethodGet, "https://evil.example/traces", nil, nil)
+	if err == nil {
+		t.Fatalf("expected validation error")
+	}
+	if !strings.Contains(err.Error(), "relative") {
+		t.Fatalf("expected relative path validation error, got %v", err)
+	}
+}
+
+func TestClientDoPreservesBasePathPrefix(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if got := r.URL.Path; got != "/api/traces" {
+			t.Fatalf("expected /api/traces, got %q", got)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"ok":true}`))
+	}))
+	defer server.Close()
+
+	client := NewClient(server.URL+"/api", "token", Options{})
+	if _, err := client.Do(context.Background(), http.MethodGet, "/traces", nil, nil); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 }
