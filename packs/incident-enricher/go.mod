@@ -5,7 +5,7 @@ go 1.24.0
 require (
 	github.com/cordum-io/cap/v2 v2.6.0
 	github.com/cordum/cordum/sdk v0.2.0
-	github.com/nats-io/nats.go v1.48.0
+	github.com/nats-io/nats.go v1.49.0
 	github.com/redis/go-redis/v9 v9.17.3
 	google.golang.org/protobuf v1.36.11
 )
