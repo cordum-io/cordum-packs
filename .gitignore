@@ -21,6 +21,10 @@ out/
 .vscode/
 generated/
 .codex/
+.claude/
+.moe/
+.bin/
+*.exe
 .gocache/
 .gomodcache/
 .gopath/

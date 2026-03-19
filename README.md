@@ -9,6 +9,12 @@ risky actions, and full auditability. Packs bring those guarantees to
 integrations and workflows so teams can move from proof-of-concept to
 production with confidence.
 
+## Protocol
+
+All packs implement the [Cordum Agent Protocol (CAP)](https://github.com/cordum-io/cap) — the open wire protocol for distributed AI agent governance. Packs are CAP-native workers that communicate via `BusPacket` envelopes over NATS, with built-in safety gating and policy enforcement.
+
+The reference control plane is [Cordum](https://github.com/cordum-io/cordum).
+
 ## From PoC to production
 
 Most teams get stuck at the trust gap: agents can do the work, but governance,
