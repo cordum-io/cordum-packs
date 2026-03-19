@@ -112,7 +112,7 @@ jobs:
       - name: Gosec scan
         run: |
           set -euo pipefail
-          go install github.com/securego/gosec/v2/cmd/gosec@latest
+          go install github.com/securego/gosec/v2/cmd/gosec@v2.22.4
           while IFS= read -r mod; do
             dir="$(dirname "$mod")"
             echo "Scanning $dir"
