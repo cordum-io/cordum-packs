@@ -1,0 +1,23 @@
+id: huggingface.model.search
+name: Hugging Face Model Search
+description: Search the Hugging Face model hub.
+version: "0.1.0"
+timeout_sec: 30
+steps:
+  search:
+    id: search
+    name: HF Model Hub Search
+    type: worker
+    topic: job.huggingface.models
+    input:
+      profile: ${input.profile}
+      action: models.search
+      params: ${input.params}
+      request_id: ${input.request_id}
+    input_schema_id: huggingface/HuggingFaceModelSearchInput
+    output_schema_id: huggingface/HuggingFaceActionResult
+    meta:
+      pack_id: huggingface
+      capability: huggingface.models
+      risk_tags: ["read", "network"]
+      requires: ["network:egress"]

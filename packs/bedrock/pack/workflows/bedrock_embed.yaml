@@ -1,0 +1,24 @@
+id: bedrock.embed
+name: Bedrock Embeddings
+description: Generate embeddings via Bedrock (Titan, Cohere).
+version: "0.1.0"
+timeout_sec: 60
+steps:
+  embed:
+    id: embed
+    name: Bedrock Embed
+    type: worker
+    topic: job.bedrock.generate
+    input:
+      profile: ${input.profile}
+      action: embed
+      region: ${input.region}
+      params: ${input.params}
+      request_id: ${input.request_id}
+    input_schema_id: bedrock/BedrockEmbedInput
+    output_schema_id: bedrock/BedrockActionResult
+    meta:
+      pack_id: bedrock
+      capability: bedrock.generate
+      risk_tags: ["read", "network", "llm"]
+      requires: ["network:egress"]

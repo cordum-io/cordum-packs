@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Temporal Workflow Start Input",
+  "type": "object",
+  "properties": {
+    "workflow_type": { "type": "string", "description": "Workflow type name." },
+    "workflow_id": { "type": "string", "description": "Unique workflow ID." },
+    "task_queue": { "type": "string", "description": "Task queue name." },
+    "input": { "description": "Workflow input arguments." },
+    "execution_timeout": { "type": "string", "description": "Overall execution timeout (e.g., '24h')." },
+    "run_timeout": { "type": "string", "description": "Single run timeout." },
+    "task_timeout": { "type": "string", "description": "Workflow task timeout." },
+    "retry_policy": {
+      "type": "object",
+      "properties": {
+        "initial_interval": { "type": "string" },
+        "backoff_coefficient": { "type": "number" },
+        "maximum_interval": { "type": "string" },
+        "maximum_attempts": { "type": "integer" }
+      }
+    },
+    "memo": { "type": "object" },
+    "search_attributes": { "type": "object" },
+    "cron_schedule": { "type": "string" },
+    "id_reuse_policy": { "type": "string", "enum": ["allow_duplicate", "reject_duplicate", "terminate_if_running"] }
+  },
+  "required": ["workflow_type", "task_queue"]
+}

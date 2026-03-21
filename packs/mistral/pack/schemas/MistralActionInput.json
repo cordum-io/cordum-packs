@@ -1,0 +1,32 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Mistral Action Input",
+  "description": "Top-level action router for the Mistral pack.",
+  "type": "object",
+  "properties": {
+    "profile": {
+      "type": "string",
+      "description": "Named integration profile to use."
+    },
+    "action": {
+      "type": "string",
+      "description": "Action identifier.",
+      "enum": [
+        "chat.completions",
+        "chat.completions.stream",
+        "embeddings",
+        "fim.completions",
+        "models.list"
+      ]
+    },
+    "params": {
+      "type": "object",
+      "description": "Action-specific parameters."
+    },
+    "request_id": {
+      "type": "string",
+      "description": "Optional idempotency or trace id."
+    }
+  },
+  "required": ["action"]
+}

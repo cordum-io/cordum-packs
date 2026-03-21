@@ -1,0 +1,24 @@
+id: anthropic.messages.stream
+name: Anthropic Messages (Streaming)
+description: Send a message to Claude with streaming response via NATS chunked delivery.
+version: "0.1.0"
+timeout_sec: 300
+steps:
+  stream:
+    id: stream
+    name: Anthropic Streaming Messages
+    type: worker
+    topic: job.anthropic.messages.stream
+    input:
+      profile: ${input.profile}
+      action: messages.create.stream
+      params: ${input.params}
+      request_id: ${input.request_id}
+      auth: ${input.auth}
+    input_schema_id: anthropic/AnthropicMessagesInput
+    output_schema_id: anthropic/AnthropicActionResult
+    meta:
+      pack_id: anthropic
+      capability: anthropic.messages.stream
+      risk_tags: ["read", "network", "llm"]
+      requires: ["network:egress"]

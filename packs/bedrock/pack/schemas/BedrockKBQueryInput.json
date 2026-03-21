@@ -1,0 +1,12 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Bedrock Knowledge Base Query Input",
+  "type": "object",
+  "properties": {
+    "knowledge_base_id": { "type": "string" },
+    "query": { "type": "string" },
+    "model_arn": { "type": "string", "description": "Model ARN for retrieval-augmented generation." },
+    "retrieval_config": { "type": "object" }
+  },
+  "required": ["knowledge_base_id", "query"]
+}

@@ -1,0 +1,32 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "OpenAI Audio Transcribe Input",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "profile": { "type": "string" },
+    "model": {
+      "type": "string",
+      "enum": ["whisper-1"]
+    },
+    "file_url": { "type": "string", "format": "uri" },
+    "language": { "type": "string", "minLength": 2, "maxLength": 16 },
+    "prompt": { "type": "string" },
+    "response_format": {
+      "type": "string",
+      "enum": ["json", "text", "srt", "verbose_json", "vtt"]
+    },
+    "temperature": { "type": "number", "minimum": 0, "maximum": 1 },
+    "auth": {
+      "type": "object",
+      "properties": {
+        "api_key": { "type": "string" },
+        "api_key_env": { "type": "string" },
+        "organization": { "type": "string" },
+        "organization_env": { "type": "string" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "required": ["model", "file_url"]
+}

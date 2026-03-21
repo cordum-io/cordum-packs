@@ -1,0 +1,10 @@
+topics:
+  job.crewai.crew:
+    timeout_seconds: 300
+    max_retries: 0
+  job.crewai.task:
+    timeout_seconds: 180
+    max_retries: 1
+  job.crewai.toolcall:
+    timeout_seconds: 120
+    max_retries: 0

@@ -1,0 +1,38 @@
+# syntax=docker/dockerfile:1.7
+
+ARG GO_VERSION=1.24.11
+ARG PYTHON_IMAGE=python:3.12-slim
+
+FROM golang:${GO_VERSION} AS go-builder
+WORKDIR /src
+
+# Copy the pack-specific Go worker after this template has been copied into the pack root.
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY cmd ./cmd
+COPY internal ./internal
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags="-s -w" -o /out/cordum-framework-worker ./cmd/...
+
+FROM ${PYTHON_IMAGE} AS runtime
+WORKDIR /app
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1
+
+COPY python/requirements.txt /app/python/requirements.txt
+COPY python /app/python
+
+# Copy the shared adapters into the image and install them as a package.
+COPY integrations/agent-adapters /opt/agent-adapters
+
+RUN python -m pip install --upgrade pip \
+    && python -m pip install -r /app/python/requirements.txt \
+    && python -m pip install /opt/agent-adapters
+
+COPY --from=go-builder /out/cordum-framework-worker /usr/local/bin/cordum-framework-worker
+
+EXPOSE 8080
+
+ENTRYPOINT ["/usr/local/bin/cordum-framework-worker"]

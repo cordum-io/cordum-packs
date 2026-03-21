@@ -1,0 +1,13 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Hugging Face Model Search Input",
+  "type": "object",
+  "properties": {
+    "search": { "type": "string", "description": "Search query." },
+    "author": { "type": "string", "description": "Filter by author/organization." },
+    "filter": { "type": "string", "description": "Tag filter (e.g., task:text-generation)." },
+    "sort": { "type": "string", "description": "Sort field.", "enum": ["downloads", "likes", "lastModified", "trending"] },
+    "direction": { "type": "string", "enum": ["-1", "1"] },
+    "limit": { "type": "integer", "minimum": 1, "maximum": 100, "default": 10 }
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Vertex AI Action Input",
+  "description": "Generic action dispatcher for the Vertex AI pack.",
+  "type": "object",
+  "properties": {
+    "profile": {
+      "type": "string",
+      "description": "Named integration profile to use."
+    },
+    "project_id": {
+      "type": "string",
+      "description": "GCP project override. Falls back to profile/config default."
+    },
+    "location": {
+      "type": "string",
+      "description": "Vertex AI region override (for example us-central1)."
+    },
+    "request_id": {
+      "type": "string",
+      "description": "Optional idempotency or trace identifier."
+    },
+    "action": {
+      "type": "string",
+      "description": "Vertex AI action identifier.",
+      "enum": [
+        "predict.predict",
+        "predict.raw_predict",
+        "batch.create_prediction_job",
+        "batch.get_prediction_job",
+        "batch.list_prediction_jobs",
+        "generate.generate_content",
+        "embed.embed_content",
+        "training.create_pipeline",
+        "training.get_pipeline",
+        "training.list_pipelines"
+      ]
+    },
+    "params": {
+      "type": "object",
+      "description": "Action-specific parameters.",
+      "additionalProperties": true
+    }
+  },
+  "required": [
+    "action"
+  ],
+  "additionalProperties": false
+}

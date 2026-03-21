@@ -1,0 +1,12 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Bedrock Embed Input",
+  "type": "object",
+  "properties": {
+    "model_id": { "type": "string", "description": "Embedding model (e.g., amazon.titan-embed-text-v2:0, cohere.embed-english-v3)." },
+    "texts": { "type": "array", "items": { "type": "string" } },
+    "dimensions": { "type": "integer" },
+    "input_type": { "type": "string", "enum": ["search_document", "search_query", "classification", "clustering"] }
+  },
+  "required": ["model_id", "texts"]
+}

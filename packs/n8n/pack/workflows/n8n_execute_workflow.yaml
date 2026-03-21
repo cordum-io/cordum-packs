@@ -1,0 +1,28 @@
+id: n8n-bridge-workflow
+name: n8n Execute Workflow
+description: Trigger an n8n workflow from Cordum with governed approval.
+version: "0.1.0"
+timeout_sec: 180
+steps:
+  execute:
+    id: execute
+    name: Execute n8n workflow
+    type: worker
+    topic: job.n8n.write
+    input:
+      profile: ${input.profile}
+      request_id: ${input.request_id}
+      action: workflow.execute
+      params:
+        workflow_id: ${input.workflow_id}
+        payload: ${input.payload}
+        wait_for_completion: ${input.wait_for_completion}
+        poll_interval_ms: ${input.poll_interval_ms}
+        completion_timeout_sec: ${input.completion_timeout_sec}
+    input_schema_id: n8n/N8nExecuteWorkflowInput
+    output_schema_id: n8n/N8nActionResult
+    meta:
+      pack_id: n8n
+      capability: n8n.execute
+      risk_tags: ["write", "network"]
+      requires: ["network:egress"]

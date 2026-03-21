@@ -1,0 +1,17 @@
+version: v1
+rules:
+  - id: zapier-read
+    match:
+      topics:
+        - job.zapier.read
+      risk_tags:
+        - read
+    decision: allow
+  - id: zapier-write
+    match:
+      topics:
+        - job.zapier.write
+      risk_tags:
+        - write
+    decision: require_approval
+    reason: "Zapier AI Action execution can trigger real side effects across external apps"

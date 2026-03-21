@@ -1,0 +1,23 @@
+id: temporal.workflow.signal
+name: Temporal Workflow Signal
+description: Send a signal to a running Temporal workflow.
+version: "0.1.0"
+timeout_sec: 30
+steps:
+  signal:
+    id: signal
+    name: Signal Temporal Workflow
+    type: worker
+    topic: job.temporal.write
+    input:
+      profile: ${input.profile}
+      action: workflow.signal
+      params: ${input.params}
+      request_id: ${input.request_id}
+    input_schema_id: temporal/TemporalWorkflowSignalInput
+    output_schema_id: temporal/TemporalActionResult
+    meta:
+      pack_id: temporal
+      capability: temporal.write
+      risk_tags: ["write", "network"]
+      requires: ["network:egress"]

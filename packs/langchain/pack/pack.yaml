@@ -1,0 +1,93 @@
+apiVersion: cordum.io/v1alpha1
+kind: Pack
+
+metadata:
+  id: langchain
+  version: 0.1.0
+  title: LangChain
+  description: LangChain chain execution, agent dispatch with CAP governance, and retriever queries.
+  image: https://cdn.simpleicons.org/langchain
+
+compatibility:
+  protocolVersion: 1
+  minCoreVersion: 0.1.0
+
+topics:
+  - name: job.langchain.chain
+    requires: ["network:egress"]
+    riskTags: ["read", "network", "llm"]
+    capability: langchain.chain
+  - name: job.langchain.agent
+    requires: ["network:egress"]
+    riskTags: ["write", "network", "llm", "tool_use"]
+    capability: langchain.agent
+  - name: job.langchain.retriever
+    requires: ["network:egress"]
+    riskTags: ["read", "network"]
+    capability: langchain.retriever
+  - name: job.langchain.toolcall
+    requires: ["network:egress"]
+    riskTags: ["write", "network", "tool_use"]
+    capability: langchain.toolcall
+
+resources:
+  schemas:
+    - id: langchain/LangChainChainInput
+      path: schemas/LangChainChainInput.json
+    - id: langchain/LangChainAgentInput
+      path: schemas/LangChainAgentInput.json
+    - id: langchain/LangChainRetrieverInput
+      path: schemas/LangChainRetrieverInput.json
+    - id: langchain/LangChainActionResult
+      path: schemas/LangChainActionResult.json
+  workflows:
+    - id: langchain.chain.invoke
+      path: workflows/langchain_chain_invoke.yaml
+    - id: langchain.agent.invoke
+      path: workflows/langchain_agent_invoke.yaml
+    - id: langchain.retriever.invoke
+      path: workflows/langchain_retriever_invoke.yaml
+
+overlays:
+  config:
+    - name: pools
+      scope: system
+      key: pools
+      strategy: json_merge_patch
+      path: overlays/pools.patch.yaml
+    - name: timeouts
+      scope: system
+      key: timeouts
+      strategy: json_merge_patch
+      path: overlays/timeouts.patch.yaml
+  policy:
+    - name: safety
+      strategy: bundle_fragment
+      path: overlays/policy.fragment.yaml
+
+tests:
+  policySimulations:
+    - name: allow_chain
+      request:
+        tenantId: default
+        topic: job.langchain.chain
+        riskTags: ["read", "network", "llm"]
+      expectDecision: ALLOW
+    - name: agent_requires_approval
+      request:
+        tenantId: default
+        topic: job.langchain.agent
+        riskTags: ["write", "network", "llm", "tool_use"]
+      expectDecision: REQUIRE_APPROVAL
+    - name: allow_retriever
+      request:
+        tenantId: default
+        topic: job.langchain.retriever
+        riskTags: ["read", "network"]
+      expectDecision: ALLOW
+    - name: toolcall_requires_approval
+      request:
+        tenantId: default
+        topic: job.langchain.toolcall
+        riskTags: ["write", "network", "tool_use"]
+      expectDecision: REQUIRE_APPROVAL

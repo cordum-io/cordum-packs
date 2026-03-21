@@ -1,0 +1,9 @@
+topics:
+  job.mistral.chat: mistral
+  job.mistral.chat.stream: mistral
+  job.mistral.embed: mistral
+  job.mistral.code: mistral
+  job.mistral.fim: mistral
+pools:
+  mistral:
+    requires: ["network:egress"]

@@ -1,0 +1,8 @@
+topics:
+  job.autogen.groupchat: autogen
+  job.autogen.agent: autogen
+  job.autogen.code: autogen
+  job.autogen.toolcall: autogen
+pools:
+  autogen:
+    requires: ["network:egress"]

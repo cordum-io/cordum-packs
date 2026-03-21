@@ -1,0 +1,37 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "GCP Storage Get Object Input",
+  "description": "Input schema for downloading an object from Cloud Storage.",
+  "type": "object",
+  "properties": {
+    "profile": {
+      "type": "string",
+      "description": "Named integration profile to use."
+    },
+    "project_id": {
+      "type": "string",
+      "description": "GCP project override. Falls back to profile/config default."
+    },
+    "location": {
+      "type": "string",
+      "description": "GCP region/location override (for example us-central1)."
+    },
+    "request_id": {
+      "type": "string",
+      "description": "Optional idempotency or trace identifier."
+    },
+    "bucket": {
+      "type": "string",
+      "description": "Cloud Storage bucket name."
+    },
+    "object_name": {
+      "type": "string",
+      "description": "Object name/path."
+    }
+  },
+  "required": [
+    "bucket",
+    "object_name"
+  ],
+  "additionalProperties": false
+}

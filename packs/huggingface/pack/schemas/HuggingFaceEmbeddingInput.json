@@ -1,0 +1,23 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Hugging Face Embedding Input",
+  "type": "object",
+  "properties": {
+    "model": { "type": "string", "description": "Embedding model ID (e.g., sentence-transformers/all-MiniLM-L6-v2)." },
+    "inputs": {
+      "description": "Text(s) to embed.",
+      "oneOf": [
+        { "type": "string" },
+        { "type": "array", "items": { "type": "string" } }
+      ]
+    },
+    "options": {
+      "type": "object",
+      "properties": {
+        "wait_for_model": { "type": "boolean", "default": false },
+        "use_cache": { "type": "boolean", "default": true }
+      }
+    }
+  },
+  "required": ["model", "inputs"]
+}

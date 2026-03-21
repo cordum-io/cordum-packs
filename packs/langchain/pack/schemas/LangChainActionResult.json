@@ -1,0 +1,95 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "LangChain Action Result",
+  "description": "Standard result schema for LangChain pack operations.",
+  "type": "object",
+  "properties": {
+    "job_id": {
+      "type": "string",
+      "description": "Cordum job ID."
+    },
+    "profile": {
+      "type": "string",
+      "description": "Integration profile used."
+    },
+    "action": {
+      "type": "string",
+      "description": "Action that was executed.",
+      "enum": ["chain.invoke", "agent.invoke", "retriever.invoke"]
+    },
+    "duration_ms": {
+      "type": "number",
+      "description": "Total execution duration in milliseconds."
+    },
+    "output": {
+      "description": "Final output from the chain, agent, or retriever.",
+      "type": ["string", "object", "array", "null"]
+    },
+    "intermediate_steps": {
+      "type": "array",
+      "description": "Intermediate agent steps (actions + observations).",
+      "items": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "object",
+            "properties": {
+              "tool": { "type": "string" },
+              "tool_input": {},
+              "log": { "type": "string" }
+            }
+          },
+          "observation": {},
+          "governance_decision": {
+            "type": "string",
+            "description": "CAP governance decision for this tool call.",
+            "enum": ["approved", "denied", "error", "skipped"]
+          },
+          "governance_job_id": {
+            "type": "string",
+            "description": "Cordum job ID for the governance evaluation."
+          }
+        }
+      }
+    },
+    "tool_calls": {
+      "type": "array",
+      "description": "Summary of all tool calls with governance decisions.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "tool_name": { "type": "string" },
+          "arguments": { "type": "object" },
+          "governance_decision": { "type": "string" },
+          "governance_job_id": { "type": "string" },
+          "result": {},
+          "error": { "type": "string" }
+        }
+      }
+    },
+    "tokens_used": {
+      "type": "object",
+      "description": "Aggregate token usage across all LLM calls.",
+      "properties": {
+        "prompt_tokens": { "type": "integer" },
+        "completion_tokens": { "type": "integer" },
+        "total_tokens": { "type": "integer" }
+      }
+    },
+    "documents": {
+      "type": "array",
+      "description": "Retrieved documents (retriever action only).",
+      "items": {
+        "type": "object",
+        "properties": {
+          "page_content": { "type": "string" },
+          "metadata": { "type": "object" }
+        }
+      }
+    },
+    "error": {
+      "type": "string",
+      "description": "Error message if the execution failed."
+    }
+  }
+}

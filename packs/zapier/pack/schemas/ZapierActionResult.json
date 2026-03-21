@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ZapierActionResult",
+  "type": "object",
+  "additionalProperties": true,
+  "properties": {
+    "job_id": {"type": "string"},
+    "action": {"type": "string"},
+    "request_id": {"type": "string"},
+    "status_code": {"type": "integer"},
+    "status": {"type": "string"},
+    "duration_ms": {"type": "integer"},
+    "action_used": {"type": "string"},
+    "execution_log_id": {"type": "string"},
+    "result": {},
+    "additional_results": {
+      "type": "array",
+      "items": {"type": "object", "additionalProperties": true}
+    },
+    "error": {"type": "string"},
+    "metadata": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  },
+  "required": ["job_id", "action", "status_code"]
+}

@@ -1,0 +1,8 @@
+topics:
+  job.llamaindex.query: llamaindex
+  job.llamaindex.retrieve: llamaindex
+  job.llamaindex.index: llamaindex
+  job.llamaindex.ingest: llamaindex
+pools:
+  llamaindex:
+    requires: ["network:egress"]

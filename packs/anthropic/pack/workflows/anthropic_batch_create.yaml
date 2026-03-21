@@ -1,0 +1,24 @@
+id: anthropic.batch
+name: Anthropic Batch Operations
+description: Create, list, get, or cancel Anthropic message batches.
+version: "0.1.0"
+timeout_sec: 60
+steps:
+  batch:
+    id: batch
+    name: Anthropic Batch API
+    type: worker
+    topic: job.anthropic.batch
+    input:
+      profile: ${input.profile}
+      action: ${input.action}
+      params: ${input.params}
+      request_id: ${input.request_id}
+      auth: ${input.auth}
+    input_schema_id: anthropic/AnthropicBatchInput
+    output_schema_id: anthropic/AnthropicActionResult
+    meta:
+      pack_id: anthropic
+      capability: anthropic.batch
+      risk_tags: ["write", "network", "llm"]
+      requires: ["network:egress"]

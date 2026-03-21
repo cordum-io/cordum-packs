@@ -1,0 +1,25 @@
+id: openai.embed
+name: OpenAI Embeddings
+description: Generate embeddings with OpenAI embedding models.
+version: "0.1.0"
+timeout_sec: 60
+steps:
+  embed:
+    id: embed
+    name: Create embeddings
+    type: worker
+    topic: job.openai.embed
+    input:
+      profile: ${input.profile}
+      action: embeddings
+      model: ${input.model}
+      input: ${input.input}
+      dimensions: ${input.dimensions}
+      encoding_format: ${input.encoding_format}
+    input_schema_id: openai/OpenAIEmbeddingInput
+    output_schema_id: openai/OpenAIActionResult
+    meta:
+      pack_id: openai
+      capability: openai.embed
+      risk_tags: ["read", "llm"]
+      requires: ["network:egress"]

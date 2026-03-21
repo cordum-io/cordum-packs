@@ -1,0 +1,26 @@
+id: openai.audio.tts
+name: OpenAI Audio Speech
+description: Synthesize speech with OpenAI text-to-speech models.
+version: "0.1.0"
+timeout_sec: 180
+steps:
+  audio_tts:
+    id: audio_tts
+    name: Create speech
+    type: worker
+    topic: job.openai.audio.tts
+    input:
+      profile: ${input.profile}
+      action: audio.speech
+      model: ${input.model}
+      input: ${input.input}
+      voice: ${input.voice}
+      speed: ${input.speed}
+      format: ${input.format}
+    input_schema_id: openai/OpenAIAudioSpeechInput
+    output_schema_id: openai/OpenAIActionResult
+    meta:
+      pack_id: openai
+      capability: openai.audio.tts
+      risk_tags: ["write", "cost"]
+      requires: ["network:egress"]

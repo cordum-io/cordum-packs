@@ -1,0 +1,78 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Mistral Chat Completion Input",
+  "description": "Input schema for Mistral chat completions.",
+  "type": "object",
+  "properties": {
+    "model": {
+      "type": "string",
+      "description": "Model identifier.",
+      "enum": [
+        "mistral-large-latest",
+        "mistral-medium-latest",
+        "mistral-small-latest",
+        "codestral-latest",
+        "open-mistral-nemo",
+        "mistral-tiny-latest"
+      ]
+    },
+    "messages": {
+      "type": "array",
+      "description": "Conversation messages.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "role": { "type": "string", "enum": ["system", "user", "assistant", "tool"] },
+          "content": { "type": "string" },
+          "tool_calls": { "type": "array" },
+          "tool_call_id": { "type": "string" }
+        },
+        "required": ["role", "content"]
+      }
+    },
+    "temperature": { "type": "number", "minimum": 0.0, "maximum": 1.5 },
+    "max_tokens": { "type": "integer", "minimum": 1 },
+    "top_p": { "type": "number", "minimum": 0.0, "maximum": 1.0 },
+    "tools": {
+      "type": "array",
+      "description": "Function calling tool definitions.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "type": { "type": "string", "const": "function" },
+          "function": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "description": { "type": "string" },
+              "parameters": { "type": "object" }
+            },
+            "required": ["name"]
+          }
+        }
+      }
+    },
+    "tool_choice": {
+      "description": "Tool selection strategy.",
+      "oneOf": [
+        { "type": "string", "enum": ["auto", "any", "none"] },
+        { "type": "object" }
+      ]
+    },
+    "response_format": {
+      "type": "object",
+      "description": "Response format constraint.",
+      "properties": {
+        "type": { "type": "string", "enum": ["json_object", "text"] }
+      }
+    },
+    "safe_prompt": {
+      "type": "boolean",
+      "description": "Inject safety prompt before messages.",
+      "default": false
+    },
+    "stream": { "type": "boolean" },
+    "random_seed": { "type": "integer" }
+  },
+  "required": ["model", "messages"]
+}

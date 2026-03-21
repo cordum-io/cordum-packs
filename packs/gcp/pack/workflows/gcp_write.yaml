@@ -1,6 +1,6 @@
 id: gcp.write
 name: GCP Write
-description: Perform approved GCP changes or remediations.
+description: Perform approved GCP write or manage actions through the generic dispatcher.
 version: "0.1.0"
 timeout_sec: 120
 steps:
@@ -11,6 +11,8 @@ steps:
     topic: job.gcp.write
     input:
       profile: ${input.profile}
+      project_id: ${input.project_id}
+      location: ${input.location}
       action: ${input.action}
       params: ${input.params}
       request_id: ${input.request_id}

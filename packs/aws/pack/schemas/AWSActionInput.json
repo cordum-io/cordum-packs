@@ -1,6 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "AWS Action Input",
+  "description": "Generic action dispatcher for the AWS pack.",
   "type": "object",
   "properties": {
     "profile": {
@@ -9,7 +10,42 @@
     },
     "action": {
       "type": "string",
-      "description": "Action identifier, e.g. cloudwatch.logs.query, ecs.services.list, s3.get_object."
+      "description": "Action identifier.",
+      "enum": [
+        "lambda.invoke",
+        "lambda.get_function",
+        "lambda.list_functions",
+        "s3.get_object",
+        "s3.put_object",
+        "s3.list_buckets",
+        "s3.list_objects",
+        "s3.head_object",
+        "s3.delete_object",
+        "sqs.send_message",
+        "sqs.receive_message",
+        "sqs.get_queue_url",
+        "sqs.list_queues",
+        "sns.publish",
+        "sns.list_topics",
+        "sns.list_subscriptions",
+        "ec2.describe_instances",
+        "ec2.describe_security_groups",
+        "ec2.describe_vpcs",
+        "cloudwatch.get_metric_data",
+        "cloudwatch.list_metrics",
+        "cloudwatch.describe_alarms",
+        "iam.get_user",
+        "iam.list_users",
+        "iam.list_roles",
+        "iam.list_policies",
+        "secretsmanager.get_secret_value",
+        "secretsmanager.list_secrets",
+        "secretsmanager.describe_secret"
+      ]
+    },
+    "region": {
+      "type": "string",
+      "description": "AWS region override (e.g., us-east-1). Falls back to profile/config default."
     },
     "params": {
       "type": "object",
@@ -20,7 +56,5 @@
       "description": "Optional idempotency or trace id."
     }
   },
-  "required": [
-    "action"
-  ]
+  "required": ["action"]
 }

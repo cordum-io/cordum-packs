@@ -1,0 +1,105 @@
+apiVersion: cordum.io/v1alpha1
+kind: Pack
+
+metadata:
+  id: huggingface
+  version: 0.1.0
+  title: Hugging Face
+  description: Hugging Face — inference API, embeddings, model hub search, and Spaces management.
+  image: https://cdn.simpleicons.org/huggingface
+
+compatibility:
+  protocolVersion: 1
+  minCoreVersion: 0.1.0
+
+topics:
+  - name: job.huggingface.inference
+    requires: ["network:egress"]
+    riskTags: ["read", "network", "llm"]
+    capability: huggingface.inference
+  - name: job.huggingface.embed
+    requires: ["network:egress"]
+    riskTags: ["read", "network", "llm"]
+    capability: huggingface.embed
+  - name: job.huggingface.models
+    requires: ["network:egress"]
+    riskTags: ["read", "network"]
+    capability: huggingface.models
+  - name: job.huggingface.spaces
+    requires: ["network:egress"]
+    riskTags: ["read", "network"]
+    capability: huggingface.spaces
+  - name: job.huggingface.spaces.manage
+    requires: ["network:egress"]
+    riskTags: ["write", "network"]
+    capability: huggingface.spaces.manage
+
+resources:
+  schemas:
+    - id: huggingface/HuggingFaceActionInput
+      path: schemas/HuggingFaceActionInput.json
+    - id: huggingface/HuggingFaceInferenceInput
+      path: schemas/HuggingFaceInferenceInput.json
+    - id: huggingface/HuggingFaceEmbeddingInput
+      path: schemas/HuggingFaceEmbeddingInput.json
+    - id: huggingface/HuggingFaceModelSearchInput
+      path: schemas/HuggingFaceModelSearchInput.json
+    - id: huggingface/HuggingFaceActionResult
+      path: schemas/HuggingFaceActionResult.json
+  workflows:
+    - id: huggingface.inference
+      path: workflows/huggingface_inference.yaml
+    - id: huggingface.embed
+      path: workflows/huggingface_embed.yaml
+    - id: huggingface.model.search
+      path: workflows/huggingface_model_search.yaml
+
+overlays:
+  config:
+    - name: pools
+      scope: system
+      key: pools
+      strategy: json_merge_patch
+      path: overlays/pools.patch.yaml
+    - name: timeouts
+      scope: system
+      key: timeouts
+      strategy: json_merge_patch
+      path: overlays/timeouts.patch.yaml
+  policy:
+    - name: safety
+      strategy: bundle_fragment
+      path: overlays/policy.fragment.yaml
+
+tests:
+  policySimulations:
+    - name: allow_inference
+      request:
+        tenantId: default
+        topic: job.huggingface.inference
+        riskTags: ["read", "network", "llm"]
+      expectDecision: ALLOW
+    - name: allow_embed
+      request:
+        tenantId: default
+        topic: job.huggingface.embed
+        riskTags: ["read", "network", "llm"]
+      expectDecision: ALLOW
+    - name: allow_models
+      request:
+        tenantId: default
+        topic: job.huggingface.models
+        riskTags: ["read", "network"]
+      expectDecision: ALLOW
+    - name: allow_spaces_read
+      request:
+        tenantId: default
+        topic: job.huggingface.spaces
+        riskTags: ["read", "network"]
+      expectDecision: ALLOW
+    - name: spaces_manage_requires_approval
+      request:
+        tenantId: default
+        topic: job.huggingface.spaces.manage
+        riskTags: ["write", "network"]
+      expectDecision: REQUIRE_APPROVAL

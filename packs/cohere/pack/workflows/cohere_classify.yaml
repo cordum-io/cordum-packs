@@ -1,0 +1,23 @@
+id: cohere.classify
+name: Cohere Classify
+description: Classify text with few-shot examples.
+version: "0.1.0"
+timeout_sec: 60
+steps:
+  classify:
+    id: classify
+    name: Cohere Classify API
+    type: worker
+    topic: job.cohere.classify
+    input:
+      profile: ${input.profile}
+      action: classify
+      params: ${input.params}
+      request_id: ${input.request_id}
+    input_schema_id: cohere/CohereClassifyInput
+    output_schema_id: cohere/CohereActionResult
+    meta:
+      pack_id: cohere
+      capability: cohere.classify
+      risk_tags: ["read", "network", "llm"]
+      requires: ["network:egress"]

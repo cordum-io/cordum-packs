@@ -1,0 +1,12 @@
+topics:
+  job.openai.chat: openai
+  job.openai.chat.stream: openai
+  job.openai.embed: openai
+  job.openai.image.generate: openai
+  job.openai.audio.transcribe: openai
+  job.openai.audio.tts: openai
+  job.openai.finetune: openai
+  job.openai.finetune.read: openai
+pools:
+  openai:
+    requires: ["network:egress"]

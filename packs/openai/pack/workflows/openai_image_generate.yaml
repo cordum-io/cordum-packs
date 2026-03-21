@@ -1,0 +1,27 @@
+id: openai.image.generate
+name: OpenAI Image Generate
+description: Generate images with DALL-E models.
+version: "0.1.0"
+timeout_sec: 180
+steps:
+  image_generate:
+    id: image_generate
+    name: Generate image
+    type: worker
+    topic: job.openai.image.generate
+    input:
+      profile: ${input.profile}
+      action: images.generate
+      model: ${input.model}
+      prompt: ${input.prompt}
+      size: ${input.size}
+      quality: ${input.quality}
+      style: ${input.style}
+      n: ${input.n}
+    input_schema_id: openai/OpenAIImageGenerateInput
+    output_schema_id: openai/OpenAIActionResult
+    meta:
+      pack_id: openai
+      capability: openai.image.generate
+      risk_tags: ["write", "cost"]
+      requires: ["network:egress"]

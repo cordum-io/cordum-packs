@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ZapierWebhookTriggerInput",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "webhook_name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Configured webhook alias. Raw Zapier URLs must stay in environment configuration, not workflow input."
+    },
+    "payload": {
+      "type": "object",
+      "default": {},
+      "additionalProperties": true
+    },
+    "request_id": {"type": "string"}
+  },
+  "required": ["webhook_name"]
+}

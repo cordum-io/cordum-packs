@@ -1,0 +1,27 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AWS Lambda Invoke Input",
+  "description": "Input schema for Lambda function invocation.",
+  "type": "object",
+  "properties": {
+    "function_name": {
+      "type": "string",
+      "description": "Lambda function name, ARN, or partial ARN."
+    },
+    "payload": {
+      "description": "JSON payload to send to the function.",
+      "type": ["object", "string", "null"]
+    },
+    "invocation_type": {
+      "type": "string",
+      "description": "Invocation type.",
+      "enum": ["RequestResponse", "Event", "DryRun"],
+      "default": "RequestResponse"
+    },
+    "qualifier": {
+      "type": "string",
+      "description": "Version or alias qualifier."
+    }
+  },
+  "required": ["function_name"]
+}

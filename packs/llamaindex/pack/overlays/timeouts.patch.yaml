@@ -1,0 +1,13 @@
+topics:
+  job.llamaindex.query:
+    timeout_seconds: 120
+    max_retries: 1
+  job.llamaindex.retrieve:
+    timeout_seconds: 60
+    max_retries: 2
+  job.llamaindex.index:
+    timeout_seconds: 300
+    max_retries: 1
+  job.llamaindex.ingest:
+    timeout_seconds: 300
+    max_retries: 1

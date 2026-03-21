@@ -1,0 +1,19 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Temporal Action Result",
+  "type": "object",
+  "properties": {
+    "job_id": { "type": "string" },
+    "profile": { "type": "string" },
+    "action": { "type": "string" },
+    "status_code": { "type": "integer" },
+    "duration_ms": { "type": "number" },
+    "workflow_id": { "type": "string" },
+    "run_id": { "type": "string" },
+    "schedule_id": { "type": "string" },
+    "execution_info": { "type": "object", "description": "Workflow execution details." },
+    "query_result": { "description": "Query response data." },
+    "result": { "type": ["object", "array", "null"] },
+    "error": { "type": "string" }
+  }
+}

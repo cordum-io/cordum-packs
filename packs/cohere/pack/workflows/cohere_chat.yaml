@@ -1,0 +1,23 @@
+id: cohere.chat
+name: Cohere Chat
+description: Send a chat message to Cohere with optional RAG documents.
+version: "0.1.0"
+timeout_sec: 120
+steps:
+  chat:
+    id: chat
+    name: Cohere Chat API
+    type: worker
+    topic: job.cohere.chat
+    input:
+      profile: ${input.profile}
+      action: chat
+      params: ${input.params}
+      request_id: ${input.request_id}
+    input_schema_id: cohere/CohereChatInput
+    output_schema_id: cohere/CohereActionResult
+    meta:
+      pack_id: cohere
+      capability: cohere.chat
+      risk_tags: ["read", "network", "llm"]
+      requires: ["network:egress"]

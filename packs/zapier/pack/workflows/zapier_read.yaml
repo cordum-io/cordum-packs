@@ -1,0 +1,22 @@
+id: zapier.read
+name: Zapier Read
+description: Read-only Zapier operations including stored AI Action discovery, execution log lookup, and webhook alias dispatch.
+version: "0.1.0"
+timeout_sec: 60
+steps:
+  read:
+    id: read
+    name: Zapier read action
+    type: worker
+    topic: job.zapier.read
+    input:
+      request_id: ${input.request_id}
+      action: ${input.action}
+      params: ${input.params}
+    input_schema_id: zapier/ZapierActionInput
+    output_schema_id: zapier/ZapierActionResult
+    meta:
+      pack_id: zapier
+      capability: zapier.read
+      risk_tags: ["read", "network"]
+      requires: ["network:egress"]

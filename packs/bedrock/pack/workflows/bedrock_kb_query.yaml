@@ -1,0 +1,24 @@
+id: bedrock.kb.query
+name: Bedrock Knowledge Base Query
+description: Retrieve and generate using a Bedrock Knowledge Base.
+version: "0.1.0"
+timeout_sec: 120
+steps:
+  query:
+    id: query
+    name: Bedrock KB Query
+    type: worker
+    topic: job.bedrock.write
+    input:
+      profile: ${input.profile}
+      action: kb.query
+      region: ${input.region}
+      params: ${input.params}
+      request_id: ${input.request_id}
+    input_schema_id: bedrock/BedrockKBQueryInput
+    output_schema_id: bedrock/BedrockActionResult
+    meta:
+      pack_id: bedrock
+      capability: bedrock.write
+      risk_tags: ["write", "network", "llm"]
+      requires: ["network:egress"]

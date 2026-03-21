@@ -1,0 +1,25 @@
+id: langchain.retriever.invoke
+name: LangChain Retriever Invoke
+description: Query a LangChain retriever for relevant documents.
+version: "0.1.0"
+timeout_sec: 60
+steps:
+  retriever:
+    id: retriever
+    name: LangChain Retriever Query
+    type: worker
+    topic: job.langchain.retriever
+    input:
+      profile: ${input.profile}
+      action: retriever.invoke
+      config: ${input.retriever_config}
+      query: ${input.query}
+      k: ${input.k}
+      request_id: ${input.request_id}
+    input_schema_id: langchain/LangChainRetrieverInput
+    output_schema_id: langchain/LangChainActionResult
+    meta:
+      pack_id: langchain
+      capability: langchain.retriever
+      risk_tags: ["read", "network"]
+      requires: ["network:egress"]

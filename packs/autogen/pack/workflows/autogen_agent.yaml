@@ -1,0 +1,24 @@
+id: autogen.agent
+name: AutoGen Single Agent
+description: Execute a single AutoGen agent task.
+version: "0.1.0"
+timeout_sec: 120
+steps:
+  agent:
+    id: agent
+    name: AutoGen Agent
+    type: worker
+    topic: job.autogen.agent
+    input:
+      profile: ${input.profile}
+      action: agent
+      config: ${input.agent_config}
+      input: ${input.message}
+      request_id: ${input.request_id}
+    input_schema_id: autogen/AutoGenAgentInput
+    output_schema_id: autogen/AutoGenActionResult
+    meta:
+      pack_id: autogen
+      capability: autogen.agent
+      risk_tags: ["read", "network", "llm"]
+      requires: ["network:egress"]

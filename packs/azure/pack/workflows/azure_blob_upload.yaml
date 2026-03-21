@@ -1,0 +1,23 @@
+id: azure.blob.upload
+name: Azure Blob Upload
+description: Upload a blob to Azure Blob Storage.
+version: "0.1.0"
+timeout_sec: 120
+steps:
+  upload:
+    id: upload
+    name: Blob Upload
+    type: worker
+    topic: job.azure.write
+    input:
+      profile: ${input.profile}
+      action: blob.upload
+      params: ${input.params}
+      request_id: ${input.request_id}
+    input_schema_id: azure/AzureBlobUploadInput
+    output_schema_id: azure/AzureActionResult
+    meta:
+      pack_id: azure
+      capability: azure.write
+      risk_tags: ["write", "network"]
+      requires: ["network:egress"]

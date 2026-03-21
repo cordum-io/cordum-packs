@@ -1,0 +1,40 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "n8n Webhook Payload",
+  "description": "Payload received from n8n and bridged into Cordum.",
+  "type": "object",
+  "properties": {
+    "source": {
+      "type": "string",
+      "const": "n8n"
+    },
+    "workflow_id": {
+      "type": "string"
+    },
+    "execution_id": {
+      "type": "string"
+    },
+    "data": {
+      "description": "Webhook body forwarded from n8n.",
+      "oneOf": [
+        { "type": "object", "additionalProperties": true },
+        { "type": "array" },
+        { "type": "string" },
+        { "type": "number" },
+        { "type": "integer" },
+        { "type": "boolean" },
+        { "type": "null" }
+      ]
+    },
+    "received_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "headers": {
+      "type": "object",
+      "additionalProperties": { "type": "string" }
+    }
+  },
+  "required": ["source", "workflow_id", "received_at"],
+  "additionalProperties": false
+}

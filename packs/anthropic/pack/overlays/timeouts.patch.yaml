@@ -1,0 +1,16 @@
+topics:
+  job.anthropic.messages:
+    timeout_seconds: 120
+    max_retries: 2
+  job.anthropic.messages.stream:
+    timeout_seconds: 300
+    max_retries: 1
+  job.anthropic.messages.tooluse:
+    timeout_seconds: 300
+    max_retries: 1
+  job.anthropic.batch:
+    timeout_seconds: 60
+    max_retries: 2
+  job.anthropic.batch.read:
+    timeout_seconds: 60
+    max_retries: 2

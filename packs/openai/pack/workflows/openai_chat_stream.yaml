@@ -1,0 +1,29 @@
+id: openai.chat.stream
+name: OpenAI Chat Stream
+description: Stream a chat completion through the OpenAI chat completions API.
+version: "0.1.0"
+timeout_sec: 120
+steps:
+  chat_stream:
+    id: chat_stream
+    name: Chat stream
+    type: worker
+    topic: job.openai.chat.stream
+    input:
+      profile: ${input.profile}
+      action: chat.completions.stream
+      model: ${input.model}
+      messages: ${input.messages}
+      temperature: ${input.temperature}
+      max_tokens: ${input.max_tokens}
+      tools: ${input.tools}
+      tool_choice: ${input.tool_choice}
+      response_format: ${input.response_format}
+      stream: true
+    input_schema_id: openai/OpenAIChatCompletionInput
+    output_schema_id: openai/OpenAIActionResult
+    meta:
+      pack_id: openai
+      capability: openai.chat.stream
+      risk_tags: ["read", "llm", "stream"]
+      requires: ["network:egress"]

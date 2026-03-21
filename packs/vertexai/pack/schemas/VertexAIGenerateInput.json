@@ -1,0 +1,90 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Vertex AI Generate Input",
+  "description": "Input schema for Gemini content generation through Vertex AI.",
+  "type": "object",
+  "properties": {
+    "profile": {
+      "type": "string"
+    },
+    "project_id": {
+      "type": "string"
+    },
+    "location": {
+      "type": "string"
+    },
+    "request_id": {
+      "type": "string"
+    },
+    "model": {
+      "type": "string",
+      "description": "Publisher model name such as gemini-2.5-pro or a full publisher model resource."
+    },
+    "prompt": {
+      "type": "string",
+      "description": "Single-turn prompt convenience field."
+    },
+    "messages": {
+      "type": "array",
+      "description": "Structured multi-turn chat messages.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": ["system", "user", "model", "assistant"]
+          },
+          "content": {
+            "oneOf": [
+              { "type": "string" },
+              { "type": "array" },
+              { "type": "object" }
+            ]
+          }
+        },
+        "required": ["role", "content"],
+        "additionalProperties": true
+      }
+    },
+    "system_instruction": {
+      "oneOf": [
+        { "type": "string" },
+        { "type": "object" }
+      ]
+    },
+    "generation_config": {
+      "type": "object",
+      "properties": {
+        "temperature": { "type": "number", "minimum": 0, "maximum": 2 },
+        "max_tokens": { "type": "integer", "minimum": 1, "maximum": 65536 },
+        "top_p": { "type": "number", "minimum": 0, "maximum": 1 },
+        "top_k": { "type": "integer", "minimum": 1 },
+        "stop_sequences": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      },
+      "additionalProperties": true
+    },
+    "safety_settings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "category": { "type": "string" },
+          "threshold": { "type": "string" }
+        },
+        "required": ["category", "threshold"],
+        "additionalProperties": true
+      }
+    }
+  },
+  "required": [
+    "model"
+  ],
+  "anyOf": [
+    { "required": ["prompt"] },
+    { "required": ["messages"] }
+  ],
+  "additionalProperties": false
+}

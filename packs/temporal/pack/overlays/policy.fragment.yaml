@@ -1,0 +1,28 @@
+version: v1
+rules:
+  - id: temporal-read
+    match:
+      topics:
+        - job.temporal.read
+      risk_tags:
+        - read
+    decision: allow
+
+  - id: temporal-write
+    match:
+      topics:
+        - job.temporal.write
+      risk_tags:
+        - write
+    decision: require_approval
+    reason: "Temporal write operations start workflows or modify state"
+
+  - id: temporal-destructive
+    match:
+      topics:
+        - job.temporal.destructive
+      risk_tags:
+        - write
+        - destructive
+    decision: require_approval
+    reason: "Temporal cancel/terminate operations are irreversible"

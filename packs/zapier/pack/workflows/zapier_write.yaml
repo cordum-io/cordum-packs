@@ -1,0 +1,22 @@
+id: zapier.write
+name: Zapier Write
+description: Governed Zapier AI Action execution and preview operations.
+version: "0.1.0"
+timeout_sec: 120
+steps:
+  write:
+    id: write
+    name: Zapier write action
+    type: worker
+    topic: job.zapier.write
+    input:
+      request_id: ${input.request_id}
+      action: ${input.action}
+      params: ${input.params}
+    input_schema_id: zapier/ZapierActionInput
+    output_schema_id: zapier/ZapierActionResult
+    meta:
+      pack_id: zapier
+      capability: zapier.write
+      risk_tags: ["write", "network"]
+      requires: ["network:egress"]

@@ -1,0 +1,17 @@
+version: v1
+rules:
+  - id: n8n-read
+    match:
+      topics:
+        - job.n8n.read
+      risk_tags:
+        - read
+    decision: allow
+  - id: n8n-write
+    match:
+      topics:
+        - job.n8n.write
+      risk_tags:
+        - write
+    decision: require_approval
+    reason: "n8n workflow execution and registration require approval"

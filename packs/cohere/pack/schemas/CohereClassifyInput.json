@@ -1,0 +1,24 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Cohere Classify Input",
+  "type": "object",
+  "properties": {
+    "model": { "type": "string" },
+    "inputs": { "type": "array", "items": { "type": "string" }, "description": "Texts to classify." },
+    "examples": {
+      "type": "array",
+      "description": "Labeled examples for few-shot classification.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "text": { "type": "string" },
+          "label": { "type": "string" }
+        },
+        "required": ["text", "label"]
+      }
+    },
+    "preset": { "type": "string", "description": "Preset ID (alternative to examples)." },
+    "truncate": { "type": "string", "enum": ["NONE", "START", "END"] }
+  },
+  "required": ["inputs"]
+}

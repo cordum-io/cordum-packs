@@ -1,0 +1,21 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Azure Blob Get Input",
+  "description": "Input schema for Azure Blob Storage download.",
+  "type": "object",
+  "properties": {
+    "storage_account": {
+      "type": "string",
+      "description": "Storage account name."
+    },
+    "container": {
+      "type": "string",
+      "description": "Blob container name."
+    },
+    "blob_name": {
+      "type": "string",
+      "description": "Blob name (path)."
+    }
+  },
+  "required": ["storage_account", "container", "blob_name"]
+}

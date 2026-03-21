@@ -1,0 +1,24 @@
+id: llamaindex.retrieve
+name: LlamaIndex Retrieve
+description: Retrieve relevant documents without synthesis.
+version: "0.1.0"
+timeout_sec: 60
+steps:
+  retrieve:
+    id: retrieve
+    name: LlamaIndex Retriever
+    type: worker
+    topic: job.llamaindex.retrieve
+    input:
+      profile: ${input.profile}
+      action: retrieve
+      config: ${input.index_config}
+      input: ${input}
+      request_id: ${input.request_id}
+    input_schema_id: llamaindex/LlamaIndexRetrieveInput
+    output_schema_id: llamaindex/LlamaIndexActionResult
+    meta:
+      pack_id: llamaindex
+      capability: llamaindex.retrieve
+      risk_tags: ["read", "network"]
+      requires: ["network:egress"]

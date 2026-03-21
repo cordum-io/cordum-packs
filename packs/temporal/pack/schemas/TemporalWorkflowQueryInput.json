@@ -1,0 +1,12 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Temporal Workflow Query Input",
+  "type": "object",
+  "properties": {
+    "workflow_id": { "type": "string" },
+    "run_id": { "type": "string" },
+    "query_type": { "type": "string" },
+    "args": { "description": "Query arguments." }
+  },
+  "required": ["workflow_id", "query_type"]
+}

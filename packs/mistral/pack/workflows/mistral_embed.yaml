@@ -1,0 +1,23 @@
+id: mistral.embed
+name: Mistral Embeddings
+description: Generate text embeddings using Mistral AI.
+version: "0.1.0"
+timeout_sec: 60
+steps:
+  embed:
+    id: embed
+    name: Mistral Embeddings API
+    type: worker
+    topic: job.mistral.embed
+    input:
+      profile: ${input.profile}
+      action: embeddings
+      params: ${input.params}
+      request_id: ${input.request_id}
+    input_schema_id: mistral/MistralEmbeddingInput
+    output_schema_id: mistral/MistralActionResult
+    meta:
+      pack_id: mistral
+      capability: mistral.embed
+      risk_tags: ["read", "network", "llm"]
+      requires: ["network:egress"]

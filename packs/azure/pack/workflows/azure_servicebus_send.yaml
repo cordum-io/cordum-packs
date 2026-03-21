@@ -1,0 +1,23 @@
+id: azure.servicebus.send
+name: Azure Service Bus Send
+description: Send a message to Azure Service Bus queue or topic.
+version: "0.1.0"
+timeout_sec: 60
+steps:
+  send:
+    id: send
+    name: Service Bus Send
+    type: worker
+    topic: job.azure.write
+    input:
+      profile: ${input.profile}
+      action: servicebus.send
+      params: ${input.params}
+      request_id: ${input.request_id}
+    input_schema_id: azure/AzureServiceBusSendInput
+    output_schema_id: azure/AzureActionResult
+    meta:
+      pack_id: azure
+      capability: azure.write
+      risk_tags: ["write", "network"]
+      requires: ["network:egress"]

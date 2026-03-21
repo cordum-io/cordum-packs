@@ -1,0 +1,37 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "n8n Action Input",
+  "description": "Generic dispatcher input for the n8n pack.",
+  "type": "object",
+  "properties": {
+    "profile": {
+      "type": "string",
+      "description": "Named integration profile to use."
+    },
+    "request_id": {
+      "type": "string",
+      "description": "Optional idempotency or trace identifier."
+    },
+    "action": {
+      "type": "string",
+      "description": "n8n action identifier.",
+      "enum": [
+        "workflow.list",
+        "workflow.get",
+        "workflow.execute",
+        "workflow.activate",
+        "workflow.deactivate",
+        "execution.get",
+        "execution.list",
+        "credentials.list"
+      ]
+    },
+    "params": {
+      "type": "object",
+      "description": "Action-specific parameters.",
+      "additionalProperties": true
+    }
+  },
+  "required": ["action"],
+  "additionalProperties": false
+}

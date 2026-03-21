@@ -1,0 +1,13 @@
+version: v1
+rules:
+  - id: cohere-all
+    match:
+      topics:
+        - job.cohere.chat
+        - job.cohere.generate
+        - job.cohere.embed
+        - job.cohere.rerank
+        - job.cohere.classify
+      risk_tags:
+        - read
+    decision: allow

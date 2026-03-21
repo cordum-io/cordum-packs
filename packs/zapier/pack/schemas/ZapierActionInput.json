@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ZapierActionInput",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "action": {
+      "type": "string",
+      "enum": ["nla.list", "nla.execute", "nla.preview", "nla.log", "webhook.send"]
+    },
+    "params": {
+      "type": "object",
+      "default": {},
+      "additionalProperties": true,
+      "properties": {
+        "action_id": {"type": "string", "minLength": 1},
+        "instruction": {"type": "string", "minLength": 1},
+        "preview_only": {"type": "boolean"},
+        "execution_log_id": {"type": "string", "minLength": 1},
+        "webhook_name": {"type": "string", "minLength": 1},
+        "payload": {"type": "object", "additionalProperties": true},
+        "params_hints": {"type": "object", "additionalProperties": true}
+      }
+    },
+    "request_id": {"type": "string"}
+  },
+  "required": ["action"]
+}

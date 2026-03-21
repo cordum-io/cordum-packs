@@ -1,38 +1,20 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "AWS Action Result",
+  "description": "Standard result schema for AWS pack operations.",
   "type": "object",
   "properties": {
-    "job_id": {
-      "type": "string"
-    },
-    "profile": {
-      "type": "string"
-    },
-    "action": {
-      "type": "string"
-    },
-    "status_code": {
-      "type": "integer"
-    },
-    "request_id": {
-      "type": "string"
-    },
-    "duration_ms": {
-      "type": "number"
-    },
+    "job_id": { "type": "string", "description": "Cordum job ID." },
+    "profile": { "type": "string", "description": "Integration profile used." },
+    "action": { "type": "string", "description": "Action that was executed." },
+    "region": { "type": "string", "description": "AWS region used." },
+    "status_code": { "type": "integer", "description": "HTTP status code from AWS API." },
+    "request_id": { "type": "string", "description": "AWS request ID." },
+    "duration_ms": { "type": "number", "description": "Request duration in milliseconds." },
     "result": {
-      "type": [
-        "object",
-        "array",
-        "string",
-        "number",
-        "boolean",
-        "null"
-      ]
+      "description": "Action result payload.",
+      "type": ["object", "array", "string", "number", "boolean", "null"]
     },
-    "error": {
-      "type": "string"
-    }
+    "error": { "type": "string", "description": "Error message if the request failed." }
   }
 }

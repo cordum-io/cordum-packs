@@ -1,0 +1,23 @@
+id: crewai.crew.run
+name: Multi-Agent Crew Workflow
+description: Kick off a governed CrewAI crew with multiple agents and tasks.
+version: "0.1.0"
+timeout_sec: 300
+steps:
+  kickoff:
+    id: kickoff
+    name: Run CrewAI crew
+    type: worker
+    topic: job.crewai.crew
+    input:
+      crew_config: ${input.crew_config}
+      input: ${input.input}
+      tool_governance: ${input.tool_governance}
+      trace_id: ${input.trace_id}
+    input_schema_id: crewai/CrewAICrewInput
+    output_schema_id: crewai/CrewAIActionResult
+    meta:
+      pack_id: crewai
+      capability: crewai.crew.run
+      risk_tags: ["write", "tool-execution", "multi-agent"]
+      requires: ["network:egress"]

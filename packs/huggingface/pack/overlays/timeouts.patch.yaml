@@ -1,0 +1,16 @@
+topics:
+  job.huggingface.inference:
+    timeout_seconds: 120
+    max_retries: 1
+  job.huggingface.embed:
+    timeout_seconds: 60
+    max_retries: 2
+  job.huggingface.models:
+    timeout_seconds: 30
+    max_retries: 2
+  job.huggingface.spaces:
+    timeout_seconds: 30
+    max_retries: 2
+  job.huggingface.spaces.manage:
+    timeout_seconds: 60
+    max_retries: 1

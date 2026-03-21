@@ -1,0 +1,97 @@
+apiVersion: cordum.io/v1alpha1
+kind: Pack
+
+metadata:
+  id: llamaindex
+  version: 0.1.0
+  title: LlamaIndex
+  description: LlamaIndex — RAG index management, query engine, document ingestion, and retrieval pipelines.
+  image: https://cdn.simpleicons.org/llamaindex
+
+compatibility:
+  protocolVersion: 1
+  minCoreVersion: 0.1.0
+
+topics:
+  - name: job.llamaindex.query
+    requires: ["network:egress"]
+    riskTags: ["read", "network", "llm"]
+    capability: llamaindex.query
+  - name: job.llamaindex.retrieve
+    requires: ["network:egress"]
+    riskTags: ["read", "network"]
+    capability: llamaindex.retrieve
+  - name: job.llamaindex.index
+    requires: ["network:egress"]
+    riskTags: ["write", "network"]
+    capability: llamaindex.index
+  - name: job.llamaindex.ingest
+    requires: ["network:egress"]
+    riskTags: ["write", "network"]
+    capability: llamaindex.ingest
+
+resources:
+  schemas:
+    - id: llamaindex/LlamaIndexQueryInput
+      path: schemas/LlamaIndexQueryInput.json
+    - id: llamaindex/LlamaIndexIndexInput
+      path: schemas/LlamaIndexIndexInput.json
+    - id: llamaindex/LlamaIndexIngestInput
+      path: schemas/LlamaIndexIngestInput.json
+    - id: llamaindex/LlamaIndexRetrieveInput
+      path: schemas/LlamaIndexRetrieveInput.json
+    - id: llamaindex/LlamaIndexActionResult
+      path: schemas/LlamaIndexActionResult.json
+  workflows:
+    - id: llamaindex.query
+      path: workflows/llamaindex_query.yaml
+    - id: llamaindex.index.create
+      path: workflows/llamaindex_index_create.yaml
+    - id: llamaindex.ingest
+      path: workflows/llamaindex_ingest.yaml
+    - id: llamaindex.retrieve
+      path: workflows/llamaindex_retrieve.yaml
+
+overlays:
+  config:
+    - name: pools
+      scope: system
+      key: pools
+      strategy: json_merge_patch
+      path: overlays/pools.patch.yaml
+    - name: timeouts
+      scope: system
+      key: timeouts
+      strategy: json_merge_patch
+      path: overlays/timeouts.patch.yaml
+  policy:
+    - name: safety
+      strategy: bundle_fragment
+      path: overlays/policy.fragment.yaml
+
+tests:
+  policySimulations:
+    - name: allow_query
+      request:
+        tenantId: default
+        topic: job.llamaindex.query
+        riskTags: ["read", "network", "llm"]
+      expectDecision: ALLOW
+    - name: allow_retrieve
+      request:
+        tenantId: default
+        topic: job.llamaindex.retrieve
+        riskTags: ["read", "network"]
+      expectDecision: ALLOW
+    - name: index_requires_approval
+      request:
+        tenantId: default
+        topic: job.llamaindex.index
+        riskTags: ["write", "network"]
+      expectDecision: REQUIRE_APPROVAL
+    - name: ingest_requires_approval
+      request:
+        tenantId: default
+        topic: job.llamaindex.ingest
+        riskTags: ["write", "network"]
+      expectDecision: REQUIRE_APPROVAL

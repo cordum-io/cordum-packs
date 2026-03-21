@@ -1,0 +1,41 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "n8n Execute Workflow Input",
+  "description": "Input schema for triggering an n8n workflow execution.",
+  "type": "object",
+  "properties": {
+    "profile": {
+      "type": "string"
+    },
+    "request_id": {
+      "type": "string"
+    },
+    "workflow_id": {
+      "type": "string",
+      "description": "n8n workflow id to execute."
+    },
+    "payload": {
+      "type": "object",
+      "description": "Input payload forwarded to the n8n workflow.",
+      "additionalProperties": true,
+      "default": {}
+    },
+    "wait_for_completion": {
+      "type": "boolean",
+      "description": "Poll the execution until it reaches a terminal state.",
+      "default": false
+    },
+    "poll_interval_ms": {
+      "type": "integer",
+      "minimum": 100,
+      "description": "Polling interval used when wait_for_completion is true."
+    },
+    "completion_timeout_sec": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Maximum seconds to wait for workflow completion."
+    }
+  },
+  "required": ["workflow_id"],
+  "additionalProperties": false
+}

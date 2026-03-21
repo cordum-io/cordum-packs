@@ -1,0 +1,43 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "OpenAI Fine-Tune Input",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "profile": { "type": "string" },
+    "model": { "type": "string", "minLength": 1 },
+    "training_file": { "type": "string", "minLength": 1 },
+    "validation_file": { "type": "string" },
+    "suffix": { "type": "string", "maxLength": 64 },
+    "hyperparameters": {
+      "type": "object",
+      "properties": {
+        "n_epochs": {
+          "oneOf": [
+            { "type": "integer", "minimum": 1 },
+            { "type": "string", "enum": ["auto"] }
+          ]
+        },
+        "batch_size": {
+          "oneOf": [
+            { "type": "integer", "minimum": 1 },
+            { "type": "string", "enum": ["auto"] }
+          ]
+        },
+        "learning_rate_multiplier": { "type": "number", "exclusiveMinimum": 0 }
+      },
+      "additionalProperties": false
+    },
+    "auth": {
+      "type": "object",
+      "properties": {
+        "api_key": { "type": "string" },
+        "api_key_env": { "type": "string" },
+        "organization": { "type": "string" },
+        "organization_env": { "type": "string" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "required": ["model", "training_file"]
+}

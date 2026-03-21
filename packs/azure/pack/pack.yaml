@@ -5,7 +5,8 @@ metadata:
   id: azure
   version: 0.1.0
   title: Azure
-  description: Azure Monitor queries and service inspection.
+  description: Azure cloud integration — Functions, Blob Storage, Service Bus, VMs, Monitor, Key Vault, Entra ID.
+  image: https://cdn.simpleicons.org/microsoftazure
 
 compatibility:
   protocolVersion: 1
@@ -28,11 +29,31 @@ resources:
       path: schemas/AzureActionInput.json
     - id: azure/AzureActionResult
       path: schemas/AzureActionResult.json
+    - id: azure/AzureFunctionInvokeInput
+      path: schemas/AzureFunctionInvokeInput.json
+    - id: azure/AzureBlobGetInput
+      path: schemas/AzureBlobGetInput.json
+    - id: azure/AzureBlobUploadInput
+      path: schemas/AzureBlobUploadInput.json
+    - id: azure/AzureServiceBusSendInput
+      path: schemas/AzureServiceBusSendInput.json
+    - id: azure/AzureKeyVaultGetSecretInput
+      path: schemas/AzureKeyVaultGetSecretInput.json
   workflows:
     - id: azure.read
       path: workflows/azure_read.yaml
     - id: azure.write
       path: workflows/azure_write.yaml
+    - id: azure.function.invoke
+      path: workflows/azure_function_invoke.yaml
+    - id: azure.blob.get
+      path: workflows/azure_blob_get.yaml
+    - id: azure.blob.upload
+      path: workflows/azure_blob_upload.yaml
+    - id: azure.servicebus.send
+      path: workflows/azure_servicebus_send.yaml
+    - id: azure.keyvault.get_secret
+      path: workflows/azure_keyvault_get_secret.yaml
 
 overlays:
   config:

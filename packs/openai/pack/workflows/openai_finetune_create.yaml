@@ -1,0 +1,26 @@
+id: openai.finetune.create
+name: OpenAI Fine-Tune Create
+description: Create a fine-tuning job in OpenAI.
+version: "0.1.0"
+timeout_sec: 300
+steps:
+  finetune_create:
+    id: finetune_create
+    name: Create fine-tune
+    type: worker
+    topic: job.openai.finetune
+    input:
+      profile: ${input.profile}
+      action: fine_tuning.jobs.create
+      model: ${input.model}
+      training_file: ${input.training_file}
+      validation_file: ${input.validation_file}
+      suffix: ${input.suffix}
+      hyperparameters: ${input.hyperparameters}
+    input_schema_id: openai/OpenAIFineTuneInput
+    output_schema_id: openai/OpenAIActionResult
+    meta:
+      pack_id: openai
+      capability: openai.finetune.create
+      risk_tags: ["write", "cost"]
+      requires: ["network:egress"]

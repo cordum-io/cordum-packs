@@ -1,0 +1,24 @@
+id: aws.s3.get_object
+name: AWS S3 Get Object
+description: Download an object from S3.
+version: "0.1.0"
+timeout_sec: 60
+steps:
+  get:
+    id: get
+    name: S3 GetObject
+    type: worker
+    topic: job.aws.read
+    input:
+      profile: ${input.profile}
+      action: s3.get_object
+      region: ${input.region}
+      params: ${input.params}
+      request_id: ${input.request_id}
+    input_schema_id: aws/AWSS3GetObjectInput
+    output_schema_id: aws/AWSActionResult
+    meta:
+      pack_id: aws
+      capability: aws.read
+      risk_tags: ["read", "network"]
+      requires: ["network:egress"]

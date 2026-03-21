@@ -1,0 +1,24 @@
+id: aws.lambda.invoke
+name: AWS Lambda Invoke
+description: Invoke an AWS Lambda function.
+version: "0.1.0"
+timeout_sec: 120
+steps:
+  invoke:
+    id: invoke
+    name: Lambda Invoke
+    type: worker
+    topic: job.aws.write
+    input:
+      profile: ${input.profile}
+      action: lambda.invoke
+      region: ${input.region}
+      params: ${input.params}
+      request_id: ${input.request_id}
+    input_schema_id: aws/AWSLambdaInvokeInput
+    output_schema_id: aws/AWSActionResult
+    meta:
+      pack_id: aws
+      capability: aws.write
+      risk_tags: ["write", "network"]
+      requires: ["network:egress"]

@@ -1,0 +1,75 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "LangChain Retriever Input",
+  "description": "Input schema for LangChain retriever queries.",
+  "type": "object",
+  "properties": {
+    "profile": {
+      "type": "string",
+      "description": "Named integration profile to use."
+    },
+    "retriever_config": {
+      "type": "object",
+      "description": "Retriever configuration.",
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "Retriever type.",
+          "enum": ["vectorstore", "contextual-compression", "multi-query", "parent-document", "self-query", "custom"]
+        },
+        "store_config": {
+          "type": "object",
+          "description": "Vector store or backing store configuration.",
+          "properties": {
+            "provider": {
+              "type": "string",
+              "description": "Store provider.",
+              "enum": ["chroma", "faiss", "pinecone", "weaviate", "qdrant", "milvus", "redis"]
+            },
+            "collection_name": { "type": "string" },
+            "connection_string_env": {
+              "type": "string",
+              "description": "Environment variable containing the store connection string."
+            },
+            "embedding_config": {
+              "type": "object",
+              "description": "Embedding model configuration.",
+              "properties": {
+                "provider": { "type": "string", "enum": ["openai", "huggingface", "cohere"] },
+                "model": { "type": "string" },
+                "api_key_env": { "type": "string" }
+              },
+              "required": ["provider", "model"]
+            }
+          },
+          "required": ["provider"]
+        },
+        "search_type": {
+          "type": "string",
+          "enum": ["similarity", "mmr", "similarity_score_threshold"],
+          "default": "similarity"
+        },
+        "search_kwargs": {
+          "type": "object",
+          "description": "Additional search parameters (k, score_threshold, fetch_k, etc.)."
+        }
+      },
+      "required": ["type", "store_config"]
+    },
+    "query": {
+      "type": "string",
+      "description": "Query string for retrieval."
+    },
+    "k": {
+      "type": "integer",
+      "description": "Number of documents to retrieve.",
+      "minimum": 1,
+      "default": 4
+    },
+    "request_id": {
+      "type": "string",
+      "description": "Optional idempotency or trace id."
+    }
+  },
+  "required": ["retriever_config", "query"]
+}

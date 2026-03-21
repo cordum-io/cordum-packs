@@ -1,0 +1,18 @@
+version: v1
+rules:
+  - id: crewai-task
+    match:
+      topics:
+        - job.crewai.task
+      risk_tags:
+        - read
+    decision: allow
+  - id: crewai-crew
+    match:
+      topics:
+        - job.crewai.crew
+        - job.crewai.toolcall
+      risk_tags:
+        - write
+    decision: require_approval
+    reason: "Crew runs and governed tool calls require approval"

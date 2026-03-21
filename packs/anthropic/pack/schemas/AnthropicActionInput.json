@@ -1,0 +1,49 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Anthropic Action Input",
+  "description": "Top-level action router for the Anthropic pack.",
+  "type": "object",
+  "properties": {
+    "profile": {
+      "type": "string",
+      "description": "Named integration profile to use."
+    },
+    "action": {
+      "type": "string",
+      "description": "Action identifier.",
+      "enum": [
+        "messages.create",
+        "messages.create.stream",
+        "messages.create.tooluse",
+        "batch.create",
+        "batch.list",
+        "batch.get",
+        "batch.cancel",
+        "models.list"
+      ]
+    },
+    "params": {
+      "type": "object",
+      "description": "Action-specific parameters. See AnthropicMessagesInput or AnthropicBatchInput for details."
+    },
+    "request_id": {
+      "type": "string",
+      "description": "Optional idempotency or trace id."
+    },
+    "auth": {
+      "type": "object",
+      "description": "Optional inline auth (must be enabled in worker config).",
+      "properties": {
+        "api_key": {
+          "type": "string",
+          "description": "Anthropic API key (x-api-key header)."
+        },
+        "api_key_env": {
+          "type": "string",
+          "description": "Environment variable name containing the API key."
+        }
+      }
+    }
+  },
+  "required": ["action"]
+}

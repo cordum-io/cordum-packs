@@ -1,0 +1,7 @@
+topics:
+  job.temporal.read: temporal
+  job.temporal.write: temporal
+  job.temporal.destructive: temporal
+pools:
+  temporal:
+    requires: ["network:egress"]

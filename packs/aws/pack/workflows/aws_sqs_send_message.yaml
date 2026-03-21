@@ -1,0 +1,24 @@
+id: aws.sqs.send_message
+name: AWS SQS Send Message
+description: Send a message to an SQS queue.
+version: "0.1.0"
+timeout_sec: 60
+steps:
+  send:
+    id: send
+    name: SQS SendMessage
+    type: worker
+    topic: job.aws.write
+    input:
+      profile: ${input.profile}
+      action: sqs.send_message
+      region: ${input.region}
+      params: ${input.params}
+      request_id: ${input.request_id}
+    input_schema_id: aws/AWSSQSSendMessageInput
+    output_schema_id: aws/AWSActionResult
+    meta:
+      pack_id: aws
+      capability: aws.write
+      risk_tags: ["write", "network"]
+      requires: ["network:egress"]

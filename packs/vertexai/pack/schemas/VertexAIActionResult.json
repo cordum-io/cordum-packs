@@ -1,0 +1,63 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Vertex AI Action Result",
+  "description": "Standard result envelope for Vertex AI pack actions.",
+  "type": "object",
+  "properties": {
+    "job_id": {
+      "type": "string"
+    },
+    "profile": {
+      "type": "string"
+    },
+    "action": {
+      "type": "string"
+    },
+    "project_id": {
+      "type": "string"
+    },
+    "location": {
+      "type": "string"
+    },
+    "request_id": {
+      "type": "string"
+    },
+    "status_code": {
+      "type": "integer"
+    },
+    "duration_ms": {
+      "type": "integer"
+    },
+    "latency_ms": {
+      "type": "integer"
+    },
+    "result": {},
+    "error": {
+      "type": "string"
+    },
+    "candidates": {
+      "type": "array"
+    },
+    "finish_reason": {
+      "type": "string"
+    },
+    "token_usage": {
+      "type": "object",
+      "properties": {
+        "prompt_tokens": { "type": "integer" },
+        "completion_tokens": { "type": "integer" },
+        "total_tokens": { "type": "integer" }
+      },
+      "additionalProperties": false
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  },
+  "required": [
+    "job_id",
+    "action"
+  ],
+  "additionalProperties": false
+}

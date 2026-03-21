@@ -1,0 +1,38 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AutoGen Group Chat Input",
+  "type": "object",
+  "properties": {
+    "agents": {
+      "type": "array",
+      "description": "Agent definitions for the group chat.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "system_message": { "type": "string" },
+          "llm_config": {
+            "type": "object",
+            "properties": {
+              "model": { "type": "string" },
+              "api_key_env": { "type": "string" },
+              "temperature": { "type": "number" }
+            }
+          },
+          "human_input_mode": { "type": "string", "enum": ["NEVER", "ALWAYS", "TERMINATE"], "default": "NEVER" },
+          "code_execution_config": {
+            "type": ["object", "boolean"],
+            "description": "Code execution config or false to disable."
+          },
+          "tools": { "type": "array", "description": "Tool definitions for this agent." }
+        },
+        "required": ["name"]
+      }
+    },
+    "message": { "type": "string", "description": "Initial message to start the conversation." },
+    "max_rounds": { "type": "integer", "minimum": 1, "default": 10 },
+    "speaker_selection": { "type": "string", "enum": ["auto", "round_robin", "random"], "default": "auto" },
+    "tool_governance": { "type": "boolean", "default": true }
+  },
+  "required": ["agents", "message"]
+}

@@ -1,0 +1,24 @@
+id: bedrock.converse
+name: Bedrock Converse
+description: Multi-turn conversation via the unified Bedrock Converse API.
+version: "0.1.0"
+timeout_sec: 120
+steps:
+  converse:
+    id: converse
+    name: Bedrock Converse API
+    type: worker
+    topic: job.bedrock.generate
+    input:
+      profile: ${input.profile}
+      action: converse
+      region: ${input.region}
+      params: ${input.params}
+      request_id: ${input.request_id}
+    input_schema_id: bedrock/BedrockConverseInput
+    output_schema_id: bedrock/BedrockActionResult
+    meta:
+      pack_id: bedrock
+      capability: bedrock.generate
+      risk_tags: ["read", "network", "llm"]
+      requires: ["network:egress"]

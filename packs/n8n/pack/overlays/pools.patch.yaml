@@ -1,0 +1,6 @@
+topics:
+  job.n8n.read: n8n
+  job.n8n.write: n8n
+pools:
+  n8n:
+    requires: ["network:egress"]

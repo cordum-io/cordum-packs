@@ -1,0 +1,16 @@
+topics:
+  job.mistral.chat:
+    timeout_seconds: 120
+    max_retries: 2
+  job.mistral.chat.stream:
+    timeout_seconds: 300
+    max_retries: 1
+  job.mistral.embed:
+    timeout_seconds: 60
+    max_retries: 2
+  job.mistral.code:
+    timeout_seconds: 60
+    max_retries: 2
+  job.mistral.fim:
+    timeout_seconds: 60
+    max_retries: 2

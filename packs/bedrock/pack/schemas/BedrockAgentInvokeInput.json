@@ -1,0 +1,12 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Bedrock Agent Invoke Input",
+  "type": "object",
+  "properties": {
+    "agent_id": { "type": "string" },
+    "agent_alias_id": { "type": "string" },
+    "session_id": { "type": "string" },
+    "input_text": { "type": "string" }
+  },
+  "required": ["agent_id", "input_text"]
+}

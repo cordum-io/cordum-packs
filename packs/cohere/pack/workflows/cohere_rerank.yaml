@@ -1,0 +1,23 @@
+id: cohere.rerank
+name: Cohere Rerank
+description: Rerank documents by relevance to a query (ideal for RAG pipelines).
+version: "0.1.0"
+timeout_sec: 60
+steps:
+  rerank:
+    id: rerank
+    name: Cohere Rerank API
+    type: worker
+    topic: job.cohere.rerank
+    input:
+      profile: ${input.profile}
+      action: rerank
+      params: ${input.params}
+      request_id: ${input.request_id}
+    input_schema_id: cohere/CohereRerankInput
+    output_schema_id: cohere/CohereActionResult
+    meta:
+      pack_id: cohere
+      capability: cohere.rerank
+      risk_tags: ["read", "network", "llm"]
+      requires: ["network:egress"]

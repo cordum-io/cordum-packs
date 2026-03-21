@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Cohere Chat Input",
+  "type": "object",
+  "properties": {
+    "model": { "type": "string", "enum": ["command-r-plus", "command-r", "command-light", "command"] },
+    "message": { "type": "string", "description": "Current user message." },
+    "preamble": { "type": "string", "description": "System preamble." },
+    "chat_history": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "role": { "type": "string", "enum": ["USER", "CHATBOT", "SYSTEM"] },
+          "message": { "type": "string" }
+        },
+        "required": ["role", "message"]
+      }
+    },
+    "documents": { "type": "array", "description": "RAG documents for grounded generation." },
+    "connectors": { "type": "array", "description": "Connector IDs for web search." },
+    "temperature": { "type": "number", "minimum": 0.0, "maximum": 1.0 },
+    "max_tokens": { "type": "integer", "minimum": 1 },
+    "tools": { "type": "array", "description": "Tool definitions for function calling." },
+    "tool_results": { "type": "array", "description": "Tool results from previous turn." }
+  },
+  "required": ["message"]
+}

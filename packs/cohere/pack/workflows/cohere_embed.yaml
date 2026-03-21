@@ -1,0 +1,23 @@
+id: cohere.embed
+name: Cohere Embed
+description: Generate text embeddings with input_type specification.
+version: "0.1.0"
+timeout_sec: 60
+steps:
+  embed:
+    id: embed
+    name: Cohere Embed API
+    type: worker
+    topic: job.cohere.embed
+    input:
+      profile: ${input.profile}
+      action: embed
+      params: ${input.params}
+      request_id: ${input.request_id}
+    input_schema_id: cohere/CohereEmbedInput
+    output_schema_id: cohere/CohereActionResult
+    meta:
+      pack_id: cohere
+      capability: cohere.embed
+      risk_tags: ["read", "network", "llm"]
+      requires: ["network:egress"]

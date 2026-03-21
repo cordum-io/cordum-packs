@@ -1,0 +1,27 @@
+id: openai.audio.transcribe
+name: OpenAI Audio Transcribe
+description: Transcribe audio with OpenAI Whisper models.
+version: "0.1.0"
+timeout_sec: 120
+steps:
+  audio_transcribe:
+    id: audio_transcribe
+    name: Transcribe audio
+    type: worker
+    topic: job.openai.audio.transcribe
+    input:
+      profile: ${input.profile}
+      action: audio.transcriptions
+      model: ${input.model}
+      file_url: ${input.file_url}
+      language: ${input.language}
+      prompt: ${input.prompt}
+      response_format: ${input.response_format}
+      temperature: ${input.temperature}
+    input_schema_id: openai/OpenAIAudioTranscribeInput
+    output_schema_id: openai/OpenAIActionResult
+    meta:
+      pack_id: openai
+      capability: openai.audio.transcribe
+      risk_tags: ["read", "llm"]
+      requires: ["network:egress"]

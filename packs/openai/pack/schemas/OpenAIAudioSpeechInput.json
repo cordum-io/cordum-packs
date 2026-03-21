@@ -1,0 +1,31 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "OpenAI Audio Speech Input",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "profile": { "type": "string" },
+    "model": {
+      "type": "string",
+      "enum": ["tts-1", "tts-1-hd"]
+    },
+    "input": { "type": "string", "minLength": 1, "maxLength": 4096 },
+    "voice": {
+      "type": "string",
+      "enum": ["alloy", "ash", "ballad", "cedar", "coral", "echo", "fable", "marin", "nova", "onyx", "sage", "shimmer"]
+    },
+    "speed": { "type": "number", "minimum": 0.25, "maximum": 4 },
+    "format": { "type": "string", "enum": ["mp3", "opus", "aac", "flac", "wav", "pcm"] },
+    "auth": {
+      "type": "object",
+      "properties": {
+        "api_key": { "type": "string" },
+        "api_key_env": { "type": "string" },
+        "organization": { "type": "string" },
+        "organization_env": { "type": "string" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "required": ["model", "input", "voice"]
+}

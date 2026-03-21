@@ -1,0 +1,75 @@
+apiVersion: cordum.io/v1alpha1
+kind: Pack
+
+metadata:
+  id: zapier
+  version: 0.1.0
+  title: Zapier
+  description: Zapier webhook aliasing and deprecated AI Actions/NLA bridge for Cordum workflows.
+  image: https://cdn.simpleicons.org/zapier
+
+compatibility:
+  protocolVersion: 1
+  minCoreVersion: 0.1.0
+
+topics:
+  - name: job.zapier.read
+    requires: ["network:egress"]
+    riskTags: ["read", "network"]
+    capability: zapier.read
+  - name: job.zapier.write
+    requires: ["network:egress"]
+    riskTags: ["write", "network"]
+    capability: zapier.write
+
+resources:
+  schemas:
+    - id: zapier/ZapierActionInput
+      path: schemas/ZapierActionInput.json
+    - id: zapier/ZapierWebhookTriggerInput
+      path: schemas/ZapierWebhookTriggerInput.json
+    - id: zapier/ZapierNLAExecuteInput
+      path: schemas/ZapierNLAExecuteInput.json
+    - id: zapier/ZapierActionResult
+      path: schemas/ZapierActionResult.json
+  workflows:
+    - id: zapier.read
+      path: workflows/zapier_read.yaml
+    - id: zapier.write
+      path: workflows/zapier_write.yaml
+    - id: zapier.webhook.trigger
+      path: workflows/zapier_webhook_trigger.yaml
+    - id: zapier-nla-workflow
+      path: workflows/zapier_nla_execute.yaml
+
+overlays:
+  config:
+    - name: pools
+      scope: system
+      key: pools
+      strategy: json_merge_patch
+      path: overlays/pools.patch.yaml
+    - name: timeouts
+      scope: system
+      key: timeouts
+      strategy: json_merge_patch
+      path: overlays/timeouts.patch.yaml
+  policy:
+    - name: safety
+      strategy: bundle_fragment
+      path: overlays/policy.fragment.yaml
+
+tests:
+  policySimulations:
+    - name: allow_read
+      request:
+        tenantId: default
+        topic: job.zapier.read
+        riskTags: ["read", "network"]
+      expectDecision: ALLOW
+    - name: write_requires_approval
+      request:
+        tenantId: default
+        topic: job.zapier.write
+        riskTags: ["write", "network"]
+      expectDecision: REQUIRE_APPROVAL

@@ -1,0 +1,30 @@
+id: vertexai.embed
+name: Vertex AI Embed
+description: Generate embeddings through Vertex AI.
+version: "0.1.0"
+timeout_sec: 60
+steps:
+  embed:
+    id: embed
+    name: Vertex AI embed content
+    type: worker
+    topic: job.vertexai.read
+    input:
+      profile: ${input.profile}
+      project_id: ${input.project_id}
+      location: ${input.location}
+      request_id: ${input.request_id}
+      action: embed.embed_content
+      params:
+        model: ${input.model}
+        contents: ${input.contents}
+        task_type: ${input.task_type}
+        title: ${input.title}
+        output_dimensionality: ${input.output_dimensionality}
+    input_schema_id: vertexai/VertexAIEmbedInput
+    output_schema_id: vertexai/VertexAIActionResult
+    meta:
+      pack_id: vertexai
+      capability: vertexai.read
+      risk_tags: ["read", "network"]
+      requires: ["network:egress"]

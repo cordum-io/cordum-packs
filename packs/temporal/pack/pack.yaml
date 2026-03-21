@@ -1,0 +1,89 @@
+apiVersion: cordum.io/v1alpha1
+kind: Pack
+
+metadata:
+  id: temporal
+  version: 0.1.0
+  title: Temporal
+  description: Temporal — durable workflow execution bridge with start, query, signal, cancel, and schedule management.
+  image: https://cdn.simpleicons.org/temporal
+
+compatibility:
+  protocolVersion: 1
+  minCoreVersion: 0.1.0
+
+topics:
+  - name: job.temporal.read
+    requires: ["network:egress"]
+    riskTags: ["read", "network"]
+    capability: temporal.read
+  - name: job.temporal.write
+    requires: ["network:egress"]
+    riskTags: ["write", "network"]
+    capability: temporal.write
+  - name: job.temporal.destructive
+    requires: ["network:egress"]
+    riskTags: ["write", "network", "destructive"]
+    capability: temporal.destructive
+
+resources:
+  schemas:
+    - id: temporal/TemporalActionInput
+      path: schemas/TemporalActionInput.json
+    - id: temporal/TemporalWorkflowStartInput
+      path: schemas/TemporalWorkflowStartInput.json
+    - id: temporal/TemporalWorkflowSignalInput
+      path: schemas/TemporalWorkflowSignalInput.json
+    - id: temporal/TemporalWorkflowQueryInput
+      path: schemas/TemporalWorkflowQueryInput.json
+    - id: temporal/TemporalScheduleInput
+      path: schemas/TemporalScheduleInput.json
+    - id: temporal/TemporalActionResult
+      path: schemas/TemporalActionResult.json
+  workflows:
+    - id: temporal.workflow.start
+      path: workflows/temporal_workflow_start.yaml
+    - id: temporal.workflow.signal
+      path: workflows/temporal_workflow_signal.yaml
+    - id: temporal.workflow.query
+      path: workflows/temporal_workflow_query.yaml
+    - id: temporal.schedule.create
+      path: workflows/temporal_schedule_create.yaml
+
+overlays:
+  config:
+    - name: pools
+      scope: system
+      key: pools
+      strategy: json_merge_patch
+      path: overlays/pools.patch.yaml
+    - name: timeouts
+      scope: system
+      key: timeouts
+      strategy: json_merge_patch
+      path: overlays/timeouts.patch.yaml
+  policy:
+    - name: safety
+      strategy: bundle_fragment
+      path: overlays/policy.fragment.yaml
+
+tests:
+  policySimulations:
+    - name: allow_read
+      request:
+        tenantId: default
+        topic: job.temporal.read
+        riskTags: ["read", "network"]
+      expectDecision: ALLOW
+    - name: write_requires_approval
+      request:
+        tenantId: default
+        topic: job.temporal.write
+        riskTags: ["write", "network"]
+      expectDecision: REQUIRE_APPROVAL
+    - name: destructive_requires_approval
+      request:
+        tenantId: default
+        topic: job.temporal.destructive
+        riskTags: ["write", "network", "destructive"]
+      expectDecision: REQUIRE_APPROVAL

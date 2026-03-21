@@ -1,0 +1,9 @@
+topics:
+  job.cohere.chat: cohere
+  job.cohere.generate: cohere
+  job.cohere.embed: cohere
+  job.cohere.rerank: cohere
+  job.cohere.classify: cohere
+pools:
+  cohere:
+    requires: ["network:egress"]

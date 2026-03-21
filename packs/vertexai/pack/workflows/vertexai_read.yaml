@@ -1,0 +1,25 @@
+id: vertexai.read
+name: Vertex AI Read
+description: Dispatch read-only Vertex AI actions such as predict, embed, or list operations.
+version: "0.1.0"
+timeout_sec: 90
+steps:
+  read:
+    id: read
+    name: Vertex AI read action
+    type: worker
+    topic: job.vertexai.read
+    input:
+      profile: ${input.profile}
+      project_id: ${input.project_id}
+      location: ${input.location}
+      request_id: ${input.request_id}
+      action: ${input.action}
+      params: ${input.params}
+    input_schema_id: vertexai/VertexAIActionInput
+    output_schema_id: vertexai/VertexAIActionResult
+    meta:
+      pack_id: vertexai
+      capability: vertexai.read
+      risk_tags: ["read", "network"]
+      requires: ["network:egress"]

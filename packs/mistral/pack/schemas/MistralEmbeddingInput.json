@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Mistral Embedding Input",
+  "description": "Input schema for Mistral embeddings.",
+  "type": "object",
+  "properties": {
+    "model": {
+      "type": "string",
+      "description": "Embedding model.",
+      "enum": ["mistral-embed"],
+      "default": "mistral-embed"
+    },
+    "input": {
+      "description": "Text(s) to embed.",
+      "oneOf": [
+        { "type": "string" },
+        { "type": "array", "items": { "type": "string" } }
+      ]
+    },
+    "encoding_format": {
+      "type": "string",
+      "description": "Encoding format.",
+      "enum": ["float"],
+      "default": "float"
+    }
+  },
+  "required": ["input"]
+}

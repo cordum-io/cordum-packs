@@ -1,0 +1,21 @@
+version: v1
+rules:
+  - id: huggingface-read
+    match:
+      topics:
+        - job.huggingface.inference
+        - job.huggingface.embed
+        - job.huggingface.models
+        - job.huggingface.spaces
+      risk_tags:
+        - read
+    decision: allow
+
+  - id: huggingface-spaces-manage
+    match:
+      topics:
+        - job.huggingface.spaces.manage
+      risk_tags:
+        - write
+    decision: require_approval
+    reason: "Spaces management operations modify running deployments"

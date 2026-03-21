@@ -1,0 +1,103 @@
+apiVersion: cordum.io/v1alpha1
+kind: Pack
+
+metadata:
+  id: cohere
+  version: 0.1.0
+  title: Cohere
+  description: Cohere AI — chat, text generation, embeddings, rerank, and classification.
+  image: https://cdn.simpleicons.org/cohere
+
+compatibility:
+  protocolVersion: 1
+  minCoreVersion: 0.1.0
+
+topics:
+  - name: job.cohere.chat
+    requires: ["network:egress"]
+    riskTags: ["read", "network", "llm"]
+    capability: cohere.chat
+  - name: job.cohere.generate
+    requires: ["network:egress"]
+    riskTags: ["read", "network", "llm"]
+    capability: cohere.generate
+  - name: job.cohere.embed
+    requires: ["network:egress"]
+    riskTags: ["read", "network", "llm"]
+    capability: cohere.embed
+  - name: job.cohere.rerank
+    requires: ["network:egress"]
+    riskTags: ["read", "network", "llm"]
+    capability: cohere.rerank
+  - name: job.cohere.classify
+    requires: ["network:egress"]
+    riskTags: ["read", "network", "llm"]
+    capability: cohere.classify
+
+resources:
+  schemas:
+    - id: cohere/CohereActionInput
+      path: schemas/CohereActionInput.json
+    - id: cohere/CohereChatInput
+      path: schemas/CohereChatInput.json
+    - id: cohere/CohereEmbedInput
+      path: schemas/CohereEmbedInput.json
+    - id: cohere/CohereRerankInput
+      path: schemas/CohereRerankInput.json
+    - id: cohere/CohereClassifyInput
+      path: schemas/CohereClassifyInput.json
+    - id: cohere/CohereActionResult
+      path: schemas/CohereActionResult.json
+  workflows:
+    - id: cohere.chat
+      path: workflows/cohere_chat.yaml
+    - id: cohere.embed
+      path: workflows/cohere_embed.yaml
+    - id: cohere.rerank
+      path: workflows/cohere_rerank.yaml
+    - id: cohere.classify
+      path: workflows/cohere_classify.yaml
+
+overlays:
+  config:
+    - name: pools
+      scope: system
+      key: pools
+      strategy: json_merge_patch
+      path: overlays/pools.patch.yaml
+    - name: timeouts
+      scope: system
+      key: timeouts
+      strategy: json_merge_patch
+      path: overlays/timeouts.patch.yaml
+  policy:
+    - name: safety
+      strategy: bundle_fragment
+      path: overlays/policy.fragment.yaml
+
+tests:
+  policySimulations:
+    - name: allow_chat
+      request:
+        tenantId: default
+        topic: job.cohere.chat
+        riskTags: ["read", "network", "llm"]
+      expectDecision: ALLOW
+    - name: allow_embed
+      request:
+        tenantId: default
+        topic: job.cohere.embed
+        riskTags: ["read", "network", "llm"]
+      expectDecision: ALLOW
+    - name: allow_rerank
+      request:
+        tenantId: default
+        topic: job.cohere.rerank
+        riskTags: ["read", "network", "llm"]
+      expectDecision: ALLOW
+    - name: allow_classify
+      request:
+        tenantId: default
+        topic: job.cohere.classify
+        riskTags: ["read", "network", "llm"]
+      expectDecision: ALLOW

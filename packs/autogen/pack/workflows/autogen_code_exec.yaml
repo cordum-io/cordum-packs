@@ -1,0 +1,24 @@
+id: autogen.code
+name: AutoGen Code Execution
+description: Execute code in a Docker sandbox.
+version: "0.1.0"
+timeout_sec: 60
+steps:
+  code:
+    id: code
+    name: AutoGen Sandboxed Code Exec
+    type: worker
+    topic: job.autogen.code
+    input:
+      profile: ${input.profile}
+      action: code
+      config: ${input}
+      input: ${input.code}
+      request_id: ${input.request_id}
+    input_schema_id: autogen/AutoGenCodeInput
+    output_schema_id: autogen/AutoGenActionResult
+    meta:
+      pack_id: autogen
+      capability: autogen.code
+      risk_tags: ["write", "network", "code_execution", "destructive"]
+      requires: ["network:egress"]

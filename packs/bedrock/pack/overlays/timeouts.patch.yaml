@@ -1,0 +1,10 @@
+topics:
+  job.bedrock.read:
+    timeout_seconds: 30
+    max_retries: 2
+  job.bedrock.generate:
+    timeout_seconds: 120
+    max_retries: 1
+  job.bedrock.write:
+    timeout_seconds: 120
+    max_retries: 1

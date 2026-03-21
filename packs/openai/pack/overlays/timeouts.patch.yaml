@@ -1,0 +1,25 @@
+topics:
+  job.openai.chat:
+    timeout_seconds: 120
+    max_retries: 2
+  job.openai.chat.stream:
+    timeout_seconds: 120
+    max_retries: 2
+  job.openai.embed:
+    timeout_seconds: 60
+    max_retries: 2
+  job.openai.image.generate:
+    timeout_seconds: 180
+    max_retries: 1
+  job.openai.audio.transcribe:
+    timeout_seconds: 120
+    max_retries: 1
+  job.openai.audio.tts:
+    timeout_seconds: 180
+    max_retries: 1
+  job.openai.finetune:
+    timeout_seconds: 300
+    max_retries: 0
+  job.openai.finetune.read:
+    timeout_seconds: 120
+    max_retries: 1

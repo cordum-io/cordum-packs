@@ -1,0 +1,31 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Bedrock Converse Input",
+  "type": "object",
+  "properties": {
+    "model_id": { "type": "string" },
+    "messages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "role": { "type": "string", "enum": ["user", "assistant"] },
+          "content": { "type": "array" }
+        },
+        "required": ["role", "content"]
+      }
+    },
+    "system": { "type": "array" },
+    "inference_config": {
+      "type": "object",
+      "properties": {
+        "maxTokens": { "type": "integer" },
+        "temperature": { "type": "number" },
+        "topP": { "type": "number" },
+        "stopSequences": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "tool_config": { "type": "object" }
+  },
+  "required": ["model_id", "messages"]
+}

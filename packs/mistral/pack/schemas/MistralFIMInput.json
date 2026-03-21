@@ -1,0 +1,31 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Mistral FIM (Fill-in-the-Middle) Input",
+  "description": "Input schema for Codestral fill-in-the-middle code completion.",
+  "type": "object",
+  "properties": {
+    "model": {
+      "type": "string",
+      "description": "Model identifier.",
+      "enum": ["codestral-latest"],
+      "default": "codestral-latest"
+    },
+    "prompt": {
+      "type": "string",
+      "description": "Code prefix (text before the cursor)."
+    },
+    "suffix": {
+      "type": "string",
+      "description": "Code suffix (text after the cursor)."
+    },
+    "max_tokens": { "type": "integer", "minimum": 1 },
+    "temperature": { "type": "number", "minimum": 0.0, "maximum": 1.5 },
+    "top_p": { "type": "number" },
+    "stop": {
+      "type": "array",
+      "description": "Stop sequences.",
+      "items": { "type": "string" }
+    }
+  },
+  "required": ["model", "prompt"]
+}

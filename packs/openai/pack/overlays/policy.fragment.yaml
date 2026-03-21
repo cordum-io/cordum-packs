@@ -1,0 +1,23 @@
+version: v1
+rules:
+  - id: openai-chat
+    match:
+      topics:
+        - job.openai.chat
+        - job.openai.chat.stream
+        - job.openai.embed
+        - job.openai.audio.transcribe
+        - job.openai.finetune.read
+      risk_tags:
+        - read
+    decision: allow
+  - id: openai-write
+    match:
+      topics:
+        - job.openai.image.generate
+        - job.openai.audio.tts
+        - job.openai.finetune
+      risk_tags:
+        - write
+    decision: require_approval
+    reason: "OpenAI image, speech, and fine-tuning actions incur cost and require approval"

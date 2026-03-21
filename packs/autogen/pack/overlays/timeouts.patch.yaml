@@ -1,0 +1,13 @@
+topics:
+  job.autogen.groupchat:
+    timeout_seconds: 300
+    max_retries: 1
+  job.autogen.agent:
+    timeout_seconds: 120
+    max_retries: 1
+  job.autogen.code:
+    timeout_seconds: 60
+    max_retries: 1
+  job.autogen.toolcall:
+    timeout_seconds: 120
+    max_retries: 1

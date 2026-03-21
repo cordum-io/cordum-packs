@@ -1,0 +1,23 @@
+id: mistral.code.fim
+name: Mistral Codestral FIM
+description: Fill-in-the-middle code completion using Codestral.
+version: "0.1.0"
+timeout_sec: 60
+steps:
+  fim:
+    id: fim
+    name: Codestral FIM
+    type: worker
+    topic: job.mistral.fim
+    input:
+      profile: ${input.profile}
+      action: fim.completions
+      params: ${input.params}
+      request_id: ${input.request_id}
+    input_schema_id: mistral/MistralFIMInput
+    output_schema_id: mistral/MistralActionResult
+    meta:
+      pack_id: mistral
+      capability: mistral.fim
+      risk_tags: ["read", "network", "llm"]
+      requires: ["network:egress"]

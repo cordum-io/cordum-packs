@@ -1,0 +1,9 @@
+topics:
+  job.huggingface.inference: huggingface
+  job.huggingface.embed: huggingface
+  job.huggingface.models: huggingface
+  job.huggingface.spaces: huggingface
+  job.huggingface.spaces.manage: huggingface
+pools:
+  huggingface:
+    requires: ["network:egress"]

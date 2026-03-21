@@ -1,0 +1,93 @@
+apiVersion: cordum.io/v1alpha1
+kind: Pack
+
+metadata:
+  id: bedrock
+  version: 0.1.0
+  title: AWS Bedrock
+  description: AWS Bedrock — managed AI model invocation, Converse API, embeddings, knowledge bases, and Bedrock agents.
+  image: https://cdn.simpleicons.org/amazonaws
+
+compatibility:
+  protocolVersion: 1
+  minCoreVersion: 0.1.0
+
+topics:
+  - name: job.bedrock.read
+    requires: ["network:egress"]
+    riskTags: ["read", "network"]
+    capability: bedrock.read
+  - name: job.bedrock.generate
+    requires: ["network:egress"]
+    riskTags: ["read", "network", "llm"]
+    capability: bedrock.generate
+  - name: job.bedrock.write
+    requires: ["network:egress"]
+    riskTags: ["write", "network", "llm"]
+    capability: bedrock.write
+
+resources:
+  schemas:
+    - id: bedrock/BedrockActionInput
+      path: schemas/BedrockActionInput.json
+    - id: bedrock/BedrockInvokeInput
+      path: schemas/BedrockInvokeInput.json
+    - id: bedrock/BedrockConverseInput
+      path: schemas/BedrockConverseInput.json
+    - id: bedrock/BedrockEmbedInput
+      path: schemas/BedrockEmbedInput.json
+    - id: bedrock/BedrockKBQueryInput
+      path: schemas/BedrockKBQueryInput.json
+    - id: bedrock/BedrockAgentInvokeInput
+      path: schemas/BedrockAgentInvokeInput.json
+    - id: bedrock/BedrockActionResult
+      path: schemas/BedrockActionResult.json
+  workflows:
+    - id: bedrock.converse
+      path: workflows/bedrock_converse.yaml
+    - id: bedrock.embed
+      path: workflows/bedrock_embed.yaml
+    - id: bedrock.kb.query
+      path: workflows/bedrock_kb_query.yaml
+    - id: bedrock.agent.invoke
+      path: workflows/bedrock_agent_invoke.yaml
+    - id: bedrock.read
+      path: workflows/bedrock_read.yaml
+
+overlays:
+  config:
+    - name: pools
+      scope: system
+      key: pools
+      strategy: json_merge_patch
+      path: overlays/pools.patch.yaml
+    - name: timeouts
+      scope: system
+      key: timeouts
+      strategy: json_merge_patch
+      path: overlays/timeouts.patch.yaml
+  policy:
+    - name: safety
+      strategy: bundle_fragment
+      path: overlays/policy.fragment.yaml
+
+tests:
+  policySimulations:
+    - name: allow_read
+      request:
+        tenantId: default
+        topic: job.bedrock.read
+        riskTags: ["read", "network"]
+      expectDecision: ALLOW
+    - name: allow_generate
+      request:
+        tenantId: default
+        topic: job.bedrock.generate
+        riskTags: ["read", "network", "llm"]
+      expectDecision: ALLOW
+    - name: write_requires_approval
+      request:
+        tenantId: default
+        topic: job.bedrock.write
+        riskTags: ["write", "network", "llm"]
+      expectDecision: REQUIRE_APPROVAL

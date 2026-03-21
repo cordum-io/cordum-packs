@@ -1,0 +1,27 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Azure Function Invoke Input",
+  "description": "Input schema for Azure Functions invocation.",
+  "type": "object",
+  "properties": {
+    "function_app": {
+      "type": "string",
+      "description": "Function app name."
+    },
+    "function_name": {
+      "type": "string",
+      "description": "Function name within the app."
+    },
+    "payload": {
+      "description": "Request payload (JSON body).",
+      "type": ["object", "string", "null"]
+    },
+    "method": {
+      "type": "string",
+      "description": "HTTP method.",
+      "enum": ["GET", "POST", "PUT", "DELETE"],
+      "default": "POST"
+    }
+  },
+  "required": ["function_app", "function_name"]
+}

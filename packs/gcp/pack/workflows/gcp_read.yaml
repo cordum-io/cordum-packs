@@ -1,6 +1,6 @@
 id: gcp.read
 name: GCP Read
-description: Read GCP logs, metrics, and service metadata.
+description: Read GCP metadata and data-plane resources through the generic dispatcher.
 version: "0.1.0"
 timeout_sec: 60
 steps:
@@ -11,6 +11,8 @@ steps:
     topic: job.gcp.read
     input:
       profile: ${input.profile}
+      project_id: ${input.project_id}
+      location: ${input.location}
       action: ${input.action}
       params: ${input.params}
       request_id: ${input.request_id}

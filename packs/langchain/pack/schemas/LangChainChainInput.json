@@ -1,0 +1,68 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "LangChain Chain Input",
+  "description": "Input schema for LangChain chain execution.",
+  "type": "object",
+  "properties": {
+    "profile": {
+      "type": "string",
+      "description": "Named integration profile to use."
+    },
+    "chain_config": {
+      "type": "object",
+      "description": "Chain configuration.",
+      "properties": {
+        "chain_type": {
+          "type": "string",
+          "description": "LangChain chain type.",
+          "enum": ["llm", "stuff", "map_reduce", "refine", "map_rerank", "sequential", "router", "custom"]
+        },
+        "llm_config": {
+          "type": "object",
+          "description": "LLM provider configuration.",
+          "properties": {
+            "provider": {
+              "type": "string",
+              "description": "LLM provider.",
+              "enum": ["openai", "anthropic", "mistral", "cohere", "huggingface"]
+            },
+            "model": { "type": "string" },
+            "temperature": { "type": "number", "minimum": 0.0, "maximum": 2.0 },
+            "max_tokens": { "type": "integer", "minimum": 1 },
+            "api_key_env": {
+              "type": "string",
+              "description": "Environment variable containing the LLM API key."
+            }
+          },
+          "required": ["provider", "model"]
+        },
+        "prompt_template": {
+          "type": "string",
+          "description": "Prompt template string with {variable} placeholders."
+        },
+        "output_parser": {
+          "type": "string",
+          "description": "Output parser type.",
+          "enum": ["str", "json", "list", "structured", "none"]
+        },
+        "chain_kwargs": {
+          "type": "object",
+          "description": "Additional chain-specific keyword arguments."
+        }
+      },
+      "required": ["chain_type", "llm_config"]
+    },
+    "input": {
+      "description": "Input to the chain — string or object with template variables.",
+      "oneOf": [
+        { "type": "string" },
+        { "type": "object" }
+      ]
+    },
+    "request_id": {
+      "type": "string",
+      "description": "Optional idempotency or trace id."
+    }
+  },
+  "required": ["chain_config", "input"]
+}

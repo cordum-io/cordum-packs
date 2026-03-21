@@ -1,0 +1,26 @@
+id: zapier-nla-workflow
+name: Zapier AI Action
+description: Execute or preview a stored Zapier AI Action from a natural-language instruction.
+version: "0.1.0"
+timeout_sec: 180
+steps:
+  execute:
+    id: execute
+    name: Execute Zapier AI Action
+    type: worker
+    topic: job.zapier.write
+    input:
+      request_id: ${input.request_id}
+      action: nla.execute
+      params:
+        action_id: ${input.action_id}
+        instruction: ${input.instruction}
+        preview_only: ${input.preview_only}
+        params_hints: ${input.params_hints}
+    input_schema_id: zapier/ZapierNLAExecuteInput
+    output_schema_id: zapier/ZapierActionResult
+    meta:
+      pack_id: zapier
+      capability: zapier.nla.execute
+      risk_tags: ["write", "network"]
+      requires: ["network:egress"]

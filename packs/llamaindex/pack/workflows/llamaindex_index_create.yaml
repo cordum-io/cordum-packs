@@ -1,0 +1,24 @@
+id: llamaindex.index.create
+name: LlamaIndex Index Create
+description: Create or manage a LlamaIndex vector index.
+version: "0.1.0"
+timeout_sec: 300
+steps:
+  index:
+    id: index
+    name: LlamaIndex Index Management
+    type: worker
+    topic: job.llamaindex.index
+    input:
+      profile: ${input.profile}
+      action: index
+      config: ${input.index_config}
+      input: ${input}
+      request_id: ${input.request_id}
+    input_schema_id: llamaindex/LlamaIndexIndexInput
+    output_schema_id: llamaindex/LlamaIndexActionResult
+    meta:
+      pack_id: llamaindex
+      capability: llamaindex.index
+      risk_tags: ["write", "network"]
+      requires: ["network:egress"]

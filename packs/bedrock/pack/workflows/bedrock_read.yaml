@@ -1,0 +1,24 @@
+id: bedrock.read
+name: Bedrock Read
+description: List models and read Bedrock metadata.
+version: "0.1.0"
+timeout_sec: 30
+steps:
+  read:
+    id: read
+    name: Bedrock Read
+    type: worker
+    topic: job.bedrock.read
+    input:
+      profile: ${input.profile}
+      action: ${input.action}
+      region: ${input.region}
+      params: ${input.params}
+      request_id: ${input.request_id}
+    input_schema_id: bedrock/BedrockActionInput
+    output_schema_id: bedrock/BedrockActionResult
+    meta:
+      pack_id: bedrock
+      capability: bedrock.read
+      risk_tags: ["read", "network"]
+      requires: ["network:egress"]

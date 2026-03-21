@@ -1,0 +1,40 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "GCP Cloud Function Call Input",
+  "description": "Input schema for calling a Google Cloud Function.",
+  "type": "object",
+  "properties": {
+    "profile": {
+      "type": "string",
+      "description": "Named integration profile to use."
+    },
+    "project_id": {
+      "type": "string",
+      "description": "GCP project override. Falls back to profile/config default."
+    },
+    "location": {
+      "type": "string",
+      "description": "GCP region/location override (for example us-central1)."
+    },
+    "request_id": {
+      "type": "string",
+      "description": "Optional idempotency or trace identifier."
+    },
+    "function_name": {
+      "type": "string",
+      "description": "Function name or fully-qualified resource name."
+    },
+    "payload": {
+      "type": [
+        "object",
+        "string",
+        "null"
+      ],
+      "description": "JSON payload to send to the function."
+    }
+  },
+  "required": [
+    "function_name"
+  ],
+  "additionalProperties": false
+}

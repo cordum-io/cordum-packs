@@ -1,0 +1,24 @@
+id: anthropic.messages.tooluse
+name: Anthropic Messages with Tool Use
+description: Multi-turn conversation with Claude using tool use. Tool calls are governed through CAP Safety Kernel.
+version: "0.1.0"
+timeout_sec: 300
+steps:
+  tooluse:
+    id: tooluse
+    name: Anthropic Tool Use (Governed)
+    type: worker
+    topic: job.anthropic.messages.tooluse
+    input:
+      profile: ${input.profile}
+      action: messages.create.tooluse
+      params: ${input.params}
+      request_id: ${input.request_id}
+      auth: ${input.auth}
+    input_schema_id: anthropic/AnthropicMessagesInput
+    output_schema_id: anthropic/AnthropicActionResult
+    meta:
+      pack_id: anthropic
+      capability: anthropic.messages.tooluse
+      risk_tags: ["write", "network", "llm", "tool_use"]
+      requires: ["network:egress"]

@@ -1,0 +1,25 @@
+version: v1
+rules:
+  - id: vertexai-read
+    match:
+      topics:
+        - job.vertexai.read
+      risk_tags:
+        - read
+    decision: allow
+  - id: vertexai-generate
+    match:
+      topics:
+        - job.vertexai.generate
+      risk_tags:
+        - generate
+    decision: require_approval
+    reason: "Vertex AI generation incurs cost and may expose sensitive prompt/context data"
+  - id: vertexai-write
+    match:
+      topics:
+        - job.vertexai.write
+      risk_tags:
+        - write
+    decision: require_approval
+    reason: "Vertex AI batch prediction and pipeline operations require approval"

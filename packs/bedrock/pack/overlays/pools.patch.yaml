@@ -1,0 +1,7 @@
+topics:
+  job.bedrock.read: bedrock
+  job.bedrock.generate: bedrock
+  job.bedrock.write: bedrock
+pools:
+  bedrock:
+    requires: ["network:egress"]

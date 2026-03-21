@@ -1,0 +1,44 @@
+version: v1
+rules:
+  - id: anthropic-messages
+    match:
+      topics:
+        - job.anthropic.messages
+      risk_tags:
+        - read
+    decision: allow
+
+  - id: anthropic-stream
+    match:
+      topics:
+        - job.anthropic.messages.stream
+      risk_tags:
+        - read
+    decision: allow
+
+  - id: anthropic-tooluse
+    match:
+      topics:
+        - job.anthropic.messages.tooluse
+      risk_tags:
+        - write
+        - tool_use
+    decision: require_approval
+    reason: "Tool use executes external actions via governed tool calls"
+
+  - id: anthropic-batch
+    match:
+      topics:
+        - job.anthropic.batch
+      risk_tags:
+        - write
+    decision: require_approval
+    reason: "Batch operations create bulk API requests"
+
+  - id: anthropic-batch-read
+    match:
+      topics:
+        - job.anthropic.batch.read
+      risk_tags:
+        - read
+    decision: allow

@@ -1,0 +1,19 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Temporal Schedule Input",
+  "type": "object",
+  "properties": {
+    "schedule_id": { "type": "string" },
+    "schedule": {
+      "type": "object",
+      "description": "Schedule definition.",
+      "properties": {
+        "spec": { "type": "object", "description": "Schedule spec (calendars, intervals, cron_expressions)." },
+        "action": { "type": "object", "description": "Action to execute (start_workflow)." },
+        "policy": { "type": "object" },
+        "state": { "type": "object" }
+      }
+    }
+  },
+  "required": ["schedule_id"]
+}

@@ -1,0 +1,23 @@
+id: temporal.workflow.query
+name: Temporal Workflow Query
+description: Query a Temporal workflow's state.
+version: "0.1.0"
+timeout_sec: 30
+steps:
+  query:
+    id: query
+    name: Query Temporal Workflow
+    type: worker
+    topic: job.temporal.read
+    input:
+      profile: ${input.profile}
+      action: workflow.query
+      params: ${input.params}
+      request_id: ${input.request_id}
+    input_schema_id: temporal/TemporalWorkflowQueryInput
+    output_schema_id: temporal/TemporalActionResult
+    meta:
+      pack_id: temporal
+      capability: temporal.read
+      risk_tags: ["read", "network"]
+      requires: ["network:egress"]

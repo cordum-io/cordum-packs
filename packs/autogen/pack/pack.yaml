@@ -1,0 +1,93 @@
+apiVersion: cordum.io/v1alpha1
+kind: Pack
+
+metadata:
+  id: autogen
+  version: 0.1.0
+  title: AutoGen
+  description: AutoGen — multi-agent group chat, single agent tasks, sandboxed code execution with CAP governance.
+  image: https://cdn.simpleicons.org/microsoft
+
+compatibility:
+  protocolVersion: 1
+  minCoreVersion: 0.1.0
+
+topics:
+  - name: job.autogen.groupchat
+    requires: ["network:egress"]
+    riskTags: ["write", "network", "llm", "tool_use"]
+    capability: autogen.groupchat
+  - name: job.autogen.agent
+    requires: ["network:egress"]
+    riskTags: ["read", "network", "llm"]
+    capability: autogen.agent
+  - name: job.autogen.code
+    requires: ["network:egress"]
+    riskTags: ["write", "network", "code_execution", "destructive"]
+    capability: autogen.code
+  - name: job.autogen.toolcall
+    requires: ["network:egress"]
+    riskTags: ["write", "network", "tool_use"]
+    capability: autogen.toolcall
+
+resources:
+  schemas:
+    - id: autogen/AutoGenGroupChatInput
+      path: schemas/AutoGenGroupChatInput.json
+    - id: autogen/AutoGenAgentInput
+      path: schemas/AutoGenAgentInput.json
+    - id: autogen/AutoGenCodeInput
+      path: schemas/AutoGenCodeInput.json
+    - id: autogen/AutoGenActionResult
+      path: schemas/AutoGenActionResult.json
+  workflows:
+    - id: autogen.groupchat
+      path: workflows/autogen_groupchat.yaml
+    - id: autogen.agent
+      path: workflows/autogen_agent.yaml
+    - id: autogen.code
+      path: workflows/autogen_code_exec.yaml
+
+overlays:
+  config:
+    - name: pools
+      scope: system
+      key: pools
+      strategy: json_merge_patch
+      path: overlays/pools.patch.yaml
+    - name: timeouts
+      scope: system
+      key: timeouts
+      strategy: json_merge_patch
+      path: overlays/timeouts.patch.yaml
+  policy:
+    - name: safety
+      strategy: bundle_fragment
+      path: overlays/policy.fragment.yaml
+
+tests:
+  policySimulations:
+    - name: agent_allow
+      request:
+        tenantId: default
+        topic: job.autogen.agent
+        riskTags: ["read", "network", "llm"]
+      expectDecision: ALLOW
+    - name: groupchat_requires_approval
+      request:
+        tenantId: default
+        topic: job.autogen.groupchat
+        riskTags: ["write", "network", "llm", "tool_use"]
+      expectDecision: REQUIRE_APPROVAL
+    - name: code_requires_approval
+      request:
+        tenantId: default
+        topic: job.autogen.code
+        riskTags: ["write", "network", "code_execution", "destructive"]
+      expectDecision: REQUIRE_APPROVAL
+    - name: toolcall_requires_approval
+      request:
+        tenantId: default
+        topic: job.autogen.toolcall
+        riskTags: ["write", "network", "tool_use"]
+      expectDecision: REQUIRE_APPROVAL

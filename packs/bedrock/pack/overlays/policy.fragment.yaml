@@ -1,0 +1,27 @@
+version: v1
+rules:
+  - id: bedrock-read
+    match:
+      topics:
+        - job.bedrock.read
+      risk_tags:
+        - read
+    decision: allow
+
+  - id: bedrock-generate
+    match:
+      topics:
+        - job.bedrock.generate
+      risk_tags:
+        - read
+        - llm
+    decision: allow
+
+  - id: bedrock-write
+    match:
+      topics:
+        - job.bedrock.write
+      risk_tags:
+        - write
+    decision: require_approval
+    reason: "Knowledge base and agent operations require approval"

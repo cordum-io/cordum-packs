@@ -1,0 +1,107 @@
+apiVersion: cordum.io/v1alpha1
+kind: Pack
+
+metadata:
+  id: mistral
+  version: 0.1.0
+  title: Mistral AI
+  description: Mistral AI — chat completions, embeddings, streaming, and Codestral code generation (FIM).
+  image: https://cdn.simpleicons.org/mistral
+
+compatibility:
+  protocolVersion: 1
+  minCoreVersion: 0.1.0
+
+topics:
+  - name: job.mistral.chat
+    requires: ["network:egress"]
+    riskTags: ["read", "network", "llm"]
+    capability: mistral.chat
+  - name: job.mistral.chat.stream
+    requires: ["network:egress"]
+    riskTags: ["read", "network", "llm"]
+    capability: mistral.chat.stream
+  - name: job.mistral.embed
+    requires: ["network:egress"]
+    riskTags: ["read", "network", "llm"]
+    capability: mistral.embed
+  - name: job.mistral.code
+    requires: ["network:egress"]
+    riskTags: ["read", "network", "llm"]
+    capability: mistral.code
+  - name: job.mistral.fim
+    requires: ["network:egress"]
+    riskTags: ["read", "network", "llm"]
+    capability: mistral.fim
+
+resources:
+  schemas:
+    - id: mistral/MistralActionInput
+      path: schemas/MistralActionInput.json
+    - id: mistral/MistralChatInput
+      path: schemas/MistralChatInput.json
+    - id: mistral/MistralEmbeddingInput
+      path: schemas/MistralEmbeddingInput.json
+    - id: mistral/MistralFIMInput
+      path: schemas/MistralFIMInput.json
+    - id: mistral/MistralActionResult
+      path: schemas/MistralActionResult.json
+  workflows:
+    - id: mistral.chat
+      path: workflows/mistral_chat.yaml
+    - id: mistral.chat.stream
+      path: workflows/mistral_chat_stream.yaml
+    - id: mistral.embed
+      path: workflows/mistral_embed.yaml
+    - id: mistral.code.fim
+      path: workflows/mistral_code_fim.yaml
+
+overlays:
+  config:
+    - name: pools
+      scope: system
+      key: pools
+      strategy: json_merge_patch
+      path: overlays/pools.patch.yaml
+    - name: timeouts
+      scope: system
+      key: timeouts
+      strategy: json_merge_patch
+      path: overlays/timeouts.patch.yaml
+  policy:
+    - name: safety
+      strategy: bundle_fragment
+      path: overlays/policy.fragment.yaml
+
+tests:
+  policySimulations:
+    - name: allow_chat
+      request:
+        tenantId: default
+        topic: job.mistral.chat
+        riskTags: ["read", "network", "llm"]
+      expectDecision: ALLOW
+    - name: allow_stream
+      request:
+        tenantId: default
+        topic: job.mistral.chat.stream
+        riskTags: ["read", "network", "llm"]
+      expectDecision: ALLOW
+    - name: allow_embed
+      request:
+        tenantId: default
+        topic: job.mistral.embed
+        riskTags: ["read", "network", "llm"]
+      expectDecision: ALLOW
+    - name: allow_code
+      request:
+        tenantId: default
+        topic: job.mistral.code
+        riskTags: ["read", "network", "llm"]
+      expectDecision: ALLOW
+    - name: allow_fim
+      request:
+        tenantId: default
+        topic: job.mistral.fim
+        riskTags: ["read", "network", "llm"]
+      expectDecision: ALLOW

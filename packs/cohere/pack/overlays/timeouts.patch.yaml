@@ -1,0 +1,16 @@
+topics:
+  job.cohere.chat:
+    timeout_seconds: 120
+    max_retries: 2
+  job.cohere.generate:
+    timeout_seconds: 120
+    max_retries: 2
+  job.cohere.embed:
+    timeout_seconds: 60
+    max_retries: 2
+  job.cohere.rerank:
+    timeout_seconds: 60
+    max_retries: 2
+  job.cohere.classify:
+    timeout_seconds: 60
+    max_retries: 2

@@ -1,0 +1,23 @@
+id: temporal.schedule.create
+name: Temporal Schedule Create
+description: Create a Temporal schedule for recurring workflow execution.
+version: "0.1.0"
+timeout_sec: 30
+steps:
+  create:
+    id: create
+    name: Create Temporal Schedule
+    type: worker
+    topic: job.temporal.write
+    input:
+      profile: ${input.profile}
+      action: schedule.create
+      params: ${input.params}
+      request_id: ${input.request_id}
+    input_schema_id: temporal/TemporalScheduleInput
+    output_schema_id: temporal/TemporalActionResult
+    meta:
+      pack_id: temporal
+      capability: temporal.write
+      risk_tags: ["write", "network"]
+      requires: ["network:egress"]

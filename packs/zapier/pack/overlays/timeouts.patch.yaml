@@ -1,0 +1,7 @@
+topics:
+  job.zapier.read:
+    timeout_seconds: 60
+    max_retries: 2
+  job.zapier.write:
+    timeout_seconds: 180
+    max_retries: 1

@@ -1,0 +1,25 @@
+id: langchain.agent.invoke
+name: LangChain Agent Invoke (Governed)
+description: Execute a LangChain agent with all tool calls governed through CAP Safety Kernel.
+version: "0.1.0"
+timeout_sec: 300
+steps:
+  agent:
+    id: agent
+    name: LangChain Governed Agent
+    type: worker
+    topic: job.langchain.agent
+    input:
+      profile: ${input.profile}
+      action: agent.invoke
+      config: ${input.agent_config}
+      input: ${input.input}
+      tool_governance: ${input.tool_governance}
+      request_id: ${input.request_id}
+    input_schema_id: langchain/LangChainAgentInput
+    output_schema_id: langchain/LangChainActionResult
+    meta:
+      pack_id: langchain
+      capability: langchain.agent
+      risk_tags: ["write", "network", "llm", "tool_use"]
+      requires: ["network:egress"]

@@ -1,0 +1,23 @@
+id: n8n.read
+name: n8n Read
+description: Read n8n workflows, executions, and credentials through the generic dispatcher.
+version: "0.1.0"
+timeout_sec: 60
+steps:
+  read:
+    id: read
+    name: n8n read action
+    type: worker
+    topic: job.n8n.read
+    input:
+      profile: ${input.profile}
+      request_id: ${input.request_id}
+      action: ${input.action}
+      params: ${input.params}
+    input_schema_id: n8n/N8nActionInput
+    output_schema_id: n8n/N8nActionResult
+    meta:
+      pack_id: n8n
+      capability: n8n.read
+      risk_tags: ["read", "network"]
+      requires: ["network:egress"]

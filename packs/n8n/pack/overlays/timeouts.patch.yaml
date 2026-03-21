@@ -1,0 +1,7 @@
+topics:
+  job.n8n.read:
+    timeout_seconds: 60
+    max_retries: 2
+  job.n8n.write:
+    timeout_seconds: 180
+    max_retries: 1

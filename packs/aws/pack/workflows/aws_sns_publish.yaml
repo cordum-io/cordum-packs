@@ -1,0 +1,24 @@
+id: aws.sns.publish
+name: AWS SNS Publish
+description: Publish a message to an SNS topic.
+version: "0.1.0"
+timeout_sec: 60
+steps:
+  publish:
+    id: publish
+    name: SNS Publish
+    type: worker
+    topic: job.aws.write
+    input:
+      profile: ${input.profile}
+      action: sns.publish
+      region: ${input.region}
+      params: ${input.params}
+      request_id: ${input.request_id}
+    input_schema_id: aws/AWSSNSPublishInput
+    output_schema_id: aws/AWSActionResult
+    meta:
+      pack_id: aws
+      capability: aws.write
+      risk_tags: ["write", "network"]
+      requires: ["network:egress"]

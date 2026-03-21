@@ -1,0 +1,10 @@
+topics:
+  job.temporal.read:
+    timeout_seconds: 30
+    max_retries: 2
+  job.temporal.write:
+    timeout_seconds: 30
+    max_retries: 1
+  job.temporal.destructive:
+    timeout_seconds: 30
+    max_retries: 0

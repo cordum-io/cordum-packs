@@ -1,0 +1,10 @@
+topics:
+  job.vertexai.read:
+    timeout_seconds: 90
+    max_retries: 2
+  job.vertexai.generate:
+    timeout_seconds: 120
+    max_retries: 1
+  job.vertexai.write:
+    timeout_seconds: 300
+    max_retries: 1

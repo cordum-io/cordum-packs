@@ -1,0 +1,7 @@
+topics:
+  job.crewai.crew: crewai
+  job.crewai.task: crewai
+  job.crewai.toolcall: crewai
+pools:
+  crewai:
+    requires: ["network:egress"]

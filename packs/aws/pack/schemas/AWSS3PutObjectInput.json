@@ -1,0 +1,30 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AWS S3 Put Object Input",
+  "description": "Input schema for S3 PutObject.",
+  "type": "object",
+  "properties": {
+    "bucket": {
+      "type": "string",
+      "description": "S3 bucket name."
+    },
+    "key": {
+      "type": "string",
+      "description": "Object key."
+    },
+    "body": {
+      "type": "string",
+      "description": "Object body (string or base64-encoded binary)."
+    },
+    "content_type": {
+      "type": "string",
+      "description": "MIME content type.",
+      "default": "application/octet-stream"
+    },
+    "content_encoding": {
+      "type": "string",
+      "description": "Content encoding (e.g., base64 if body is base64-encoded)."
+    }
+  },
+  "required": ["bucket", "key", "body"]
+}

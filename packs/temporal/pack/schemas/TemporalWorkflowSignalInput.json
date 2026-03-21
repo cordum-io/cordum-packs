@@ -1,0 +1,12 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Temporal Workflow Signal Input",
+  "type": "object",
+  "properties": {
+    "workflow_id": { "type": "string" },
+    "run_id": { "type": "string" },
+    "signal_name": { "type": "string" },
+    "input": { "description": "Signal payload." }
+  },
+  "required": ["workflow_id", "signal_name"]
+}

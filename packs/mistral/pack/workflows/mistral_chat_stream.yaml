@@ -1,0 +1,23 @@
+id: mistral.chat.stream
+name: Mistral Chat Completion (Streaming)
+description: Send a streaming chat completion request to Mistral AI.
+version: "0.1.0"
+timeout_sec: 300
+steps:
+  stream:
+    id: stream
+    name: Mistral Streaming Chat
+    type: worker
+    topic: job.mistral.chat.stream
+    input:
+      profile: ${input.profile}
+      action: chat.completions.stream
+      params: ${input.params}
+      request_id: ${input.request_id}
+    input_schema_id: mistral/MistralChatInput
+    output_schema_id: mistral/MistralActionResult
+    meta:
+      pack_id: mistral
+      capability: mistral.chat.stream
+      risk_tags: ["read", "network", "llm"]
+      requires: ["network:egress"]

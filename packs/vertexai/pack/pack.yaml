@@ -1,0 +1,93 @@
+apiVersion: cordum.io/v1alpha1
+kind: Pack
+
+metadata:
+  id: vertexai
+  version: 0.1.0
+  title: Vertex AI
+  description: Google Vertex AI integration for online prediction, Gemini generation, embeddings, batch prediction, and training pipelines.
+  image: https://cdn.simpleicons.org/googlecloud
+
+compatibility:
+  protocolVersion: 1
+  minCoreVersion: 0.1.0
+
+topics:
+  - name: job.vertexai.read
+    requires: ["network:egress"]
+    riskTags: ["read", "network"]
+    capability: vertexai.read
+
+  - name: job.vertexai.generate
+    requires: ["network:egress"]
+    riskTags: ["generate", "ai", "network"]
+    capability: vertexai.generate
+
+  - name: job.vertexai.write
+    requires: ["network:egress"]
+    riskTags: ["write", "network"]
+    capability: vertexai.write
+
+resources:
+  schemas:
+    - id: vertexai/VertexAIActionInput
+      path: schemas/VertexAIActionInput.json
+    - id: vertexai/VertexAIPredictInput
+      path: schemas/VertexAIPredictInput.json
+    - id: vertexai/VertexAIGenerateInput
+      path: schemas/VertexAIGenerateInput.json
+    - id: vertexai/VertexAIEmbedInput
+      path: schemas/VertexAIEmbedInput.json
+    - id: vertexai/VertexAIBatchPredictInput
+      path: schemas/VertexAIBatchPredictInput.json
+    - id: vertexai/VertexAIActionResult
+      path: schemas/VertexAIActionResult.json
+  workflows:
+    - id: vertex-gemini-workflow
+      path: workflows/vertexai_generate.yaml
+    - id: vertexai.embed
+      path: workflows/vertexai_embed.yaml
+    - id: vertexai.predict
+      path: workflows/vertexai_predict.yaml
+    - id: vertexai.read
+      path: workflows/vertexai_read.yaml
+    - id: vertexai.write
+      path: workflows/vertexai_write.yaml
+
+overlays:
+  config:
+    - name: pools
+      scope: system
+      key: pools
+      strategy: json_merge_patch
+      path: overlays/pools.patch.yaml
+    - name: timeouts
+      scope: system
+      key: timeouts
+      strategy: json_merge_patch
+      path: overlays/timeouts.patch.yaml
+  policy:
+    - name: safety
+      strategy: bundle_fragment
+      path: overlays/policy.fragment.yaml
+
+tests:
+  policySimulations:
+    - name: allow_read
+      request:
+        tenantId: default
+        topic: job.vertexai.read
+        riskTags: ["read", "network"]
+      expectDecision: ALLOW
+    - name: generate_requires_approval
+      request:
+        tenantId: default
+        topic: job.vertexai.generate
+        riskTags: ["generate", "ai", "network"]
+      expectDecision: REQUIRE_APPROVAL
+    - name: write_requires_approval
+      request:
+        tenantId: default
+        topic: job.vertexai.write
+        riskTags: ["write", "network"]
+      expectDecision: REQUIRE_APPROVAL

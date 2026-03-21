@@ -1,0 +1,20 @@
+version: v1
+rules:
+  - id: llamaindex-read
+    match:
+      topics:
+        - job.llamaindex.query
+        - job.llamaindex.retrieve
+      risk_tags:
+        - read
+    decision: allow
+
+  - id: llamaindex-write
+    match:
+      topics:
+        - job.llamaindex.index
+        - job.llamaindex.ingest
+      risk_tags:
+        - write
+    decision: require_approval
+    reason: "Index and ingest operations modify persistent vector storage"

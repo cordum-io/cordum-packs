@@ -1,0 +1,39 @@
+version: v1
+rules:
+  - id: autogen-agent
+    match:
+      topics:
+        - job.autogen.agent
+      risk_tags:
+        - read
+    decision: allow
+
+  - id: autogen-groupchat
+    match:
+      topics:
+        - job.autogen.groupchat
+      risk_tags:
+        - write
+        - tool_use
+    decision: require_approval
+    reason: "Group chat agents execute tools autonomously"
+
+  - id: autogen-code
+    match:
+      topics:
+        - job.autogen.code
+      risk_tags:
+        - write
+        - code_execution
+    decision: require_approval
+    reason: "Code execution runs in Docker sandbox but can have side effects"
+
+  - id: autogen-toolcall
+    match:
+      topics:
+        - job.autogen.toolcall
+      risk_tags:
+        - write
+        - tool_use
+    decision: require_approval
+    reason: "Individual governed tool calls from agents"

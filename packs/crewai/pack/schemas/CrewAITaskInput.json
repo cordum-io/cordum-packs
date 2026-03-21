@@ -1,0 +1,62 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "CrewAI Task Input",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "task_config": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "description": { "type": "string", "minLength": 1 },
+        "expected_output": { "type": "string" },
+        "agent_config": {
+          "type": "object",
+          "properties": {
+            "role": { "type": "string", "minLength": 1 },
+            "goal": { "type": "string", "minLength": 1 },
+            "backstory": { "type": "string" },
+            "llm_config": {
+              "type": "object",
+              "properties": {
+                "provider": { "type": "string" },
+                "model": { "type": "string" },
+                "temperature": { "type": "number", "minimum": 0, "maximum": 2 },
+                "base_url": { "type": "string", "format": "uri" },
+                "api_key_env": { "type": "string" },
+                "max_tokens": { "type": "integer", "minimum": 1 }
+              },
+              "additionalProperties": true
+            },
+            "allow_delegation": { "type": "boolean" }
+          },
+          "required": ["role", "goal"],
+          "additionalProperties": false
+        },
+        "tools": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string", "minLength": 1 },
+              "description": { "type": "string" },
+              "inputSchema": { "type": "object" }
+            },
+            "required": ["name"],
+            "additionalProperties": true
+          }
+        }
+      },
+      "required": ["description", "agent_config"],
+      "additionalProperties": false
+    },
+    "input": {},
+    "context": {
+      "type": "array",
+      "items": {}
+    },
+    "tool_governance": { "type": "boolean", "default": true },
+    "trace_id": { "type": "string" }
+  },
+  "required": ["task_config"]
+}

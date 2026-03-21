@@ -1,0 +1,35 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AWS SQS Send Message Input",
+  "description": "Input schema for SQS SendMessage.",
+  "type": "object",
+  "properties": {
+    "queue_url": {
+      "type": "string",
+      "description": "SQS queue URL."
+    },
+    "message_body": {
+      "type": "string",
+      "description": "Message body."
+    },
+    "delay_seconds": {
+      "type": "integer",
+      "description": "Message delivery delay in seconds (0-900).",
+      "minimum": 0,
+      "maximum": 900
+    },
+    "message_attributes": {
+      "type": "object",
+      "description": "Message attributes (key → {DataType, StringValue})."
+    },
+    "message_group_id": {
+      "type": "string",
+      "description": "Message group ID (FIFO queues only)."
+    },
+    "message_deduplication_id": {
+      "type": "string",
+      "description": "Deduplication ID (FIFO queues only)."
+    }
+  },
+  "required": ["queue_url", "message_body"]
+}

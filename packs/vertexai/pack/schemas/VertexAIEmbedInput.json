@@ -1,0 +1,50 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Vertex AI Embed Input",
+  "description": "Input schema for Vertex AI text or multimodal embeddings.",
+  "type": "object",
+  "properties": {
+    "profile": {
+      "type": "string"
+    },
+    "project_id": {
+      "type": "string"
+    },
+    "location": {
+      "type": "string"
+    },
+    "request_id": {
+      "type": "string"
+    },
+    "model": {
+      "type": "string"
+    },
+    "contents": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "oneOf": [
+          { "type": "string" },
+          { "type": "object" }
+        ]
+      }
+    },
+    "task_type": {
+      "type": "string",
+      "description": "Optional embedding task hint such as RETRIEVAL_QUERY or RETRIEVAL_DOCUMENT."
+    },
+    "title": {
+      "type": "string",
+      "description": "Optional title metadata used by retrieval embeddings."
+    },
+    "output_dimensionality": {
+      "type": "integer",
+      "minimum": 1
+    }
+  },
+  "required": [
+    "model",
+    "contents"
+  ],
+  "additionalProperties": false
+}

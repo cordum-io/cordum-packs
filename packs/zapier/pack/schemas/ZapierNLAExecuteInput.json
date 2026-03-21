@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ZapierNLAExecuteInput",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "action_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Optional stored AI Action id. Supply when allow/deny lists are configured or when you want to pin execution to a known action."
+    },
+    "instruction": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Natural-language instruction that Zapier AI Actions should resolve and execute."
+    },
+    "preview_only": {
+      "type": "boolean",
+      "default": false,
+      "description": "When true, request a review/preview response instead of committing the action."
+    },
+    "params_hints": {
+      "type": "object",
+      "default": {},
+      "additionalProperties": true,
+      "description": "Optional hints for app-specific parameters that help Zapier resolve the action safely."
+    },
+    "request_id": {"type": "string"}
+  },
+  "required": ["instruction"]
+}

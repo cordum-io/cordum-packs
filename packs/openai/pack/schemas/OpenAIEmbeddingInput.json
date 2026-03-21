@@ -1,0 +1,32 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "OpenAI Embedding Input",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "profile": { "type": "string" },
+    "model": {
+      "type": "string",
+      "enum": ["text-embedding-3-small", "text-embedding-3-large"]
+    },
+    "input": {
+      "oneOf": [
+        { "type": "string", "minLength": 1 },
+        { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } }
+      ]
+    },
+    "dimensions": { "type": "integer", "minimum": 1, "maximum": 3072 },
+    "encoding_format": { "type": "string", "enum": ["float", "base64"] },
+    "auth": {
+      "type": "object",
+      "properties": {
+        "api_key": { "type": "string" },
+        "api_key_env": { "type": "string" },
+        "organization": { "type": "string" },
+        "organization_env": { "type": "string" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "required": ["model", "input"]
+}

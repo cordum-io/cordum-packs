@@ -1,0 +1,7 @@
+topics:
+  job.vertexai.read: vertexai
+  job.vertexai.generate: vertexai
+  job.vertexai.write: vertexai
+pools:
+  vertexai:
+    requires: ["network:egress"]

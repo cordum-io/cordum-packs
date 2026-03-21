@@ -1,0 +1,27 @@
+id: gcp.storage.get_object
+name: GCP Storage Get Object
+description: Download an object from Cloud Storage.
+version: "0.1.0"
+timeout_sec: 60
+steps:
+  get:
+    id: get
+    name: Cloud Storage Get Object
+    type: worker
+    topic: job.gcp.read
+    input:
+      profile: ${input.profile}
+      project_id: ${input.project_id}
+      location: ${input.location}
+      action: storage.get_object
+      params:
+        bucket: ${input.bucket}
+        object_name: ${input.object_name}
+      request_id: ${input.request_id}
+    input_schema_id: gcp/GCPStorageGetObjectInput
+    output_schema_id: gcp/GCPActionResult
+    meta:
+      pack_id: gcp
+      capability: gcp.read
+      risk_tags: ["read", "network"]
+      requires: ["network:egress"]

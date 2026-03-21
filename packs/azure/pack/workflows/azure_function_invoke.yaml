@@ -1,0 +1,23 @@
+id: azure.function.invoke
+name: Azure Function Invoke
+description: Invoke an Azure Function.
+version: "0.1.0"
+timeout_sec: 120
+steps:
+  invoke:
+    id: invoke
+    name: Azure Function Invoke
+    type: worker
+    topic: job.azure.write
+    input:
+      profile: ${input.profile}
+      action: functions.invoke
+      params: ${input.params}
+      request_id: ${input.request_id}
+    input_schema_id: azure/AzureFunctionInvokeInput
+    output_schema_id: azure/AzureActionResult
+    meta:
+      pack_id: azure
+      capability: azure.write
+      risk_tags: ["write", "network"]
+      requires: ["network:egress"]

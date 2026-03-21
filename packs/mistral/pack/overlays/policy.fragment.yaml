@@ -1,0 +1,27 @@
+version: v1
+rules:
+  - id: mistral-chat
+    match:
+      topics:
+        - job.mistral.chat
+        - job.mistral.chat.stream
+      risk_tags:
+        - read
+    decision: allow
+
+  - id: mistral-embed
+    match:
+      topics:
+        - job.mistral.embed
+      risk_tags:
+        - read
+    decision: allow
+
+  - id: mistral-code
+    match:
+      topics:
+        - job.mistral.code
+        - job.mistral.fim
+      risk_tags:
+        - read
+    decision: allow

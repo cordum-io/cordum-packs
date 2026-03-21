@@ -1,0 +1,24 @@
+id: aws.s3.put_object
+name: AWS S3 Put Object
+description: Upload an object to S3.
+version: "0.1.0"
+timeout_sec: 120
+steps:
+  put:
+    id: put
+    name: S3 PutObject
+    type: worker
+    topic: job.aws.write
+    input:
+      profile: ${input.profile}
+      action: s3.put_object
+      region: ${input.region}
+      params: ${input.params}
+      request_id: ${input.request_id}
+    input_schema_id: aws/AWSS3PutObjectInput
+    output_schema_id: aws/AWSActionResult
+    meta:
+      pack_id: aws
+      capability: aws.write
+      risk_tags: ["write", "network"]
+      requires: ["network:egress"]

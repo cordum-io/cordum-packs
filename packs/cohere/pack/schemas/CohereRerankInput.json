@@ -1,0 +1,22 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Cohere Rerank Input",
+  "type": "object",
+  "properties": {
+    "model": { "type": "string", "enum": ["rerank-english-v3.0", "rerank-multilingual-v3.0", "rerank-english-v2.0"] },
+    "query": { "type": "string", "description": "Search query." },
+    "documents": {
+      "type": "array",
+      "description": "Documents to rerank.",
+      "items": {
+        "oneOf": [
+          { "type": "string" },
+          { "type": "object", "properties": { "text": { "type": "string" } } }
+        ]
+      }
+    },
+    "top_n": { "type": "integer", "minimum": 1, "description": "Number of top results to return." },
+    "return_documents": { "type": "boolean", "default": false }
+  },
+  "required": ["query", "documents"]
+}

@@ -1,0 +1,29 @@
+id: gcp.pubsub.publish
+name: GCP Pub/Sub Publish
+description: Publish a message to a Pub/Sub topic.
+version: "0.1.0"
+timeout_sec: 60
+steps:
+  publish:
+    id: publish
+    name: Pub/Sub Publish
+    type: worker
+    topic: job.gcp.write
+    input:
+      profile: ${input.profile}
+      project_id: ${input.project_id}
+      location: ${input.location}
+      action: pubsub.publish
+      params:
+        topic: ${input.topic}
+        data: ${input.data}
+        data_encoding: ${input.data_encoding}
+        attributes: ${input.attributes}
+      request_id: ${input.request_id}
+    input_schema_id: gcp/GCPPubSubPublishInput
+    output_schema_id: gcp/GCPActionResult
+    meta:
+      pack_id: gcp
+      capability: gcp.write
+      risk_tags: ["write", "network"]
+      requires: ["network:egress"]

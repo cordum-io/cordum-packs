@@ -1,0 +1,23 @@
+id: huggingface.embed
+name: Hugging Face Embeddings
+description: Generate embeddings via HF feature extraction models.
+version: "0.1.0"
+timeout_sec: 60
+steps:
+  embed:
+    id: embed
+    name: HF Embedding API
+    type: worker
+    topic: job.huggingface.embed
+    input:
+      profile: ${input.profile}
+      action: embed
+      params: ${input.params}
+      request_id: ${input.request_id}
+    input_schema_id: huggingface/HuggingFaceEmbeddingInput
+    output_schema_id: huggingface/HuggingFaceActionResult
+    meta:
+      pack_id: huggingface
+      capability: huggingface.embed
+      risk_tags: ["read", "network", "llm"]
+      requires: ["network:egress"]

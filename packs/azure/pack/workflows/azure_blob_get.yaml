@@ -1,0 +1,23 @@
+id: azure.blob.get
+name: Azure Blob Get
+description: Download a blob from Azure Blob Storage.
+version: "0.1.0"
+timeout_sec: 60
+steps:
+  get:
+    id: get
+    name: Blob Download
+    type: worker
+    topic: job.azure.read
+    input:
+      profile: ${input.profile}
+      action: blob.get
+      params: ${input.params}
+      request_id: ${input.request_id}
+    input_schema_id: azure/AzureBlobGetInput
+    output_schema_id: azure/AzureActionResult
+    meta:
+      pack_id: azure
+      capability: azure.read
+      risk_tags: ["read", "network"]
+      requires: ["network:egress"]

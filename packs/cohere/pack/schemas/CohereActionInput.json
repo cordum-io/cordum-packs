@@ -1,0 +1,15 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Cohere Action Input",
+  "type": "object",
+  "properties": {
+    "profile": { "type": "string" },
+    "action": {
+      "type": "string",
+      "enum": ["chat", "generate", "embed", "rerank", "classify", "models.list"]
+    },
+    "params": { "type": "object" },
+    "request_id": { "type": "string" }
+  },
+  "required": ["action"]
+}

@@ -1,0 +1,24 @@
+id: autogen.groupchat
+name: AutoGen Group Chat
+description: Multi-agent group conversation with governed tool calls.
+version: "0.1.0"
+timeout_sec: 300
+steps:
+  groupchat:
+    id: groupchat
+    name: AutoGen Group Chat
+    type: worker
+    topic: job.autogen.groupchat
+    input:
+      profile: ${input.profile}
+      action: groupchat
+      config: ${input}
+      input: ${input.message}
+      request_id: ${input.request_id}
+    input_schema_id: autogen/AutoGenGroupChatInput
+    output_schema_id: autogen/AutoGenActionResult
+    meta:
+      pack_id: autogen
+      capability: autogen.groupchat
+      risk_tags: ["write", "network", "llm", "tool_use"]
+      requires: ["network:egress"]

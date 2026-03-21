@@ -5,7 +5,8 @@ metadata:
   id: gcp
   version: 0.1.0
   title: GCP
-  description: GCP logging/monitoring queries and service inspection.
+  description: Google Cloud integration — Cloud Functions, Cloud Storage, Pub/Sub, Compute Engine, Monitoring, Secret Manager, and IAM.
+  image: https://cdn.simpleicons.org/googlecloud
 
 compatibility:
   protocolVersion: 1
@@ -28,11 +29,31 @@ resources:
       path: schemas/GCPActionInput.json
     - id: gcp/GCPActionResult
       path: schemas/GCPActionResult.json
+    - id: gcp/GCPFunctionCallInput
+      path: schemas/GCPFunctionCallInput.json
+    - id: gcp/GCPStorageGetObjectInput
+      path: schemas/GCPStorageGetObjectInput.json
+    - id: gcp/GCPStorageUploadObjectInput
+      path: schemas/GCPStorageUploadObjectInput.json
+    - id: gcp/GCPPubSubPublishInput
+      path: schemas/GCPPubSubPublishInput.json
+    - id: gcp/GCPSecretGetInput
+      path: schemas/GCPSecretGetInput.json
   workflows:
     - id: gcp.read
       path: workflows/gcp_read.yaml
     - id: gcp.write
       path: workflows/gcp_write.yaml
+    - id: gcp.functions.call
+      path: workflows/gcp_function_call.yaml
+    - id: gcp.storage.get_object
+      path: workflows/gcp_storage_get_object.yaml
+    - id: gcp.storage.upload_object
+      path: workflows/gcp_storage_upload_object.yaml
+    - id: gcp.pubsub.publish
+      path: workflows/gcp_pubsub_publish.yaml
+    - id: gcp.secretmanager.get
+      path: workflows/gcp_secret_get.yaml
 
 overlays:
   config:

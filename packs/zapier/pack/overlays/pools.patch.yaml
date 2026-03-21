@@ -1,0 +1,6 @@
+topics:
+  job.zapier.read: zapier
+  job.zapier.write: zapier
+pools:
+  zapier:
+    requires: ["network:egress"]

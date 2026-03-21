@@ -1,0 +1,38 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Mistral Action Result",
+  "description": "Standard result schema for Mistral pack operations.",
+  "type": "object",
+  "properties": {
+    "job_id": { "type": "string" },
+    "profile": { "type": "string" },
+    "action": { "type": "string" },
+    "status_code": { "type": "integer" },
+    "request_id": { "type": "string" },
+    "duration_ms": { "type": "number" },
+    "model": { "type": "string" },
+    "content": { "type": "string", "description": "Generated text content." },
+    "finish_reason": { "type": "string", "enum": ["stop", "length", "tool_calls", "error"] },
+    "tool_calls": { "type": "array", "description": "Function call requests from the model." },
+    "usage": {
+      "type": "object",
+      "properties": {
+        "prompt_tokens": { "type": "integer" },
+        "completion_tokens": { "type": "integer" },
+        "total_tokens": { "type": "integer" }
+      }
+    },
+    "cost_estimate": {
+      "type": "object",
+      "properties": {
+        "input_cost": { "type": "number" },
+        "output_cost": { "type": "number" },
+        "total_cost": { "type": "number" },
+        "currency": { "type": "string", "const": "USD" }
+      }
+    },
+    "embeddings": { "type": "array", "description": "Embedding vectors (embed action)." },
+    "result": { "type": ["object", "array", "null"] },
+    "error": { "type": "string" }
+  }
+}

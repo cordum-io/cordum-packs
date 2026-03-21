@@ -1,0 +1,79 @@
+apiVersion: cordum.io/v1alpha1
+kind: Pack
+
+metadata:
+  id: crewai
+  version: 0.1.0
+  title: CrewAI
+  description: Governed CrewAI crew orchestration and task execution through a Go-to-Python sidecar.
+  image: https://cdn.simpleicons.org/python
+
+compatibility:
+  protocolVersion: 1
+  minCoreVersion: 0.1.0
+
+topics:
+  - name: job.crewai.crew
+    requires: ["network:egress"]
+    riskTags: ["write", "tool-execution", "multi-agent"]
+    capability: crewai.crew
+  - name: job.crewai.task
+    requires: ["network:egress"]
+    riskTags: ["read", "agent-task"]
+    capability: crewai.task
+  - name: job.crewai.toolcall
+    requires: ["network:egress"]
+    riskTags: ["write", "tool-execution"]
+    capability: crewai.toolcall
+
+resources:
+  schemas:
+    - id: crewai/CrewAICrewInput
+      path: schemas/CrewAICrewInput.json
+    - id: crewai/CrewAITaskInput
+      path: schemas/CrewAITaskInput.json
+    - id: crewai/CrewAIActionResult
+      path: schemas/CrewAIActionResult.json
+  workflows:
+    - id: crewai.crew.run
+      path: workflows/crewai_crew_run.yaml
+    - id: crewai.task.execute
+      path: workflows/crewai_task_execute.yaml
+
+overlays:
+  config:
+    - name: pools
+      scope: system
+      key: pools
+      strategy: json_merge_patch
+      path: overlays/pools.patch.yaml
+    - name: timeouts
+      scope: system
+      key: timeouts
+      strategy: json_merge_patch
+      path: overlays/timeouts.patch.yaml
+  policy:
+    - name: safety
+      strategy: bundle_fragment
+      path: overlays/policy.fragment.yaml
+
+tests:
+  policySimulations:
+    - name: task_allowed
+      request:
+        tenantId: default
+        topic: job.crewai.task
+        riskTags: ["read", "agent-task"]
+      expectDecision: ALLOW
+    - name: crew_requires_approval
+      request:
+        tenantId: default
+        topic: job.crewai.crew
+        riskTags: ["write", "tool-execution", "multi-agent"]
+      expectDecision: REQUIRE_APPROVAL
+    - name: toolcall_requires_approval
+      request:
+        tenantId: default
+        topic: job.crewai.toolcall
+        riskTags: ["write", "tool-execution"]
+      expectDecision: REQUIRE_APPROVAL

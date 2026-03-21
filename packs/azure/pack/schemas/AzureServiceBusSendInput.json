@@ -1,0 +1,34 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Azure Service Bus Send Input",
+  "description": "Input schema for Azure Service Bus message send.",
+  "type": "object",
+  "properties": {
+    "namespace": {
+      "type": "string",
+      "description": "Service Bus namespace name."
+    },
+    "queue_or_topic": {
+      "type": "string",
+      "description": "Queue or topic name."
+    },
+    "message_body": {
+      "type": "string",
+      "description": "Message body."
+    },
+    "content_type": {
+      "type": "string",
+      "description": "Message content type.",
+      "default": "application/json"
+    },
+    "properties": {
+      "type": "object",
+      "description": "Custom application properties."
+    },
+    "session_id": {
+      "type": "string",
+      "description": "Session ID for session-enabled queues."
+    }
+  },
+  "required": ["namespace", "queue_or_topic", "message_body"]
+}

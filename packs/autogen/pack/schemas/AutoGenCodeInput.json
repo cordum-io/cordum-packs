@@ -1,0 +1,13 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AutoGen Code Execution Input",
+  "type": "object",
+  "properties": {
+    "code": { "type": "string", "description": "Code to execute." },
+    "language": { "type": "string", "enum": ["python", "bash"], "default": "python" },
+    "docker_image": { "type": "string", "description": "Docker image for sandboxed execution.", "default": "python:3.12-slim" },
+    "timeout": { "type": "integer", "description": "Execution timeout in seconds.", "minimum": 1, "default": 30 },
+    "work_dir": { "type": "string", "description": "Working directory inside container." }
+  },
+  "required": ["code"]
+}

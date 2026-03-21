@@ -1,0 +1,29 @@
+id: vertexai.predict
+name: Vertex AI Predict
+description: Execute online prediction against a deployed Vertex AI endpoint.
+version: "0.1.0"
+timeout_sec: 90
+steps:
+  predict:
+    id: predict
+    name: Vertex AI online prediction
+    type: worker
+    topic: job.vertexai.read
+    input:
+      profile: ${input.profile}
+      project_id: ${input.project_id}
+      location: ${input.location}
+      request_id: ${input.request_id}
+      action: predict.predict
+      params:
+        endpoint_id: ${input.endpoint_id}
+        instances: ${input.instances}
+        parameters: ${input.parameters}
+        deployed_model_id: ${input.deployed_model_id}
+    input_schema_id: vertexai/VertexAIPredictInput
+    output_schema_id: vertexai/VertexAIActionResult
+    meta:
+      pack_id: vertexai
+      capability: vertexai.read
+      risk_tags: ["read", "network"]
+      requires: ["network:egress"]

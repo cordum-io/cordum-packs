@@ -1,0 +1,60 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Vertex AI Batch Prediction Input",
+  "description": "Input schema for Vertex AI batch prediction jobs.",
+  "type": "object",
+  "properties": {
+    "profile": {
+      "type": "string"
+    },
+    "project_id": {
+      "type": "string"
+    },
+    "location": {
+      "type": "string"
+    },
+    "request_id": {
+      "type": "string"
+    },
+    "model": {
+      "type": "string",
+      "description": "Model resource name or publisher model identifier."
+    },
+    "input_uri": {
+      "type": "string",
+      "description": "GCS input URI or URI pattern."
+    },
+    "output_uri": {
+      "type": "string",
+      "description": "GCS output URI prefix."
+    },
+    "parameters": {
+      "type": [
+        "object",
+        "array",
+        "string",
+        "number",
+        "integer",
+        "boolean",
+        "null"
+      ]
+    },
+    "machine_type": {
+      "type": "string"
+    },
+    "starting_replica_count": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "max_replica_count": {
+      "type": "integer",
+      "minimum": 1
+    }
+  },
+  "required": [
+    "model",
+    "input_uri",
+    "output_uri"
+  ],
+  "additionalProperties": false
+}

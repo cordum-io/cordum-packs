@@ -1,0 +1,149 @@
+apiVersion: cordum.io/v1alpha1
+kind: Pack
+
+metadata:
+  id: openai
+  version: 0.1.0
+  title: OpenAI
+  description: OpenAI chat, embeddings, image generation, audio, and fine-tuning workflows with policy-gated cost controls.
+  image: https://cdn.simpleicons.org/openai
+
+compatibility:
+  protocolVersion: 1
+  minCoreVersion: 0.1.0
+
+topics:
+  - name: job.openai.chat
+    requires: ["network:egress"]
+    riskTags: ["read", "llm"]
+    capability: openai.chat
+  - name: job.openai.chat.stream
+    requires: ["network:egress"]
+    riskTags: ["read", "llm", "stream"]
+    capability: openai.chat.stream
+  - name: job.openai.embed
+    requires: ["network:egress"]
+    riskTags: ["read", "llm"]
+    capability: openai.embed
+  - name: job.openai.image.generate
+    requires: ["network:egress"]
+    riskTags: ["write", "cost"]
+    capability: openai.image.generate
+  - name: job.openai.audio.transcribe
+    requires: ["network:egress"]
+    riskTags: ["read", "llm"]
+    capability: openai.audio.transcribe
+  - name: job.openai.audio.tts
+    requires: ["network:egress"]
+    riskTags: ["write", "cost"]
+    capability: openai.audio.tts
+  - name: job.openai.finetune
+    requires: ["network:egress"]
+    riskTags: ["write", "cost"]
+    capability: openai.finetune
+  - name: job.openai.finetune.read
+    requires: ["network:egress"]
+    riskTags: ["read", "cost"]
+    capability: openai.finetune.read
+
+resources:
+  schemas:
+    - id: openai/OpenAIActionInput
+      path: schemas/OpenAIActionInput.json
+    - id: openai/OpenAIChatCompletionInput
+      path: schemas/OpenAIChatCompletionInput.json
+    - id: openai/OpenAIEmbeddingInput
+      path: schemas/OpenAIEmbeddingInput.json
+    - id: openai/OpenAIImageGenerateInput
+      path: schemas/OpenAIImageGenerateInput.json
+    - id: openai/OpenAIAudioTranscribeInput
+      path: schemas/OpenAIAudioTranscribeInput.json
+    - id: openai/OpenAIAudioSpeechInput
+      path: schemas/OpenAIAudioSpeechInput.json
+    - id: openai/OpenAIFineTuneInput
+      path: schemas/OpenAIFineTuneInput.json
+    - id: openai/OpenAIActionResult
+      path: schemas/OpenAIActionResult.json
+  workflows:
+    - id: openai.chat
+      path: workflows/openai_chat.yaml
+    - id: openai.chat.stream
+      path: workflows/openai_chat_stream.yaml
+    - id: openai.embed
+      path: workflows/openai_embed.yaml
+    - id: openai.image.generate
+      path: workflows/openai_image_generate.yaml
+    - id: openai.audio.transcribe
+      path: workflows/openai_audio_transcribe.yaml
+    - id: openai.audio.tts
+      path: workflows/openai_audio_tts.yaml
+    - id: openai.finetune.create
+      path: workflows/openai_finetune_create.yaml
+
+overlays:
+  config:
+    - name: pools
+      scope: system
+      key: pools
+      strategy: json_merge_patch
+      path: overlays/pools.patch.yaml
+    - name: timeouts
+      scope: system
+      key: timeouts
+      strategy: json_merge_patch
+      path: overlays/timeouts.patch.yaml
+  policy:
+    - name: safety
+      strategy: bundle_fragment
+      path: overlays/policy.fragment.yaml
+
+tests:
+  policySimulations:
+    - name: chat_allowed
+      request:
+        tenantId: default
+        topic: job.openai.chat
+        riskTags: ["read", "llm"]
+      expectDecision: ALLOW
+    - name: chat_stream_allowed
+      request:
+        tenantId: default
+        topic: job.openai.chat.stream
+        riskTags: ["read", "llm", "stream"]
+      expectDecision: ALLOW
+    - name: embed_allowed
+      request:
+        tenantId: default
+        topic: job.openai.embed
+        riskTags: ["read", "llm"]
+      expectDecision: ALLOW
+    - name: image_requires_approval
+      request:
+        tenantId: default
+        topic: job.openai.image.generate
+        riskTags: ["write", "cost"]
+      expectDecision: REQUIRE_APPROVAL
+    - name: audio_transcribe_allowed
+      request:
+        tenantId: default
+        topic: job.openai.audio.transcribe
+        riskTags: ["read", "llm"]
+      expectDecision: ALLOW
+    - name: audio_tts_requires_approval
+      request:
+        tenantId: default
+        topic: job.openai.audio.tts
+        riskTags: ["write", "cost"]
+      expectDecision: REQUIRE_APPROVAL
+    - name: finetune_requires_approval
+      request:
+        tenantId: default
+        topic: job.openai.finetune
+        riskTags: ["write", "cost"]
+      expectDecision: REQUIRE_APPROVAL
+    - name: finetune_read_allowed
+      request:
+        tenantId: default
+        topic: job.openai.finetune.read
+        riskTags: ["read", "cost"]
+      expectDecision: ALLOW

@@ -1,0 +1,34 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Azure Blob Upload Input",
+  "description": "Input schema for Azure Blob Storage upload.",
+  "type": "object",
+  "properties": {
+    "storage_account": {
+      "type": "string",
+      "description": "Storage account name."
+    },
+    "container": {
+      "type": "string",
+      "description": "Blob container name."
+    },
+    "blob_name": {
+      "type": "string",
+      "description": "Blob name (path)."
+    },
+    "data": {
+      "type": "string",
+      "description": "Blob content (string or base64-encoded binary)."
+    },
+    "content_type": {
+      "type": "string",
+      "description": "MIME content type.",
+      "default": "application/octet-stream"
+    },
+    "content_encoding": {
+      "type": "string",
+      "description": "Set to 'base64' if data is base64-encoded."
+    }
+  },
+  "required": ["storage_account", "container", "blob_name", "data"]
+}

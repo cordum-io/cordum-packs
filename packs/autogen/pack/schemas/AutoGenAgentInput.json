@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AutoGen Agent Input",
+  "type": "object",
+  "properties": {
+    "agent_config": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "system_message": { "type": "string" },
+        "llm_config": {
+          "type": "object",
+          "properties": {
+            "model": { "type": "string" },
+            "api_key_env": { "type": "string" },
+            "temperature": { "type": "number" }
+          }
+        },
+        "human_input_mode": { "type": "string", "enum": ["NEVER", "ALWAYS", "TERMINATE"], "default": "NEVER" },
+        "tools": { "type": "array" }
+      },
+      "required": ["name"]
+    },
+    "message": { "type": "string" },
+    "tool_governance": { "type": "boolean", "default": true }
+  },
+  "required": ["agent_config", "message"]
+}

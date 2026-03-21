@@ -1,0 +1,105 @@
+apiVersion: cordum.io/v1alpha1
+kind: Pack
+
+metadata:
+  id: anthropic
+  version: 0.1.0
+  title: Anthropic
+  description: Anthropic Claude AI — messages, streaming, tool use, and batch processing.
+  image: https://cdn.simpleicons.org/anthropic
+
+compatibility:
+  protocolVersion: 1
+  minCoreVersion: 0.1.0
+
+topics:
+  - name: job.anthropic.messages
+    requires: ["network:egress"]
+    riskTags: ["read", "network", "llm"]
+    capability: anthropic.messages
+  - name: job.anthropic.messages.stream
+    requires: ["network:egress"]
+    riskTags: ["read", "network", "llm"]
+    capability: anthropic.messages.stream
+  - name: job.anthropic.messages.tooluse
+    requires: ["network:egress"]
+    riskTags: ["write", "network", "llm", "tool_use"]
+    capability: anthropic.messages.tooluse
+  - name: job.anthropic.batch
+    requires: ["network:egress"]
+    riskTags: ["write", "network", "llm"]
+    capability: anthropic.batch
+  - name: job.anthropic.batch.read
+    requires: ["network:egress"]
+    riskTags: ["read", "network"]
+    capability: anthropic.batch.read
+
+resources:
+  schemas:
+    - id: anthropic/AnthropicActionInput
+      path: schemas/AnthropicActionInput.json
+    - id: anthropic/AnthropicMessagesInput
+      path: schemas/AnthropicMessagesInput.json
+    - id: anthropic/AnthropicBatchInput
+      path: schemas/AnthropicBatchInput.json
+    - id: anthropic/AnthropicActionResult
+      path: schemas/AnthropicActionResult.json
+  workflows:
+    - id: anthropic.messages
+      path: workflows/anthropic_messages.yaml
+    - id: anthropic.messages.stream
+      path: workflows/anthropic_messages_stream.yaml
+    - id: anthropic.messages.tooluse
+      path: workflows/anthropic_messages_tooluse.yaml
+    - id: anthropic.batch
+      path: workflows/anthropic_batch_create.yaml
+
+overlays:
+  config:
+    - name: pools
+      scope: system
+      key: pools
+      strategy: json_merge_patch
+      path: overlays/pools.patch.yaml
+    - name: timeouts
+      scope: system
+      key: timeouts
+      strategy: json_merge_patch
+      path: overlays/timeouts.patch.yaml
+  policy:
+    - name: safety
+      strategy: bundle_fragment
+      path: overlays/policy.fragment.yaml
+
+tests:
+  policySimulations:
+    - name: allow_messages
+      request:
+        tenantId: default
+        topic: job.anthropic.messages
+        riskTags: ["read", "network", "llm"]
+      expectDecision: ALLOW
+    - name: allow_stream
+      request:
+        tenantId: default
+        topic: job.anthropic.messages.stream
+        riskTags: ["read", "network", "llm"]
+      expectDecision: ALLOW
+    - name: tooluse_requires_approval
+      request:
+        tenantId: default
+        topic: job.anthropic.messages.tooluse
+        riskTags: ["write", "network", "llm", "tool_use"]
+      expectDecision: REQUIRE_APPROVAL
+    - name: batch_requires_approval
+      request:
+        tenantId: default
+        topic: job.anthropic.batch
+        riskTags: ["write", "network", "llm"]
+      expectDecision: REQUIRE_APPROVAL
+    - name: allow_batch_read
+      request:
+        tenantId: default
+        topic: job.anthropic.batch.read
+        riskTags: ["read", "network"]
+      expectDecision: ALLOW

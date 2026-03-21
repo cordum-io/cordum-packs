@@ -1,0 +1,9 @@
+topics:
+  job.anthropic.messages: anthropic
+  job.anthropic.messages.stream: anthropic
+  job.anthropic.messages.tooluse: anthropic
+  job.anthropic.batch: anthropic
+  job.anthropic.batch.read: anthropic
+pools:
+  anthropic:
+    requires: ["network:egress"]

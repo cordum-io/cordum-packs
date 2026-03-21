@@ -1,0 +1,29 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "LlamaIndex Action Result",
+  "type": "object",
+  "properties": {
+    "job_id": { "type": "string" },
+    "profile": { "type": "string" },
+    "action": { "type": "string" },
+    "duration_ms": { "type": "number" },
+    "response": { "type": "string", "description": "Synthesized response text (query action)." },
+    "source_nodes": {
+      "type": "array",
+      "description": "Retrieved source nodes with scores.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "text": { "type": "string" },
+          "score": { "type": "number" },
+          "metadata": { "type": "object" },
+          "node_id": { "type": "string" }
+        }
+      }
+    },
+    "index_id": { "type": "string" },
+    "documents_ingested": { "type": "integer" },
+    "result": { "type": ["object", "array", "null"] },
+    "error": { "type": "string" }
+  }
+}

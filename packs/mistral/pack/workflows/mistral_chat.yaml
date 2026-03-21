@@ -1,0 +1,23 @@
+id: mistral.chat
+name: Mistral Chat Completion
+description: Send a chat completion request to Mistral AI.
+version: "0.1.0"
+timeout_sec: 120
+steps:
+  chat:
+    id: chat
+    name: Mistral Chat API
+    type: worker
+    topic: job.mistral.chat
+    input:
+      profile: ${input.profile}
+      action: chat.completions
+      params: ${input.params}
+      request_id: ${input.request_id}
+    input_schema_id: mistral/MistralChatInput
+    output_schema_id: mistral/MistralActionResult
+    meta:
+      pack_id: mistral
+      capability: mistral.chat
+      risk_tags: ["read", "network", "llm"]
+      requires: ["network:egress"]

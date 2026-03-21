@@ -1,0 +1,88 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Anthropic Action Result",
+  "description": "Standard result schema for Anthropic pack operations.",
+  "type": "object",
+  "properties": {
+    "job_id": {
+      "type": "string",
+      "description": "Cordum job ID."
+    },
+    "profile": {
+      "type": "string",
+      "description": "Integration profile used."
+    },
+    "action": {
+      "type": "string",
+      "description": "Action that was executed."
+    },
+    "status_code": {
+      "type": "integer",
+      "description": "HTTP status code from Anthropic API."
+    },
+    "request_id": {
+      "type": "string",
+      "description": "Anthropic request ID header value."
+    },
+    "duration_ms": {
+      "type": "number",
+      "description": "Request duration in milliseconds."
+    },
+    "model": {
+      "type": "string",
+      "description": "Model used for the response."
+    },
+    "stop_reason": {
+      "type": "string",
+      "description": "Reason the model stopped generating.",
+      "enum": ["end_turn", "max_tokens", "stop_sequence", "tool_use"]
+    },
+    "content": {
+      "type": "array",
+      "description": "Response content blocks.",
+      "items": {
+        "type": "object"
+      }
+    },
+    "usage": {
+      "type": "object",
+      "description": "Token usage for cost tracking.",
+      "properties": {
+        "input_tokens": {
+          "type": "integer",
+          "description": "Number of input tokens consumed."
+        },
+        "output_tokens": {
+          "type": "integer",
+          "description": "Number of output tokens generated."
+        },
+        "cache_creation_input_tokens": {
+          "type": "integer",
+          "description": "Tokens written to prompt cache."
+        },
+        "cache_read_input_tokens": {
+          "type": "integer",
+          "description": "Tokens read from prompt cache."
+        }
+      }
+    },
+    "cost_estimate": {
+      "type": "object",
+      "description": "Estimated cost in USD.",
+      "properties": {
+        "input_cost": { "type": "number" },
+        "output_cost": { "type": "number" },
+        "total_cost": { "type": "number" },
+        "currency": { "type": "string", "const": "USD" }
+      }
+    },
+    "result": {
+      "description": "Raw API response body for batch/model operations.",
+      "type": ["object", "array", "null"]
+    },
+    "error": {
+      "type": "string",
+      "description": "Error message if the request failed."
+    }
+  }
+}

@@ -1,0 +1,75 @@
+apiVersion: cordum.io/v1alpha1
+kind: Pack
+
+metadata:
+  id: n8n
+  version: 0.1.0
+  title: n8n
+  description: n8n — bidirectional workflow bridge with trigger, execute, and webhook integration.
+  image: https://cdn.simpleicons.org/n8n
+
+compatibility:
+  protocolVersion: 1
+  minCoreVersion: 0.1.0
+
+topics:
+  - name: job.n8n.read
+    requires: ["network:egress"]
+    riskTags: ["read", "network"]
+    capability: n8n.read
+  - name: job.n8n.write
+    requires: ["network:egress"]
+    riskTags: ["write", "network"]
+    capability: n8n.write
+
+resources:
+  schemas:
+    - id: n8n/N8nActionInput
+      path: schemas/N8nActionInput.json
+    - id: n8n/N8nExecuteWorkflowInput
+      path: schemas/N8nExecuteWorkflowInput.json
+    - id: n8n/N8nWebhookPayload
+      path: schemas/N8nWebhookPayload.json
+    - id: n8n/N8nActionResult
+      path: schemas/N8nActionResult.json
+  workflows:
+    - id: n8n.read
+      path: workflows/n8n_read.yaml
+    - id: n8n.write
+      path: workflows/n8n_write.yaml
+    - id: n8n-bridge-workflow
+      path: workflows/n8n_execute_workflow.yaml
+    - id: n8n.webhook.bridge
+      path: workflows/n8n_webhook_bridge.yaml
+
+overlays:
+  config:
+    - name: pools
+      scope: system
+      key: pools
+      strategy: json_merge_patch
+      path: overlays/pools.patch.yaml
+    - name: timeouts
+      scope: system
+      key: timeouts
+      strategy: json_merge_patch
+      path: overlays/timeouts.patch.yaml
+  policy:
+    - name: safety
+      strategy: bundle_fragment
+      path: overlays/policy.fragment.yaml
+
+tests:
+  policySimulations:
+    - name: allow_read
+      request:
+        tenantId: default
+        topic: job.n8n.read
+        riskTags: ["read", "network"]
+      expectDecision: ALLOW
+    - name: write_requires_approval
+      request:
+        tenantId: default
+        topic: job.n8n.write
+        riskTags: ["write", "network"]
+      expectDecision: REQUIRE_APPROVAL

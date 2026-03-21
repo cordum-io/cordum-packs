@@ -1,0 +1,46 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "n8n Action Result",
+  "description": "Standard result envelope for the n8n pack.",
+  "type": "object",
+  "properties": {
+    "job_id": {
+      "type": "string"
+    },
+    "profile": {
+      "type": "string"
+    },
+    "action": {
+      "type": "string"
+    },
+    "workflow_id": {
+      "type": "string"
+    },
+    "execution_id": {
+      "type": "string"
+    },
+    "request_id": {
+      "type": "string"
+    },
+    "status_code": {
+      "type": "integer"
+    },
+    "status": {
+      "type": "string",
+      "description": "Execution or workflow status returned by n8n."
+    },
+    "duration_ms": {
+      "type": "integer"
+    },
+    "result": {},
+    "error": {
+      "type": "string"
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  },
+  "required": ["job_id", "action"],
+  "additionalProperties": false
+}

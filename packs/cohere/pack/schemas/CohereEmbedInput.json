@@ -1,0 +1,20 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Cohere Embed Input",
+  "type": "object",
+  "properties": {
+    "model": { "type": "string", "enum": ["embed-english-v3.0", "embed-multilingual-v3.0", "embed-english-light-v3.0", "embed-multilingual-light-v3.0"] },
+    "texts": { "type": "array", "items": { "type": "string" }, "description": "Texts to embed." },
+    "input_type": {
+      "type": "string",
+      "description": "REQUIRED for v3 models.",
+      "enum": ["search_document", "search_query", "classification", "clustering"]
+    },
+    "embedding_types": {
+      "type": "array",
+      "items": { "type": "string", "enum": ["float", "int8", "uint8", "binary", "ubinary"] }
+    },
+    "truncate": { "type": "string", "enum": ["NONE", "START", "END"], "default": "END" }
+  },
+  "required": ["texts", "input_type"]
+}

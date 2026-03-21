@@ -1,0 +1,50 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Anthropic Batch Input",
+  "description": "Input schema for Anthropic Message Batches API.",
+  "type": "object",
+  "properties": {
+    "requests": {
+      "type": "array",
+      "description": "Array of batch request items.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "custom_id": {
+            "type": "string",
+            "description": "Caller-provided identifier for matching results."
+          },
+          "params": {
+            "type": "object",
+            "description": "Messages API request parameters.",
+            "properties": {
+              "model": { "type": "string" },
+              "max_tokens": { "type": "integer", "minimum": 1 },
+              "messages": { "type": "array" },
+              "system": {},
+              "temperature": { "type": "number" },
+              "tools": { "type": "array" },
+              "tool_choice": { "type": "object" }
+            },
+            "required": ["model", "max_tokens", "messages"]
+          }
+        },
+        "required": ["custom_id", "params"]
+      }
+    },
+    "batch_id": {
+      "type": "string",
+      "description": "Batch ID for get/cancel operations."
+    },
+    "limit": {
+      "type": "integer",
+      "description": "Max results for list operation.",
+      "minimum": 1,
+      "maximum": 100
+    },
+    "after_id": {
+      "type": "string",
+      "description": "Cursor for list pagination."
+    }
+  }
+}

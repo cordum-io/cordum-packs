@@ -1,0 +1,24 @@
+id: bedrock.agent.invoke
+name: Bedrock Agent Invoke
+description: Invoke a Bedrock Agent.
+version: "0.1.0"
+timeout_sec: 120
+steps:
+  invoke:
+    id: invoke
+    name: Bedrock Agent Invoke
+    type: worker
+    topic: job.bedrock.write
+    input:
+      profile: ${input.profile}
+      action: agent.invoke
+      region: ${input.region}
+      params: ${input.params}
+      request_id: ${input.request_id}
+    input_schema_id: bedrock/BedrockAgentInvokeInput
+    output_schema_id: bedrock/BedrockActionResult
+    meta:
+      pack_id: bedrock
+      capability: bedrock.write
+      risk_tags: ["write", "network", "llm"]
+      requires: ["network:egress"]

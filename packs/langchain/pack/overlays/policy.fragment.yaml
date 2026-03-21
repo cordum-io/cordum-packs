@@ -1,0 +1,37 @@
+version: v1
+rules:
+  - id: langchain-chain
+    match:
+      topics:
+        - job.langchain.chain
+      risk_tags:
+        - read
+    decision: allow
+
+  - id: langchain-agent
+    match:
+      topics:
+        - job.langchain.agent
+      risk_tags:
+        - write
+        - tool_use
+    decision: require_approval
+    reason: "Agents execute tools autonomously — requires governance"
+
+  - id: langchain-retriever
+    match:
+      topics:
+        - job.langchain.retriever
+      risk_tags:
+        - read
+    decision: allow
+
+  - id: langchain-toolcall
+    match:
+      topics:
+        - job.langchain.toolcall
+      risk_tags:
+        - write
+        - tool_use
+    decision: require_approval
+    reason: "Individual tool calls from governed agents"

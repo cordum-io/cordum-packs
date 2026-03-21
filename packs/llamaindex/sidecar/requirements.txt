@@ -1,0 +1,5 @@
+flask>=3.0,<4.0
+llama-index-core>=0.11,<0.12
+llama-index-llms-openai>=0.3
+llama-index-vector-stores-chroma>=0.3
+chromadb>=0.5

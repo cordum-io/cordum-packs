@@ -1,0 +1,23 @@
+id: huggingface.inference
+name: Hugging Face Inference
+description: Run inference on any Hugging Face model via the serverless inference API.
+version: "0.1.0"
+timeout_sec: 120
+steps:
+  infer:
+    id: infer
+    name: HF Inference API
+    type: worker
+    topic: job.huggingface.inference
+    input:
+      profile: ${input.profile}
+      action: inference
+      params: ${input.params}
+      request_id: ${input.request_id}
+    input_schema_id: huggingface/HuggingFaceInferenceInput
+    output_schema_id: huggingface/HuggingFaceActionResult
+    meta:
+      pack_id: huggingface
+      capability: huggingface.inference
+      risk_tags: ["read", "network", "llm"]
+      requires: ["network:egress"]

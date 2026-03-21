@@ -1,0 +1,16 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Bedrock Action Input",
+  "type": "object",
+  "properties": {
+    "profile": { "type": "string" },
+    "action": {
+      "type": "string",
+      "enum": ["invoke", "converse", "embed", "kb.query", "kb.retrieve", "agent.invoke", "models.list", "models.get"]
+    },
+    "region": { "type": "string" },
+    "params": { "type": "object" },
+    "request_id": { "type": "string" }
+  },
+  "required": ["action"]
+}

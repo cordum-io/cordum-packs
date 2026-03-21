@@ -1,0 +1,13 @@
+topics:
+  job.langchain.chain:
+    timeout_seconds: 120
+    max_retries: 2
+  job.langchain.agent:
+    timeout_seconds: 300
+    max_retries: 1
+  job.langchain.retriever:
+    timeout_seconds: 60
+    max_retries: 2
+  job.langchain.toolcall:
+    timeout_seconds: 120
+    max_retries: 1

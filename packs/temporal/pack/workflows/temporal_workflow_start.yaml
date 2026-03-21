@@ -1,0 +1,23 @@
+id: temporal.workflow.start
+name: Temporal Workflow Start
+description: Start a Temporal workflow execution.
+version: "0.1.0"
+timeout_sec: 30
+steps:
+  start:
+    id: start
+    name: Start Temporal Workflow
+    type: worker
+    topic: job.temporal.write
+    input:
+      profile: ${input.profile}
+      action: workflow.start
+      params: ${input.params}
+      request_id: ${input.request_id}
+    input_schema_id: temporal/TemporalWorkflowStartInput
+    output_schema_id: temporal/TemporalActionResult
+    meta:
+      pack_id: temporal
+      capability: temporal.write
+      risk_tags: ["write", "network"]
+      requires: ["network:egress"]

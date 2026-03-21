@@ -1,0 +1,22 @@
+id: n8n.webhook.bridge
+name: n8n Webhook Bridge
+description: Resolve n8n execution details when n8n triggers Cordum through the inbound webhook bridge.
+version: "0.1.0"
+timeout_sec: 60
+steps:
+  execution:
+    id: execution
+    name: Fetch n8n execution
+    type: worker
+    topic: job.n8n.read
+    input:
+      action: execution.get
+      params:
+        execution_id: ${input.execution_id}
+    input_schema_id: n8n/N8nWebhookPayload
+    output_schema_id: n8n/N8nActionResult
+    meta:
+      pack_id: n8n
+      capability: n8n.webhook.bridge
+      risk_tags: ["read", "network"]
+      requires: ["network:egress"]

@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cordum-agent-adapters"
+version = "0.1.0"
+description = "Agent framework adapters for Cordum sidecar-based integration packs"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = []
+
+[project.optional-dependencies]
+langchain = ["langchain-core>=0.2"]
+crewai = ["crewai>=0.95", "crewai-tools>=0.25"]
+autogen = ["pyautogen>=0.4"]
+
+[tool.setuptools]
+packages = ["cordum_agent_adapters"]

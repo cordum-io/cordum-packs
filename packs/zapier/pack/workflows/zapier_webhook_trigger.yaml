@@ -1,0 +1,24 @@
+id: zapier.webhook.trigger
+name: Zapier Webhook Trigger
+description: Send a payload to a configured Zapier webhook alias without exposing raw catch hook URLs in workflow input.
+version: "0.1.0"
+timeout_sec: 60
+steps:
+  trigger:
+    id: trigger
+    name: Send Zapier webhook
+    type: worker
+    topic: job.zapier.read
+    input:
+      request_id: ${input.request_id}
+      action: webhook.send
+      params:
+        webhook_name: ${input.webhook_name}
+        payload: ${input.payload}
+    input_schema_id: zapier/ZapierWebhookTriggerInput
+    output_schema_id: zapier/ZapierActionResult
+    meta:
+      pack_id: zapier
+      capability: zapier.webhook.trigger
+      risk_tags: ["read", "network"]
+      requires: ["network:egress"]

@@ -1,0 +1,24 @@
+id: crewai.task.execute
+name: CrewAI Task Execute
+description: Execute a single governed CrewAI task.
+version: "0.1.0"
+timeout_sec: 180
+steps:
+  task:
+    id: task
+    name: Execute CrewAI task
+    type: worker
+    topic: job.crewai.task
+    input:
+      task_config: ${input.task_config}
+      input: ${input.input}
+      context: ${input.context}
+      tool_governance: ${input.tool_governance}
+      trace_id: ${input.trace_id}
+    input_schema_id: crewai/CrewAITaskInput
+    output_schema_id: crewai/CrewAIActionResult
+    meta:
+      pack_id: crewai
+      capability: crewai.task.execute
+      risk_tags: ["read", "agent-task"]
+      requires: ["network:egress"]

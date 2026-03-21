@@ -1,0 +1,8 @@
+topics:
+  job.langchain.chain: langchain
+  job.langchain.agent: langchain
+  job.langchain.retriever: langchain
+  job.langchain.toolcall: langchain
+pools:
+  langchain:
+    requires: ["network:egress"]

@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "LlamaIndex Ingest Input",
+  "type": "object",
+  "properties": {
+    "source": {
+      "type": "object",
+      "properties": {
+        "type": { "type": "string", "enum": ["file", "url", "directory", "s3", "text"] },
+        "path": { "type": "string" },
+        "url": { "type": "string" },
+        "bucket": { "type": "string" },
+        "key_prefix": { "type": "string" },
+        "texts": { "type": "array", "items": { "type": "string" } }
+      },
+      "required": ["type"]
+    },
+    "index_config": { "type": "object" },
+    "chunking": {
+      "type": "object",
+      "properties": {
+        "chunk_size": { "type": "integer", "default": 1024 },
+        "chunk_overlap": { "type": "integer", "default": 200 }
+      }
+    }
+  },
+  "required": ["source"]
+}

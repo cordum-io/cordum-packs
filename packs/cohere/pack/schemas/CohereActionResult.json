@@ -1,0 +1,32 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Cohere Action Result",
+  "type": "object",
+  "properties": {
+    "job_id": { "type": "string" },
+    "profile": { "type": "string" },
+    "action": { "type": "string" },
+    "status_code": { "type": "integer" },
+    "request_id": { "type": "string" },
+    "duration_ms": { "type": "number" },
+    "model": { "type": "string" },
+    "text": { "type": "string", "description": "Generated text (chat/generate)." },
+    "finish_reason": { "type": "string" },
+    "citations": { "type": "array", "description": "Citations for grounded generation." },
+    "tool_calls": { "type": "array" },
+    "billed_units": {
+      "type": "object",
+      "description": "Cohere billed units (instead of raw tokens).",
+      "properties": {
+        "input_tokens": { "type": "number" },
+        "output_tokens": { "type": "number" },
+        "search_units": { "type": "number" },
+        "classifications": { "type": "number" }
+      }
+    },
+    "embeddings": { "type": "array" },
+    "results": { "type": "array", "description": "Rerank or classify results." },
+    "result": { "type": ["object", "array", "null"] },
+    "error": { "type": "string" }
+  }
+}

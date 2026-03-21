@@ -1,0 +1,92 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "LangChain Agent Input",
+  "description": "Input schema for LangChain agent execution with CAP governance.",
+  "type": "object",
+  "properties": {
+    "profile": {
+      "type": "string",
+      "description": "Named integration profile to use."
+    },
+    "agent_config": {
+      "type": "object",
+      "description": "Agent configuration.",
+      "properties": {
+        "agent_type": {
+          "type": "string",
+          "description": "LangChain agent type.",
+          "enum": ["react", "openai-functions", "openai-tools", "structured-chat", "xml", "custom"]
+        },
+        "llm_config": {
+          "type": "object",
+          "description": "LLM provider configuration.",
+          "properties": {
+            "provider": {
+              "type": "string",
+              "enum": ["openai", "anthropic", "mistral", "cohere", "huggingface"]
+            },
+            "model": { "type": "string" },
+            "temperature": { "type": "number", "minimum": 0.0, "maximum": 2.0 },
+            "max_tokens": { "type": "integer", "minimum": 1 },
+            "api_key_env": {
+              "type": "string",
+              "description": "Environment variable containing the LLM API key."
+            }
+          },
+          "required": ["provider", "model"]
+        },
+        "tools": {
+          "type": "array",
+          "description": "Tool definitions for the agent.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "description": { "type": "string" },
+              "parameters": { "type": "object" }
+            },
+            "required": ["name", "description"]
+          }
+        },
+        "max_iterations": {
+          "type": "integer",
+          "description": "Maximum agent iterations before stopping.",
+          "minimum": 1,
+          "default": 10
+        },
+        "early_stopping_method": {
+          "type": "string",
+          "description": "How to handle hitting max iterations.",
+          "enum": ["force", "generate"],
+          "default": "force"
+        },
+        "system_message": {
+          "type": "string",
+          "description": "System prompt for the agent."
+        },
+        "agent_kwargs": {
+          "type": "object",
+          "description": "Additional agent-specific keyword arguments."
+        }
+      },
+      "required": ["agent_type", "llm_config", "tools"]
+    },
+    "input": {
+      "description": "Input to the agent — string or object.",
+      "oneOf": [
+        { "type": "string" },
+        { "type": "object" }
+      ]
+    },
+    "tool_governance": {
+      "type": "boolean",
+      "description": "Whether to route tool calls through CAP governance. Defaults to true.",
+      "default": true
+    },
+    "request_id": {
+      "type": "string",
+      "description": "Optional idempotency or trace id."
+    }
+  },
+  "required": ["agent_config", "input"]
+}

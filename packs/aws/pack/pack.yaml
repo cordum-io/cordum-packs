@@ -5,7 +5,8 @@ metadata:
   id: aws
   version: 0.1.0
   title: AWS
-  description: AWS observability and inspection actions.
+  description: AWS cloud integration — Lambda, S3, SQS, SNS, EC2, IAM, CloudWatch, Secrets Manager.
+  image: https://cdn.simpleicons.org/amazonaws
 
 compatibility:
   protocolVersion: 1
@@ -28,11 +29,35 @@ resources:
       path: schemas/AWSActionInput.json
     - id: aws/AWSActionResult
       path: schemas/AWSActionResult.json
+    - id: aws/AWSLambdaInvokeInput
+      path: schemas/AWSLambdaInvokeInput.json
+    - id: aws/AWSS3GetObjectInput
+      path: schemas/AWSS3GetObjectInput.json
+    - id: aws/AWSS3PutObjectInput
+      path: schemas/AWSS3PutObjectInput.json
+    - id: aws/AWSSQSSendMessageInput
+      path: schemas/AWSSQSSendMessageInput.json
+    - id: aws/AWSSNSPublishInput
+      path: schemas/AWSSNSPublishInput.json
+    - id: aws/AWSSecretsManagerGetInput
+      path: schemas/AWSSecretsManagerGetInput.json
   workflows:
     - id: aws.read
       path: workflows/aws_read.yaml
     - id: aws.write
       path: workflows/aws_write.yaml
+    - id: aws.lambda.invoke
+      path: workflows/aws_lambda_invoke.yaml
+    - id: aws.s3.get_object
+      path: workflows/aws_s3_get_object.yaml
+    - id: aws.s3.put_object
+      path: workflows/aws_s3_put_object.yaml
+    - id: aws.sqs.send_message
+      path: workflows/aws_sqs_send_message.yaml
+    - id: aws.sns.publish
+      path: workflows/aws_sns_publish.yaml
+    - id: aws.secrets.get
+      path: workflows/aws_secrets_get.yaml
 
 overlays:
   config:

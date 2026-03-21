@@ -1,0 +1,29 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "LlamaIndex Index Input",
+  "type": "object",
+  "properties": {
+    "action": { "type": "string", "enum": ["create", "update", "delete"] },
+    "index_config": {
+      "type": "object",
+      "properties": {
+        "type": { "type": "string", "enum": ["vector", "list", "keyword", "tree"] },
+        "store_config": { "type": "object" }
+      }
+    },
+    "index_id": { "type": "string", "description": "Index ID for update/delete." },
+    "documents": {
+      "type": "array",
+      "description": "Documents to index (for create/update).",
+      "items": {
+        "type": "object",
+        "properties": {
+          "text": { "type": "string" },
+          "metadata": { "type": "object" }
+        },
+        "required": ["text"]
+      }
+    }
+  },
+  "required": ["action"]
+}

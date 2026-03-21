@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Bedrock Action Result",
+  "type": "object",
+  "properties": {
+    "job_id": { "type": "string" },
+    "profile": { "type": "string" },
+    "action": { "type": "string" },
+    "region": { "type": "string" },
+    "model_id": { "type": "string" },
+    "status_code": { "type": "integer" },
+    "duration_ms": { "type": "number" },
+    "output": { "description": "Model output (text, content blocks, etc.)." },
+    "stop_reason": { "type": "string" },
+    "token_usage": {
+      "type": "object",
+      "properties": {
+        "input_tokens": { "type": "integer" },
+        "output_tokens": { "type": "integer" },
+        "total_tokens": { "type": "integer" }
+      }
+    },
+    "embeddings": { "type": "array" },
+    "citations": { "type": "array" },
+    "result": { "type": ["object", "array", "null"] },
+    "error": { "type": "string" }
+  }
+}

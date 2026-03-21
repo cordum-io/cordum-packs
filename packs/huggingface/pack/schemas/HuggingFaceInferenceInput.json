@@ -1,0 +1,31 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Hugging Face Inference Input",
+  "type": "object",
+  "properties": {
+    "model": { "type": "string", "description": "Model ID (e.g., meta-llama/Llama-3-8b, google/flan-t5-base)." },
+    "task": {
+      "type": "string",
+      "description": "Inference task type.",
+      "enum": [
+        "text-generation", "text-classification", "token-classification",
+        "summarization", "translation", "question-answering", "fill-mask",
+        "image-classification", "object-detection", "feature-extraction",
+        "zero-shot-classification", "sentence-similarity", "conversational"
+      ]
+    },
+    "inputs": { "description": "Task-specific input (string, object, or array)." },
+    "parameters": {
+      "type": "object",
+      "description": "Task-specific parameters (max_new_tokens, temperature, etc.)."
+    },
+    "options": {
+      "type": "object",
+      "properties": {
+        "wait_for_model": { "type": "boolean", "description": "Wait for model to load (can take minutes).", "default": false },
+        "use_cache": { "type": "boolean", "description": "Use cached results if available.", "default": true }
+      }
+    }
+  },
+  "required": ["model", "inputs"]
+}
