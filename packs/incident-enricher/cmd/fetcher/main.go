@@ -28,14 +28,21 @@ func main() {
 	cfg := config.Load("fetcher")
 
 	workerID := resolveWorkerID(cfg.WorkerID, cfg.Service)
-	nc, err := nats.Connect(cfg.NATSURL, nats.Name(workerID), nats.Timeout(5*time.Second))
+	natsOpts := []nats.Option{nats.Name(workerID), nats.Timeout(5 * time.Second)}
+	if tlsCfg, tlsErr := runtime.NATSTLSConfigFromEnv(); tlsErr != nil {
+		slog.Error("nats tls config failed", "error", tlsErr)
+		os.Exit(1)
+	} else if tlsCfg != nil {
+		natsOpts = append(natsOpts, nats.Secure(tlsCfg))
+	}
+	nc, err := nats.Connect(cfg.NATSURL, natsOpts...)
 	if err != nil {
 		slog.Error("nats connect failed", "error", err)
 		os.Exit(1)
 	}
 	defer nc.Close()
 
-	store, err := newRedisBlobStoreWithTTL(cfg.RedisURL, cfg.DataTTL)
+	store, err := runtime.NewRedisBlobStoreWithTTL(cfg.RedisURL, cfg.DataTTL)
 	if err != nil {
 		slog.Error("redis blob store init failed", "error", err)
 		os.Exit(1)

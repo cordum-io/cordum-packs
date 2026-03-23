@@ -85,11 +85,17 @@ func New(cfg config.Config) (*Worker, error) {
 	redisClient := redis.NewClient(opts)
 
 	workerID := resolveWorkerID("", "cron-triggers")
-	nc, err := nats.Connect(cfg.NatsURL, nats.Name(workerID), nats.Timeout(5*time.Second))
+	natsOpts := []nats.Option{nats.Name(workerID), nats.Timeout(5 * time.Second)}
+	if tlsCfg, tlsErr := runtime.NATSTLSConfigFromEnv(); tlsErr != nil {
+		return nil, fmt.Errorf("nats tls config: %w", tlsErr)
+	} else if tlsCfg != nil {
+		natsOpts = append(natsOpts, nats.Secure(tlsCfg))
+	}
+	nc, err := nats.Connect(cfg.NatsURL, natsOpts...)
 	if err != nil {
 		return nil, err
 	}
-	resultStore, err := newRedisBlobStoreWithTTL(cfg.RedisURL, cfg.ResultTTL)
+	resultStore, err := runtime.NewRedisBlobStoreWithTTL(cfg.RedisURL, cfg.ResultTTL)
 	if err != nil {
 		return nil, err
 	}

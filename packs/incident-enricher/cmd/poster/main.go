@@ -40,7 +40,14 @@ func main() {
 	cfg := config.Load("poster")
 
 	workerID := resolveWorkerID(cfg.WorkerID, cfg.Service)
-	nc, err := nats.Connect(cfg.NATSURL, nats.Name(workerID), nats.Timeout(5*time.Second))
+	natsOpts := []nats.Option{nats.Name(workerID), nats.Timeout(5 * time.Second)}
+	if tlsCfg, tlsErr := runtime.NATSTLSConfigFromEnv(); tlsErr != nil {
+		slog.Error("nats tls config failed", "error", tlsErr)
+		os.Exit(1)
+	} else if tlsCfg != nil {
+		natsOpts = append(natsOpts, nats.Secure(tlsCfg))
+	}
+	nc, err := nats.Connect(cfg.NATSURL, natsOpts...)
 	if err != nil {
 		slog.Error("nats connect failed", "error", err)
 		os.Exit(1)
@@ -53,7 +60,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	blobStore, err := newRedisBlobStoreWithTTL(cfg.RedisURL, cfg.DataTTL)
+	blobStore, err := runtime.NewRedisBlobStoreWithTTL(cfg.RedisURL, cfg.DataTTL)
 	if err != nil {
 		slog.Error("redis blob store init failed", "error", err)
 		os.Exit(1)
