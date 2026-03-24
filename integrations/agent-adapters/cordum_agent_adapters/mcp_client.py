@@ -82,6 +82,7 @@ class McpStdioClient:
             self.initialize()
 
     def initialize(self) -> dict:
+        """Send the MCP ``initialize`` handshake and mark the client as ready."""
         if self._initialized:
             return {}
         params = {
@@ -94,6 +95,7 @@ class McpStdioClient:
         return result
 
     def list_tools(self) -> List[dict]:
+        """Return all tools advertised by the MCP server, handling cursor pagination."""
         tools: List[dict] = []
         cursor = ""
         while True:
@@ -109,6 +111,7 @@ class McpStdioClient:
         return tools
 
     def call_tool(self, name: str, arguments: Optional[Dict[str, Any]] = None) -> dict:
+        """Invoke a tool by name. Raises :class:`McpToolError` if the server signals an error."""
         params = {"name": name, "arguments": arguments or {}}
         result = self._request("tools/call", params)
         if isinstance(result, dict) and result.get("isError"):
@@ -118,6 +121,7 @@ class McpStdioClient:
         return result
 
     def close(self) -> None:
+        """Terminate the MCP server subprocess."""
         if self._proc.poll() is None:
             self._proc.terminate()
             try:

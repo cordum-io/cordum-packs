@@ -32,6 +32,11 @@ def build_autogen_tools(
     tools: Optional[List[Dict[str, Any]]] = None,
     result_transform: Optional[Callable[[Dict[str, Any]], Any]] = None,
 ) -> Tuple[List[Dict[str, Any]], Dict[str, Callable[..., Any]]]:
+    """Build AutoGen-compatible function definitions and a callable function map.
+
+    Returns ``(functions, function_map)`` where *functions* is a list of
+    OpenAI function schemas and *function_map* maps tool names to callables.
+    """
     tool_defs = tools or client.list_tools()
     functions: List[Dict[str, Any]] = []
     function_map: Dict[str, Callable[..., Any]] = {}
@@ -56,4 +61,5 @@ def build_autogen_tools(
 
 
 def build_autogen_openai_tools(tools: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Convert MCP tool definitions to OpenAI function-calling format for AutoGen."""
     return mcp_tools_to_openai_tools(tools)

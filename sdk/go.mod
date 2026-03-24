@@ -5,7 +5,7 @@ go 1.24.0
 toolchain go1.24.11
 
 require (
-	github.com/cordum-io/cap/v2 v2.8.1
+	github.com/cordum-io/cap/v2 v2.8.2
 	github.com/nats-io/nats.go v1.48.0
 	github.com/redis/go-redis/v9 v9.7.3
 	google.golang.org/grpc v1.79.3

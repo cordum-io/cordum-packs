@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 import json
+import logging
 import re
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Type
 
 from .mcp_client import McpStdioClient
+
+logger = logging.getLogger(__name__)
 
 
 def _parse_tool_input(raw: Any) -> Dict[str, Any]:
@@ -42,9 +45,12 @@ def _schema_type(schema: Dict[str, Any]) -> Any:
 
 
 def _pydantic_config_allow_extra() -> Any:
+    """Return a pydantic config that allows extra fields. Falls back to a v1-style Config class."""
     try:
         from pydantic import ConfigDict
     except ImportError:
+        logger.debug("pydantic v2 ConfigDict unavailable, using v1-style Config fallback")
+
         class Config:
             extra = "allow"
 
@@ -52,10 +58,12 @@ def _pydantic_config_allow_extra() -> Any:
     return ConfigDict(extra="allow")
 
 
-def _pydantic_model_from_schema(name: str, schema: Dict[str, Any]) -> Any:
+def _pydantic_model_from_schema(name: str, schema: Dict[str, Any]) -> Optional[Type[Any]]:
+    """Build a pydantic model from a JSON Schema dict. Returns None if pydantic is unavailable."""
     try:
         from pydantic import Field, create_model
     except ImportError:
+        logger.debug("pydantic unavailable, skipping args_schema for %s", name)
         return None
 
     properties = schema.get("properties") if isinstance(schema, dict) else {}
@@ -90,6 +98,11 @@ def build_langchain_tools(
     tools: Optional[List[Dict[str, Any]]] = None,
     result_transform: Optional[Callable[[Dict[str, Any]], Any]] = None,
 ) -> List[Any]:
+    """Build LangChain tool instances from MCP tool definitions.
+
+    Uses ``StructuredTool`` when pydantic is available for schema validation,
+    falls back to ``Tool`` with string input parsing otherwise.
+    """
     try:
         from langchain_core.tools import StructuredTool, Tool
     except ImportError as exc:
