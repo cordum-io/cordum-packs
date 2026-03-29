@@ -1,6 +1,6 @@
 module github.com/cordum-io/cordum-packs/packs/incident-enricher
 
-go 1.24.0
+go 1.25.0
 
 require (
 	github.com/cordum-io/cap/v2 v2.6.0
