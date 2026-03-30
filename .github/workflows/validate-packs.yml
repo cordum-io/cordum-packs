@@ -12,6 +12,7 @@ on:
       - "packs/**"
       - "sdk/**"
       - "integrations/**"
+      - ".github/workflows/validate-packs.yml"
   workflow_dispatch: {}
 
 permissions:
