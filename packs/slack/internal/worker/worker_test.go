@@ -190,7 +190,7 @@ func TestEnforceActionPolicy(t *testing.T) {
 
 func TestExtractChannels(t *testing.T) {
 	tests := []struct {
-		name string
+		name   string
 		params map[string]any
 		keys   []string
 		want   []string

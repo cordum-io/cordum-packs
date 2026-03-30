@@ -63,11 +63,11 @@ func TestNormalizePayload(t *testing.T) {
 
 func TestExtractToolCall(t *testing.T) {
 	tests := []struct {
-		name      string
-		payload   map[string]any
-		wantName  string
-		wantArgs  map[string]any
-		wantErr   string
+		name     string
+		payload  map[string]any
+		wantName string
+		wantArgs map[string]any
+		wantErr  string
 	}{
 		{
 			name:    "nil payload returns error",
