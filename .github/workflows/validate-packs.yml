@@ -175,6 +175,17 @@ jobs:
         with:
           cluster_name: test
 
+      - name: Debug env
+        run: |
+          echo "PWD: $(pwd)"
+          echo "GOMOD: $(go env GOMOD)"
+          echo "GOWORK: $(go env GOWORK)"
+          echo "GOFLAGS: $(go env GOFLAGS)"
+          echo "--- ls packs/${{ matrix.pack.name }} ---"
+          ls packs/${{ matrix.pack.name }}/go.mod || echo "NO go.mod!"
+          echo "--- go.mod head ---"
+          head -3 packs/${{ matrix.pack.name }}/go.mod || true
+
       - name: Build pack
         run: cd packs/${{ matrix.pack.name }} && go build ./...
 
