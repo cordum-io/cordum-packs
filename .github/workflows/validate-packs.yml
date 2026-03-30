@@ -176,12 +176,11 @@ jobs:
           cluster_name: test
 
       - name: Build pack
-        working-directory: packs/${{ matrix.pack.name }}
-        run: go build ./...
+        run: cd packs/${{ matrix.pack.name }} && go build ./...
 
       - name: Build binary
-        working-directory: packs/${{ matrix.pack.name }}
         run: |
+          cd packs/${{ matrix.pack.name }}
           binary_name="cordum-${{ matrix.pack.name }}"
           if [ -d "cmd/${binary_name}" ]; then
             go build -o /dev/null "./cmd/${binary_name}/"
@@ -189,7 +188,6 @@ jobs:
 
       - name: Run tests
         if: matrix.pack.has_tests
-        working-directory: packs/${{ matrix.pack.name }}
         env:
           AWS_ENDPOINT_URL: ${{ matrix.pack.mock_tier == 'localstack' && 'http://localhost:4566' || '' }}
           AWS_ACCESS_KEY_ID: ${{ matrix.pack.mock_tier == 'localstack' && 'test' || '' }}
@@ -200,6 +198,7 @@ jobs:
           PROMETHEUS_URL: ${{ matrix.pack.mock_tier == 'prometheus' && 'http://localhost:9090' || '' }}
         run: |
           set -euo pipefail
+          cd packs/${{ matrix.pack.name }}
           go test -v -count=1 -json ./... 2>&1 | tee /tmp/test-output.json
           echo "### Test Results: ${{ matrix.pack.name }}" >> "$GITHUB_STEP_SUMMARY"
           jq -r 'select(.Test != null and (.Action=="pass" or .Action=="fail")) | "- " + (if .Action=="pass" then "PASS" else "FAIL" end) + ": " + .Test' /tmp/test-output.json >> "$GITHUB_STEP_SUMMARY" 2>/dev/null || true
