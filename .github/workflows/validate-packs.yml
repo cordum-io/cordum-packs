@@ -15,9 +15,6 @@ on:
       - ".github/workflows/validate-packs.yml"
   workflow_dispatch: {}
 
-env:
-  GOTOOLCHAIN: auto
-
 permissions:
   contents: read
 
@@ -98,15 +95,14 @@ jobs:
           go-version: "1.25.8"
           cache-dependency-path: sdk/go.sum
 
+      - name: Fix GOTOOLCHAIN
+        run: echo "GOTOOLCHAIN=auto" >> "$GITHUB_ENV"
+
       - name: Build SDK
         run: cd sdk && go build ./...
-        env:
-          GOTOOLCHAIN: auto
 
       - name: Test SDK
         run: cd sdk && go test -v -count=1 ./...
-        env:
-          GOTOOLCHAIN: auto
 
   pack:
     name: ${{ matrix.pack.name }}
@@ -146,6 +142,9 @@ jobs:
           go-version: "1.25.8"
           cache-dependency-path: packs/${{ matrix.pack.name }}/go.sum
 
+      - name: Fix GOTOOLCHAIN
+        run: echo "GOTOOLCHAIN=auto" >> "$GITHUB_ENV"
+
       - name: Start LocalStack
         if: matrix.pack.mock_tier == 'localstack'
         run: |
@@ -179,8 +178,6 @@ jobs:
       - name: Build pack
         working-directory: packs/${{ matrix.pack.name }}
         run: go build ./...
-        env:
-          GOTOOLCHAIN: auto
 
       - name: Build binary
         working-directory: packs/${{ matrix.pack.name }}
@@ -189,14 +186,11 @@ jobs:
           if [ -d "cmd/${binary_name}" ]; then
             go build -o /dev/null "./cmd/${binary_name}/"
           fi
-        env:
-          GOTOOLCHAIN: auto
 
       - name: Run tests
         if: matrix.pack.has_tests
         working-directory: packs/${{ matrix.pack.name }}
         env:
-          GOTOOLCHAIN: auto
           AWS_ENDPOINT_URL: ${{ matrix.pack.mock_tier == 'localstack' && 'http://localhost:4566' || '' }}
           AWS_ACCESS_KEY_ID: ${{ matrix.pack.mock_tier == 'localstack' && 'test' || '' }}
           AWS_SECRET_ACCESS_KEY: ${{ matrix.pack.mock_tier == 'localstack' && 'test' || '' }}
