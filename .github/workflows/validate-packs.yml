@@ -105,7 +105,7 @@ jobs:
         run: cd sdk && go test -v -count=1 ./...
 
   pack:
-    name: ${{ matrix.pack.name }}
+    name: ${{ matrix.name }}
     needs: [discover, sdk]
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -140,13 +140,13 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: "1.25.8"
-          cache-dependency-path: packs/${{ matrix.pack.name }}/go.sum
+          cache-dependency-path: packs/${{ matrix.name }}/go.sum
 
       - name: Fix Go env
         run: echo "GOTOOLCHAIN=auto" >> "$GITHUB_ENV"
 
       - name: Start LocalStack
-        if: matrix.pack.mock_tier == 'localstack'
+        if: matrix.mock_tier == 'localstack'
         run: |
           docker run -d --name localstack -p 4566:4566 \
             -e SERVICES=s3,sqs,sns,lambda,secretsmanager,iam,cloudwatch,ec2,sts \
@@ -154,7 +154,7 @@ jobs:
           timeout 30 bash -c 'until curl -sf http://localhost:4566/_localstack/health | grep -q running; do sleep 1; done'
 
       - name: Start Vault dev
-        if: matrix.pack.mock_tier == 'vault-dev'
+        if: matrix.mock_tier == 'vault-dev'
         run: |
           docker run -d --name vault -p 8200:8200 \
             -e VAULT_DEV_ROOT_TOKEN_ID=root-token \
@@ -164,54 +164,43 @@ jobs:
           timeout 15 bash -c 'until curl -sf http://localhost:8200/v1/sys/health; do sleep 1; done'
 
       - name: Start Prometheus
-        if: matrix.pack.mock_tier == 'prometheus'
+        if: matrix.mock_tier == 'prometheus'
         run: |
           docker run -d --name prometheus -p 9090:9090 prom/prometheus:v2.51.0
           timeout 15 bash -c 'until curl -sf http://localhost:9090/-/healthy; do sleep 1; done'
 
       - name: Setup kind cluster
-        if: matrix.pack.mock_tier == 'kind'
+        if: matrix.mock_tier == 'kind'
         uses: helm/kind-action@v1
         with:
           cluster_name: test
 
-      - name: Debug env
-        run: |
-          echo "PWD: $(pwd)"
-          echo "GOMOD: $(go env GOMOD)"
-          echo "GOWORK: $(go env GOWORK)"
-          echo "GOFLAGS: $(go env GOFLAGS)"
-          echo "--- ls packs/${{ matrix.pack.name }} ---"
-          ls packs/${{ matrix.pack.name }}/go.mod || echo "NO go.mod!"
-          echo "--- go.mod head ---"
-          head -3 packs/${{ matrix.pack.name }}/go.mod || true
-
       - name: Build pack
-        run: cd packs/${{ matrix.pack.name }} && go build ./...
+        run: cd packs/${{ matrix.name }} && go build ./...
 
       - name: Build binary
         run: |
-          cd packs/${{ matrix.pack.name }}
-          binary_name="cordum-${{ matrix.pack.name }}"
+          cd packs/${{ matrix.name }}
+          binary_name="cordum-${{ matrix.name }}"
           if [ -d "cmd/${binary_name}" ]; then
             go build -o /dev/null "./cmd/${binary_name}/"
           fi
 
       - name: Run tests
-        if: matrix.pack.has_tests
+        if: matrix.has_tests
         env:
-          AWS_ENDPOINT_URL: ${{ matrix.pack.mock_tier == 'localstack' && 'http://localhost:4566' || '' }}
-          AWS_ACCESS_KEY_ID: ${{ matrix.pack.mock_tier == 'localstack' && 'test' || '' }}
-          AWS_SECRET_ACCESS_KEY: ${{ matrix.pack.mock_tier == 'localstack' && 'test' || '' }}
-          AWS_REGION: ${{ matrix.pack.mock_tier == 'localstack' && 'us-east-1' || '' }}
-          VAULT_ADDR: ${{ matrix.pack.mock_tier == 'vault-dev' && 'http://localhost:8200' || '' }}
-          VAULT_TOKEN: ${{ matrix.pack.mock_tier == 'vault-dev' && 'root-token' || '' }}
-          PROMETHEUS_URL: ${{ matrix.pack.mock_tier == 'prometheus' && 'http://localhost:9090' || '' }}
+          AWS_ENDPOINT_URL: ${{ matrix.mock_tier == 'localstack' && 'http://localhost:4566' || '' }}
+          AWS_ACCESS_KEY_ID: ${{ matrix.mock_tier == 'localstack' && 'test' || '' }}
+          AWS_SECRET_ACCESS_KEY: ${{ matrix.mock_tier == 'localstack' && 'test' || '' }}
+          AWS_REGION: ${{ matrix.mock_tier == 'localstack' && 'us-east-1' || '' }}
+          VAULT_ADDR: ${{ matrix.mock_tier == 'vault-dev' && 'http://localhost:8200' || '' }}
+          VAULT_TOKEN: ${{ matrix.mock_tier == 'vault-dev' && 'root-token' || '' }}
+          PROMETHEUS_URL: ${{ matrix.mock_tier == 'prometheus' && 'http://localhost:9090' || '' }}
         run: |
           set -euo pipefail
-          cd packs/${{ matrix.pack.name }}
+          cd packs/${{ matrix.name }}
           go test -v -count=1 -json ./... 2>&1 | tee /tmp/test-output.json
-          echo "### Test Results: ${{ matrix.pack.name }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "### Test Results: ${{ matrix.name }}" >> "$GITHUB_STEP_SUMMARY"
           jq -r 'select(.Test != null and (.Action=="pass" or .Action=="fail")) | "- " + (if .Action=="pass" then "PASS" else "FAIL" end) + ": " + .Test' /tmp/test-output.json >> "$GITHUB_STEP_SUMMARY" 2>/dev/null || true
 
   summary:
