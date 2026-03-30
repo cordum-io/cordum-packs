@@ -100,9 +100,13 @@ jobs:
 
       - name: Build SDK
         run: cd sdk && go build ./...
+        env:
+          GOTOOLCHAIN: auto
 
       - name: Test SDK
         run: cd sdk && go test -v -count=1 ./...
+        env:
+          GOTOOLCHAIN: auto
 
   pack:
     name: ${{ matrix.pack.name }}
@@ -175,6 +179,8 @@ jobs:
       - name: Build pack
         working-directory: packs/${{ matrix.pack.name }}
         run: go build ./...
+        env:
+          GOTOOLCHAIN: auto
 
       - name: Build binary
         working-directory: packs/${{ matrix.pack.name }}
@@ -183,11 +189,14 @@ jobs:
           if [ -d "cmd/${binary_name}" ]; then
             go build -o /dev/null "./cmd/${binary_name}/"
           fi
+        env:
+          GOTOOLCHAIN: auto
 
       - name: Run tests
         if: matrix.pack.has_tests
         working-directory: packs/${{ matrix.pack.name }}
         env:
+          GOTOOLCHAIN: auto
           AWS_ENDPOINT_URL: ${{ matrix.pack.mock_tier == 'localstack' && 'http://localhost:4566' || '' }}
           AWS_ACCESS_KEY_ID: ${{ matrix.pack.mock_tier == 'localstack' && 'test' || '' }}
           AWS_SECRET_ACCESS_KEY: ${{ matrix.pack.mock_tier == 'localstack' && 'test' || '' }}
