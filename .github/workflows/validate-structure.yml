@@ -1,0 +1,251 @@
+name: Validate Pack Structure
+
+on:
+  pull_request:
+    paths:
+      - "packs/**/pack.yaml"
+      - "packs/**/pack.yml"
+      - "packs/**/schemas/**"
+      - "packs/**/workflows/**"
+      - "packs/**/overlays/**"
+  push:
+    branches: ["main"]
+    paths:
+      - "packs/**/pack.yaml"
+      - "packs/**/pack.yml"
+      - "packs/**/schemas/**"
+      - "packs/**/workflows/**"
+      - "packs/**/overlays/**"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    name: Pack Audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install PyYAML
+
+      - name: Run pack audit
+        run: python tools/pack_audit.py
+
+  schemas:
+    name: Schema Validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install PyYAML jsonschema
+
+      - name: Validate schemas and cross-references
+        run: |
+          python3 -c "
+          import json, sys, os
+          from pathlib import Path
+          try:
+              import yaml
+              from jsonschema import Draft7Validator
+          except ImportError:
+              sys.exit('Missing deps')
+
+          errors = []
+          packs_dir = Path('packs')
+
+          for pack_dir in sorted(packs_dir.iterdir()):
+              if not pack_dir.is_dir() or pack_dir.name.startswith('.'):
+                  continue
+
+              # Find manifest
+              manifest_path = None
+              manifest = None
+              for candidate in [pack_dir / 'pack' / 'pack.yaml', pack_dir / 'pack' / 'pack.yml',
+                                pack_dir / 'pack.yaml', pack_dir / 'pack.yml']:
+                  if candidate.exists():
+                      manifest_path = candidate
+                      break
+              if not manifest_path:
+                  continue
+              try:
+                  manifest = yaml.safe_load(manifest_path.read_text())
+              except Exception as e:
+                  errors.append(f'{pack_dir.name}: invalid manifest YAML: {e}')
+                  continue
+              if not isinstance(manifest, dict):
+                  continue
+
+              pack_root = manifest_path.parent
+
+              # Validate JSON schema files
+              schemas_dir = pack_root / 'schemas'
+              if schemas_dir.is_dir():
+                  for schema_file in sorted(schemas_dir.glob('*.json')):
+                      try:
+                          schema = json.loads(schema_file.read_text())
+                          Draft7Validator.check_schema(schema)
+                      except json.JSONDecodeError as e:
+                          errors.append(f'{pack_dir.name}: {schema_file.name} is not valid JSON: {e}')
+                      except Exception as e:
+                          errors.append(f'{pack_dir.name}: {schema_file.name} is not valid JSON Schema: {e}')
+
+              # Cross-check: resources.schemas[].path points to existing files
+              resources = manifest.get('resources') or {}
+              schema_ids = set()
+              for s in (resources.get('schemas') or []):
+                  sid = s.get('id', '')
+                  spath = s.get('path', '')
+                  schema_ids.add(sid)
+                  if spath and not (pack_root / spath).exists():
+                      errors.append(f'{pack_dir.name}: schema path {spath} does not exist')
+
+              # Cross-check: resources.workflows[].path points to existing files
+              for w in (resources.get('workflows') or []):
+                  wpath = w.get('path', '')
+                  if wpath and not (pack_root / wpath).exists():
+                      errors.append(f'{pack_dir.name}: workflow path {wpath} does not exist')
+
+              # Cross-check: workflow YAML schema refs match defined schema IDs
+              workflows_dir = pack_root / 'workflows'
+              if workflows_dir.is_dir():
+                  for wf_file in sorted(workflows_dir.glob('*.yaml')):
+                      try:
+                          wf = yaml.safe_load(wf_file.read_text())
+                      except Exception:
+                          errors.append(f'{pack_dir.name}: {wf_file.name} is not valid YAML')
+                          continue
+                      if not isinstance(wf, dict):
+                          continue
+                      for step_id, step in (wf.get('steps') or {}).items():
+                          if not isinstance(step, dict):
+                              continue
+                          for ref_key in ('input_schema_id', 'output_schema_id'):
+                              ref = step.get(ref_key, '')
+                              if ref and ref not in schema_ids:
+                                  errors.append(f'{pack_dir.name}: {wf_file.name} step {step_id} references {ref_key}={ref} not in manifest schemas')
+
+          if errors:
+              print(f'{len(errors)} error(s) found:')
+              for e in errors:
+                  print(f'  - {e}')
+              sys.exit(1)
+          print('All schema validations passed.')
+          "
+
+  policy-sim:
+    name: Policy Simulation Validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install PyYAML
+
+      - name: Validate policy simulations
+        run: |
+          python3 -c "
+          import sys
+          from pathlib import Path
+          try:
+              import yaml
+          except ImportError:
+              sys.exit('Missing PyYAML')
+
+          VALID_DECISIONS = {'ALLOW', 'DENY', 'REQUIRE_APPROVAL'}
+          errors = []
+          packs_dir = Path('packs')
+
+          for pack_dir in sorted(packs_dir.iterdir()):
+              if not pack_dir.is_dir() or pack_dir.name.startswith('.'):
+                  continue
+
+              manifest_path = None
+              for candidate in [pack_dir / 'pack' / 'pack.yaml', pack_dir / 'pack' / 'pack.yml',
+                                pack_dir / 'pack.yaml', pack_dir / 'pack.yml']:
+                  if candidate.exists():
+                      manifest_path = candidate
+                      break
+              if not manifest_path:
+                  continue
+              try:
+                  manifest = yaml.safe_load(manifest_path.read_text())
+              except Exception:
+                  continue
+              if not isinstance(manifest, dict):
+                  continue
+
+              pack_root = manifest_path.parent
+
+              # Collect defined topic names
+              topic_names = set()
+              for t in (manifest.get('topics') or []):
+                  if isinstance(t, dict) and 'name' in t:
+                      topic_names.add(t['name'])
+
+              # Validate policy simulations
+              tests = manifest.get('tests') or {}
+              sims = tests.get('policySimulations') if isinstance(tests, dict) else None
+              if not sims:
+                  continue
+
+              for idx, sim in enumerate(sims):
+                  label = sim.get('name', f'#{idx+1}')
+                  prefix = f'{pack_dir.name}: sim {label}'
+
+                  if not sim.get('name'):
+                      errors.append(f'{prefix}: missing name')
+
+                  req = sim.get('request') or {}
+                  if not req.get('tenantId'):
+                      errors.append(f'{prefix}: missing request.tenantId')
+                  if not req.get('topic'):
+                      errors.append(f'{prefix}: missing request.topic')
+                  if not req.get('riskTags'):
+                      errors.append(f'{prefix}: missing request.riskTags')
+
+                  decision = sim.get('expectDecision', '')
+                  if decision not in VALID_DECISIONS:
+                      errors.append(f'{prefix}: expectDecision={decision!r} not in {VALID_DECISIONS}')
+
+                  # Cross-check topic exists in manifest
+                  sim_topic = req.get('topic', '')
+                  if sim_topic and topic_names and sim_topic not in topic_names:
+                      errors.append(f'{prefix}: topic {sim_topic!r} not in manifest topics')
+
+              # Validate policy fragment YAML
+              policy_path = pack_root / 'overlays' / 'policy.fragment.yaml'
+              if policy_path.exists():
+                  try:
+                      yaml.safe_load(policy_path.read_text())
+                  except Exception as e:
+                      errors.append(f'{pack_dir.name}: policy.fragment.yaml parse error: {e}')
+
+          if errors:
+              print(f'{len(errors)} error(s) found:')
+              for e in errors:
+                  print(f'  - {e}')
+              sys.exit(1)
+          print('All policy simulation validations passed.')
+          "

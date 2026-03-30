@@ -1,0 +1,215 @@
+name: Validate Packs
+
+on:
+  pull_request:
+    paths:
+      - "packs/**"
+      - "sdk/**"
+      - "integrations/**"
+  push:
+    branches: ["main"]
+    paths:
+      - "packs/**"
+      - "sdk/**"
+      - "integrations/**"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  discover:
+    name: Discover Packs
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    outputs:
+      matrix: ${{ steps.scan.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Scan packs
+        id: scan
+        run: |
+          set -euo pipefail
+          matrix="[]"
+          while IFS= read -r mod; do
+            dir="$(dirname "$mod")"
+            name="$(basename "$dir")"
+
+            # Skip symlinks (cap, cordum)
+            [ -L "$dir" ] && continue
+
+            # Check for test files
+            has_tests="false"
+            if find "$dir" -name "*_test.go" -print -quit 2>/dev/null | grep -q .; then
+              has_tests="true"
+            fi
+
+            # Assign mock tier
+            mock_tier="none"
+            case "$name" in
+              aws|bedrock)          mock_tier="localstack" ;;
+              vault)                mock_tier="vault-dev" ;;
+              prometheus-query)     mock_tier="prometheus" ;;
+              kubernetes-triage)    mock_tier="kind" ;;
+            esac
+
+            matrix=$(echo "$matrix" | jq -c --arg n "$name" --arg t "$has_tests" --arg m "$mock_tier" \
+              '. + [{"name": $n, "has_tests": ($t == "true"), "mock_tier": $m}]')
+          done < <(find packs -maxdepth 2 -name go.mod -not -path "*/vendor/*" | sort)
+
+          echo "matrix={\"include\":$matrix}" >> "$GITHUB_OUTPUT"
+          echo "Found $(echo "$matrix" | jq length) packs"
+
+  sdk:
+    name: SDK
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Checkout CAP
+        uses: actions/checkout@v4
+        with:
+          repository: cordum-io/cap
+          path: .deps/cap
+          fetch-depth: 1
+
+      - name: Checkout Cordum
+        uses: actions/checkout@v4
+        with:
+          repository: cordum-io/cordum
+          path: .deps/cordum
+          fetch-depth: 1
+
+      - name: Link local replaces
+        run: |
+          set -euo pipefail
+          [ ! -e packs/cap ] && ln -s "$GITHUB_WORKSPACE/.deps/cap" packs/cap
+          [ ! -e packs/cordum ] && ln -s "$GITHUB_WORKSPACE/.deps/cordum" packs/cordum
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: "1.24.11"
+          cache-dependency-path: sdk/go.sum
+
+      - name: Build SDK
+        run: cd sdk && go build ./...
+
+      - name: Test SDK
+        run: cd sdk && go test -v -count=1 ./...
+
+  pack:
+    name: ${{ matrix.pack.name }}
+    needs: [discover, sdk]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      max-parallel: 10
+      matrix: ${{ fromJson(needs.discover.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Checkout CAP
+        uses: actions/checkout@v4
+        with:
+          repository: cordum-io/cap
+          path: .deps/cap
+          fetch-depth: 1
+
+      - name: Checkout Cordum
+        uses: actions/checkout@v4
+        with:
+          repository: cordum-io/cordum
+          path: .deps/cordum
+          fetch-depth: 1
+
+      - name: Link local replaces
+        run: |
+          set -euo pipefail
+          [ ! -e packs/cap ] && ln -s "$GITHUB_WORKSPACE/.deps/cap" packs/cap
+          [ ! -e packs/cordum ] && ln -s "$GITHUB_WORKSPACE/.deps/cordum" packs/cordum
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: "1.24.11"
+          cache-dependency-path: packs/${{ matrix.pack.name }}/go.sum
+
+      - name: Start LocalStack
+        if: matrix.pack.mock_tier == 'localstack'
+        run: |
+          docker run -d --name localstack -p 4566:4566 \
+            -e SERVICES=s3,sqs,sns,lambda,secretsmanager,iam,cloudwatch,ec2,sts \
+            localstack/localstack:3.4
+          timeout 30 bash -c 'until curl -sf http://localhost:4566/_localstack/health | grep -q running; do sleep 1; done'
+
+      - name: Start Vault dev
+        if: matrix.pack.mock_tier == 'vault-dev'
+        run: |
+          docker run -d --name vault -p 8200:8200 \
+            -e VAULT_DEV_ROOT_TOKEN_ID=root-token \
+            -e VAULT_DEV_LISTEN_ADDRESS=0.0.0.0:8200 \
+            --cap-add=IPC_LOCK \
+            hashicorp/vault:1.16
+          timeout 15 bash -c 'until curl -sf http://localhost:8200/v1/sys/health; do sleep 1; done'
+
+      - name: Start Prometheus
+        if: matrix.pack.mock_tier == 'prometheus'
+        run: |
+          docker run -d --name prometheus -p 9090:9090 prom/prometheus:v2.51.0
+          timeout 15 bash -c 'until curl -sf http://localhost:9090/-/healthy; do sleep 1; done'
+
+      - name: Setup kind cluster
+        if: matrix.pack.mock_tier == 'kind'
+        uses: helm/kind-action@v1
+        with:
+          cluster_name: test
+
+      - name: Build pack
+        working-directory: packs/${{ matrix.pack.name }}
+        run: go build ./...
+
+      - name: Build binary
+        working-directory: packs/${{ matrix.pack.name }}
+        run: |
+          binary_name="cordum-${{ matrix.pack.name }}"
+          if [ -d "cmd/${binary_name}" ]; then
+            go build -o /dev/null "./cmd/${binary_name}/"
+          fi
+
+      - name: Run tests
+        if: matrix.pack.has_tests
+        working-directory: packs/${{ matrix.pack.name }}
+        env:
+          AWS_ENDPOINT_URL: ${{ matrix.pack.mock_tier == 'localstack' && 'http://localhost:4566' || '' }}
+          AWS_ACCESS_KEY_ID: ${{ matrix.pack.mock_tier == 'localstack' && 'test' || '' }}
+          AWS_SECRET_ACCESS_KEY: ${{ matrix.pack.mock_tier == 'localstack' && 'test' || '' }}
+          AWS_REGION: ${{ matrix.pack.mock_tier == 'localstack' && 'us-east-1' || '' }}
+          VAULT_ADDR: ${{ matrix.pack.mock_tier == 'vault-dev' && 'http://localhost:8200' || '' }}
+          VAULT_TOKEN: ${{ matrix.pack.mock_tier == 'vault-dev' && 'root-token' || '' }}
+          PROMETHEUS_URL: ${{ matrix.pack.mock_tier == 'prometheus' && 'http://localhost:9090' || '' }}
+        run: |
+          set -euo pipefail
+          go test -v -count=1 -json ./... 2>&1 | tee /tmp/test-output.json
+          echo "### Test Results: ${{ matrix.pack.name }}" >> "$GITHUB_STEP_SUMMARY"
+          jq -r 'select(.Test != null and (.Action=="pass" or .Action=="fail")) | "- " + (if .Action=="pass" then "PASS" else "FAIL" end) + ": " + .Test' /tmp/test-output.json >> "$GITHUB_STEP_SUMMARY" 2>/dev/null || true
+
+  summary:
+    name: Summary
+    needs: [pack]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Generate summary
+        run: |
+          echo "## Pack Validation Summary" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          if [ "${{ needs.pack.result }}" = "success" ]; then
+            echo "All packs passed validation." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Some packs failed validation. Check individual pack jobs above." >> "$GITHUB_STEP_SUMMARY"
+          fi
