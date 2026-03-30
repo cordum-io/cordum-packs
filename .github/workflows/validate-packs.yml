@@ -91,7 +91,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v6
         with:
-          go-version: "1.24.11"
+          go-version: "1.25.8"
           cache-dependency-path: sdk/go.sum
 
       - name: Build SDK
@@ -135,7 +135,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v6
         with:
-          go-version: "1.24.11"
+          go-version: "1.25.8"
           cache-dependency-path: packs/${{ matrix.pack.name }}/go.sum
 
       - name: Start LocalStack
