@@ -15,6 +15,9 @@ on:
       - ".github/workflows/validate-packs.yml"
   workflow_dispatch: {}
 
+env:
+  GOTOOLCHAIN: auto
+
 permissions:
   contents: read
 
