@@ -1,0 +1,69 @@
+apiVersion: cordum.io/v1alpha1
+kind: Pack
+
+metadata:
+  id: langchain-guard
+  version: 0.1.0
+  title: LangChain Guard
+  description: >
+    Full CAP integration for LangChain agents. Tool calls become real CAP jobs —
+    policy-evaluated, scheduled, worker-executed, and audited through the Cordum
+    control plane. Not just a policy check — Cordum owns the execution.
+
+compatibility:
+  protocolVersion: 1
+  minCoreVersion: 0.1.0
+
+topics:
+  - name: job.langchain-guard.tool
+    riskTags: ["read"]
+    capability: langchain-guard.tool
+    requires: []
+
+resources:
+  schemas:
+    - id: langchain-guard/ToolCallInput
+      path: schemas/ToolCallInput.json
+    - id: langchain-guard/ToolCallResult
+      path: schemas/ToolCallResult.json
+  workflows:
+    - id: langchain-guard.tool
+      path: workflows/langchain_guard_tool.yaml
+
+overlays:
+  config:
+    - name: pools
+      scope: system
+      key: pools
+      strategy: json_merge_patch
+      path: overlays/pools.patch.yaml
+    - name: timeouts
+      scope: system
+      key: timeouts
+      strategy: json_merge_patch
+      path: overlays/timeouts.patch.yaml
+  policy:
+    - name: safety
+      strategy: bundle_fragment
+      path: overlays/policy.fragment.yaml
+
+tests:
+  policySimulations:
+    - name: read_allowed
+      request:
+        tenantId: default
+        topic: job.langchain-guard.tool
+        riskTags: ["read"]
+      expectDecision: ALLOW
+    - name: write_requires_approval
+      request:
+        tenantId: default
+        topic: job.langchain-guard.tool
+        riskTags: ["write"]
+      expectDecision: REQUIRE_APPROVAL
+    - name: destructive_denied
+      request:
+        tenantId: default
+        topic: job.langchain-guard.tool
+        riskTags: ["destructive"]
+      expectDecision: DENY

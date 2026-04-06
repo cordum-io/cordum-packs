@@ -1,0 +1,36 @@
+version: v1
+rules:
+  - id: langchain-guard-read
+    match:
+      topics:
+        - job.langchain-guard.tool
+      risk_tags:
+        - read
+    decision: allow
+
+  - id: langchain-guard-write
+    match:
+      topics:
+        - job.langchain-guard.tool
+      risk_tags:
+        - write
+    decision: require_approval
+    reason: "Agent write actions require human approval"
+
+  - id: langchain-guard-destructive
+    match:
+      topics:
+        - job.langchain-guard.tool
+      risk_tags:
+        - destructive
+    decision: deny
+    reason: "Destructive agent actions are denied by default"
+
+  - id: langchain-guard-secrets
+    match:
+      topics:
+        - job.langchain-guard.tool
+      risk_tags:
+        - secrets
+    decision: deny
+    reason: "Agent access to secrets is denied by default"

@@ -1,0 +1,23 @@
+id: langchain-guard.tool
+name: LangChain Tool Execution
+description: Execute a LangChain tool call through the Cordum governance pipeline.
+version: "0.1.0"
+timeout_sec: 60
+steps:
+  execute:
+    id: execute
+    name: Execute tool call
+    type: worker
+    topic: job.langchain-guard.tool
+    input:
+      tool_name: ${input.tool_name}
+      tool_input: ${input.tool_input}
+      risk_tags: ${input.risk_tags}
+      labels: ${input.labels}
+    input_schema_id: langchain-guard/ToolCallInput
+    output_schema_id: langchain-guard/ToolCallResult
+    meta:
+      pack_id: langchain-guard
+      capability: langchain-guard.tool
+      risk_tags: ["read"]
+      requires: []
