@@ -155,6 +155,15 @@ class GatewayClient:
             body["labels"] = labels
 
         resp = self._client.post("/api/v1/jobs", json=body)
+
+        # Handle policy denial (403) — gateway rejects at submission time
+        if resp.status_code == 403:
+            data = resp.json()
+            raise JobDeniedError(
+                job_id="",
+                reason=data.get("error", "denied by policy"),
+            )
+
         resp.raise_for_status()
         data = resp.json()
 
@@ -315,6 +324,14 @@ class AsyncGatewayClient:
             body["labels"] = labels
 
         resp = await self._client.post("/api/v1/jobs", json=body)
+
+        if resp.status_code == 403:
+            data = resp.json()
+            raise JobDeniedError(
+                job_id="",
+                reason=data.get("error", "denied by policy"),
+            )
+
         resp.raise_for_status()
         data = resp.json()
 

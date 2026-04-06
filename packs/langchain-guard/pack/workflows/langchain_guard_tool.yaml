@@ -19,5 +19,5 @@ steps:
     meta:
       pack_id: langchain-guard
       capability: langchain-guard.tool
-      risk_tags: ${input.risk_tags}
+      risk_tags: ["read"]
       requires: []

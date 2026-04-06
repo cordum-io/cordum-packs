@@ -12,6 +12,7 @@ from .gateway import (
     AsyncGatewayClient,
     GatewayClient,
     GatewayError,
+    JobDeniedError,
     JobResult,
 )
 
@@ -134,6 +135,10 @@ def govern_tool(
                 labels=tool_labels,
             )
             return handle_job_result(result, tool_name)
+        except JobDeniedError as exc:
+            raise ToolException(
+                f"[BLOCKED] {tool_name}: {exc.reason}"
+            ) from exc
         except ApprovalRequiredError as exc:
             return (
                 f"[AWAITING APPROVAL] {tool_name}: {exc.reason} "
@@ -165,6 +170,10 @@ def govern_tool(
                 labels=tool_labels,
             )
             return handle_job_result(result, tool_name)
+        except JobDeniedError as exc:
+            raise ToolException(
+                f"[BLOCKED] {tool_name}: {exc.reason}"
+            ) from exc
         except ApprovalRequiredError as exc:
             return (
                 f"[AWAITING APPROVAL] {tool_name}: {exc.reason} "
