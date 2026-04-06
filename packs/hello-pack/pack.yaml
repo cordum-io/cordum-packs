@@ -49,5 +49,5 @@ tests:
       request:
         tenantId: default
         topic: job.hello-pack.echo
-        riskTags: []
+        riskTags: ["read"]
       expectDecision: ALLOW
