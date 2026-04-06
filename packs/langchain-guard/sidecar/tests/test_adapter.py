@@ -1,7 +1,5 @@
 """Tests for the LangChain tool adapter."""
 
-from unittest.mock import MagicMock, patch
-
 import pytest
 import respx
 from httpx import Response

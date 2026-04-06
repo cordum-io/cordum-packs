@@ -5,14 +5,13 @@ from __future__ import annotations
 import json
 import logging
 from copy import deepcopy
-from typing import Any, Dict, List, Optional, Type
+from typing import Any, Optional
 
 from .gateway import (
     ApprovalRequiredError,
     AsyncGatewayClient,
     GatewayClient,
     GatewayError,
-    JobDeniedError,
     JobResult,
 )
 
@@ -76,8 +75,6 @@ def govern_tool(
         raise TypeError(f"Expected BaseTool, got {type(tool).__name__}")
 
     wrapped = deepcopy(tool)
-    original_run = tool._run
-    original_arun = getattr(tool, "_arun", None)
 
     tool_risk_tags = risk_tags or []
     tool_labels = dict(labels or {})

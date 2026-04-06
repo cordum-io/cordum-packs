@@ -16,7 +16,7 @@ Pattern B: Patch LangChain globally so ALL tool calls go through CAP.
 from __future__ import annotations
 
 import logging
-from typing import Any, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
