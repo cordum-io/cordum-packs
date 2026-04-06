@@ -1,0 +1,5 @@
+topics:
+  job.langchain-guard.tool: langchain-guard
+pools:
+  langchain-guard:
+    requires: []

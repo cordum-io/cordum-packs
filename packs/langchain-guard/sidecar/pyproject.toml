@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cordum-langchain-guard"
+version = "0.1.0"
+description = "Full CAP integration for LangChain agents — tool calls become governed CAP jobs"
+readme = "../README.md"
+requires-python = ">=3.9"
+license = "Apache-2.0"
+authors = [{ name = "Cordum", email = "eng@cordum.io" }]
+keywords = ["cordum", "langchain", "governance", "safety", "cap", "agent"]
+dependencies = ["httpx>=0.25.0"]
+
+[project.optional-dependencies]
+langchain = ["langchain-core>=0.1.0"]
+nats = ["nats-py>=2.0.0"]
+all = ["langchain-core>=0.1.0", "nats-py>=2.0.0"]
+dev = ["pytest>=7.0", "pytest-asyncio>=0.21", "respx>=0.20"]
+
+[project.urls]
+Homepage = "https://cordum.io"
+Documentation = "https://docs.cordum.io/packs/langchain-guard"
+Repository = "https://github.com/cordum-io/cordum-packs"
+
+[tool.setuptools.packages.find]
+where = ["."]
+exclude = ["tests", "tests.*"]

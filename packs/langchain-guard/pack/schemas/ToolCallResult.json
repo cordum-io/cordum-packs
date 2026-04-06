@@ -1,0 +1,25 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "LangChain Tool Call Result",
+  "type": "object",
+  "properties": {
+    "job_id": {
+      "type": "string"
+    },
+    "tool_name": {
+      "type": "string"
+    },
+    "output": {
+      "type": ["object", "array", "string", "number", "boolean", "null"],
+      "description": "Tool execution result."
+    },
+    "error": {
+      "type": "string",
+      "description": "Error message if tool execution failed."
+    },
+    "execution_ms": {
+      "type": "number",
+      "description": "Execution time in milliseconds."
+    }
+  }
+}

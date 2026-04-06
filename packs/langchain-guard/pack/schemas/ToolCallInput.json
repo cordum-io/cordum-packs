@@ -1,0 +1,26 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "LangChain Tool Call Input",
+  "type": "object",
+  "properties": {
+    "tool_name": {
+      "type": "string",
+      "description": "Name of the LangChain tool being invoked."
+    },
+    "tool_input": {
+      "type": ["object", "string"],
+      "description": "Input arguments for the tool call."
+    },
+    "risk_tags": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Risk classification tags for this tool call."
+    },
+    "labels": {
+      "type": "object",
+      "additionalProperties": { "type": "string" },
+      "description": "Arbitrary key-value labels for routing and policy matching."
+    }
+  },
+  "required": ["tool_name", "tool_input"]
+}

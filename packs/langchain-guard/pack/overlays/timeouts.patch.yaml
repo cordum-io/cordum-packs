@@ -1,0 +1,4 @@
+topics:
+  job.langchain-guard.tool:
+    timeout_seconds: 60
+    max_retries: 1
