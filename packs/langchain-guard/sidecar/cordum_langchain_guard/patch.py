@@ -23,6 +23,8 @@ logger = logging.getLogger(__name__)
 _patched = False
 _original_run = None
 _original_arun = None
+_gateway = None
+_async_gateway = None
 
 
 def patch_langchain(
@@ -41,7 +43,7 @@ def patch_langchain(
 
     To undo, call unpatch_langchain().
     """
-    global _patched, _original_run, _original_arun
+    global _patched, _original_run, _original_arun, _gateway, _async_gateway
 
     if _patched:
         logger.warning("LangChain is already patched for Cordum governance")
@@ -61,13 +63,13 @@ def patch_langchain(
         GatewayError,
     )
 
-    gateway = GatewayClient(
+    _gateway = GatewayClient(
         gateway_url=gateway_url,
         api_key=api_key,
         tenant_id=tenant_id,
         poll_timeout=poll_timeout,
     )
-    async_gateway = AsyncGatewayClient(
+    _async_gateway = AsyncGatewayClient(
         gateway_url=gateway_url,
         api_key=api_key,
         tenant_id=tenant_id,
@@ -80,7 +82,7 @@ def patch_langchain(
     _original_arun = BaseTool._arun
 
     def patched_run(self: Any, tool_input: Any, **kwargs: Any) -> str:
-        from .adapter import _handle_result, _serialize_input
+        from .adapter import handle_job_result, _serialize_input
 
         tool_name = self.name
         context = {
@@ -92,7 +94,7 @@ def patch_langchain(
             labels["langchain.description"] = self.description[:200]
 
         try:
-            result = gateway.submit_and_wait(
+            result = _gateway.submit_and_wait(
                 topic=topic,
                 prompt=f"LangChain tool call: {tool_name}",
                 context=context,
@@ -100,7 +102,7 @@ def patch_langchain(
                 risk_tags=risk_tags,
                 labels=labels,
             )
-            return _handle_result(result, tool_name)
+            return handle_job_result(result, tool_name)
         except ApprovalRequiredError as exc:
             return (
                 f"[AWAITING APPROVAL] {tool_name}: {exc.reason} "
@@ -113,7 +115,7 @@ def patch_langchain(
             raise ToolException(f"[GATEWAY ERROR] {tool_name}: {exc}") from exc
 
     async def patched_arun(self: Any, tool_input: Any, **kwargs: Any) -> str:
-        from .adapter import _handle_result, _serialize_input
+        from .adapter import handle_job_result, _serialize_input
 
         tool_name = self.name
         context = {
@@ -125,7 +127,7 @@ def patch_langchain(
             labels["langchain.description"] = self.description[:200]
 
         try:
-            result = await async_gateway.submit_and_wait(
+            result = await _async_gateway.submit_and_wait(
                 topic=topic,
                 prompt=f"LangChain tool call: {tool_name}",
                 context=context,
@@ -133,7 +135,7 @@ def patch_langchain(
                 risk_tags=risk_tags,
                 labels=labels,
             )
-            return _handle_result(result, tool_name)
+            return handle_job_result(result, tool_name)
         except ApprovalRequiredError as exc:
             return (
                 f"[AWAITING APPROVAL] {tool_name}: {exc.reason} "
@@ -153,7 +155,7 @@ def patch_langchain(
 
 def unpatch_langchain() -> None:
     """Undo the global LangChain patch."""
-    global _patched, _original_run, _original_arun
+    global _patched, _original_run, _original_arun, _gateway, _async_gateway
 
     if not _patched:
         return
@@ -167,6 +169,12 @@ def unpatch_langchain() -> None:
         BaseTool._run = _original_run
     if _original_arun is not None:
         BaseTool._arun = _original_arun
+
+    # Close gateway clients to prevent connection pool leaks
+    if _gateway is not None:
+        _gateway.close()
+    _gateway = None
+    _async_gateway = None
 
     _patched = False
     _original_run = None

@@ -11,12 +11,10 @@ Supports two modes:
 
 from __future__ import annotations
 
-import asyncio
-import json
 import logging
 import threading
 import time
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Dict
 
 logger = logging.getLogger(__name__)
 
@@ -24,27 +22,33 @@ _DEFAULT_TOPIC = "job.langchain-guard.tool"
 
 
 class ToolRegistry:
-    """Registry of LangChain tools available for worker execution."""
+    """Thread-safe registry of LangChain tools available for worker execution."""
 
     def __init__(self) -> None:
         self._tools: Dict[str, Any] = {}
+        self._lock = threading.Lock()
 
     def register(self, tool: Any) -> None:
         """Register a LangChain BaseTool for worker execution."""
-        self._tools[tool.name] = tool
+        with self._lock:
+            self._tools[tool.name] = tool
 
     def register_many(self, tools: list[Any]) -> None:
-        for t in tools:
-            self.register(t)
+        with self._lock:
+            for t in tools:
+                self._tools[t.name] = t
 
     def get(self, name: str) -> Any | None:
-        return self._tools.get(name)
+        with self._lock:
+            return self._tools.get(name)
 
     def names(self) -> list[str]:
-        return list(self._tools.keys())
+        with self._lock:
+            return list(self._tools.keys())
 
     def __len__(self) -> int:
-        return len(self._tools)
+        with self._lock:
+            return len(self._tools)
 
 
 class InProcessWorker:
@@ -71,7 +75,6 @@ class InProcessWorker:
         self._api_key = api_key
         self._tenant_id = tenant_id
         self._running = False
-        self._thread: Optional[threading.Thread] = None
 
     def execute_tool(self, tool_name: str, tool_input: Any) -> Dict[str, Any]:
         """Execute a registered tool and return the result dict."""
@@ -172,11 +175,12 @@ def create_remote_worker(
 
         start = time.monotonic()
         try:
-            original_run = getattr(tool, "_original_run", None) or tool._run
+            import asyncio
+            original_run = tool._run
             if isinstance(tool_input, dict):
-                result = original_run(**tool_input)
+                result = await asyncio.to_thread(original_run, **tool_input)
             else:
-                result = original_run(tool_input)
+                result = await asyncio.to_thread(original_run, tool_input)
 
             elapsed_ms = (time.monotonic() - start) * 1000
             return {

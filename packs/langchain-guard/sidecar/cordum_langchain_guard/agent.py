@@ -105,6 +105,13 @@ class CordumAgent:
         if self._worker:
             self._worker.stop()
         self._gateway.close()
+        # Close async client's underlying transport synchronously
+        try:
+            transport = self._async_gateway._client._transport
+            if hasattr(transport, "close"):
+                transport.close()
+        except Exception:
+            pass  # transport already closed or GC'd
 
     def __enter__(self) -> CordumAgent:
         return self

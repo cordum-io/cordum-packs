@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 import logging
+import re
 import time
 from dataclasses import dataclass, field
 from typing import Any, Dict, List
+
+_JOB_ID_PATTERN = re.compile(r"^[a-zA-Z0-9_-]+$")
 
 logger = logging.getLogger(__name__)
 
@@ -170,6 +173,8 @@ class GatewayClient:
 
     def get_job(self, job_id: str) -> JobResult:
         """Fetch current job state."""
+        if not _JOB_ID_PATTERN.match(job_id):
+            raise GatewayError(f"Invalid job_id: {job_id!r}")
         resp = self._client.get(f"/api/v1/jobs/{job_id}")
         resp.raise_for_status()
         data = resp.json()
@@ -327,6 +332,8 @@ class AsyncGatewayClient:
 
     async def get_job(self, job_id: str) -> JobResult:
         """Fetch current job state."""
+        if not _JOB_ID_PATTERN.match(job_id):
+            raise GatewayError(f"Invalid job_id: {job_id!r}")
         resp = await self._client.get(f"/api/v1/jobs/{job_id}")
         resp.raise_for_status()
         data = resp.json()

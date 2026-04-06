@@ -41,6 +41,42 @@ def _result_to_string(result: JobResult) -> str:
     return json.dumps(result.result, default=str)
 
 
+def handle_job_result(result: JobResult, tool_name: str) -> str:
+    """Process a terminal job result into a LangChain-compatible response.
+
+    Module-level so it can be used by both govern_tool() and patch_langchain().
+    """
+    try:
+        from langchain_core.tools import ToolException
+    except ImportError:
+        ToolException = PermissionError  # fallback
+
+    if result.is_succeeded:
+        return _result_to_string(result)
+
+    if result.is_denied:
+        raise ToolException(
+            f"[BLOCKED] {tool_name}: {result.safety_reason or 'denied by policy'}"
+        )
+
+    if result.is_approval_required:
+        ref = result.approval_ref
+        reason = result.safety_reason or "requires human approval"
+        return (
+            f"[AWAITING APPROVAL] {tool_name}: {reason} "
+            f"(ref={ref}, job_id={result.job_id}). "
+            f"A human must approve this action in the Cordum dashboard "
+            f"before it will execute."
+        )
+
+    if result.is_failed:
+        raise ToolException(
+            f"[FAILED] {tool_name}: {result.error_message or result.state}"
+        )
+
+    raise ToolException(f"[UNEXPECTED] {tool_name}: state={result.state}")
+
+
 def govern_tool(
     tool: Any,
     gateway: GatewayClient,
@@ -82,33 +118,6 @@ def govern_tool(
     if tool.description:
         tool_labels["langchain.description"] = tool.description[:200]
 
-    def _handle_result(result: JobResult, tool_name: str) -> str:
-        """Process a terminal job result into a LangChain-compatible response."""
-        if result.is_succeeded:
-            return _result_to_string(result)
-
-        if result.is_denied:
-            raise ToolException(
-                f"[BLOCKED] {tool_name}: {result.safety_reason or 'denied by policy'}"
-            )
-
-        if result.is_approval_required:
-            ref = result.approval_ref
-            reason = result.safety_reason or "requires human approval"
-            return (
-                f"[AWAITING APPROVAL] {tool_name}: {reason} "
-                f"(ref={ref}, job_id={result.job_id}). "
-                f"A human must approve this action in the Cordum dashboard "
-                f"before it will execute."
-            )
-
-        if result.is_failed:
-            raise ToolException(
-                f"[FAILED] {tool_name}: {result.error_message or result.state}"
-            )
-
-        raise ToolException(f"[UNEXPECTED] {tool_name}: state={result.state}")
-
     def governed_run(tool_input: Any, **kwargs: Any) -> str:
         tool_name = wrapped.name
         context = {
@@ -124,7 +133,7 @@ def govern_tool(
                 risk_tags=tool_risk_tags,
                 labels=tool_labels,
             )
-            return _handle_result(result, tool_name)
+            return handle_job_result(result, tool_name)
         except ApprovalRequiredError as exc:
             return (
                 f"[AWAITING APPROVAL] {tool_name}: {exc.reason} "
@@ -138,7 +147,8 @@ def govern_tool(
     async def governed_arun(tool_input: Any, **kwargs: Any) -> str:
         gw = async_gateway
         if gw is None:
-            return governed_run(tool_input, **kwargs)
+            import asyncio
+            return await asyncio.to_thread(governed_run, tool_input, **kwargs)
 
         tool_name = wrapped.name
         context = {
@@ -154,7 +164,7 @@ def govern_tool(
                 risk_tags=tool_risk_tags,
                 labels=tool_labels,
             )
-            return _handle_result(result, tool_name)
+            return handle_job_result(result, tool_name)
         except ApprovalRequiredError as exc:
             return (
                 f"[AWAITING APPROVAL] {tool_name}: {exc.reason} "
