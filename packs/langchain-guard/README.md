@@ -40,8 +40,10 @@ Before you start, you need:
    cd cordum && ./tools/scripts/quickstart.sh
    ```
 2. **Your API key** — set during Cordum setup (check your `.env` file)
-3. **Gateway URL** — default is `http://localhost:8081`
+3. **Gateway URL** — default is `https://localhost:8081` (Cordum uses TLS by default)
 4. **A LangChain agent** with tools you want to govern
+
+> **Note:** Cordum generates self-signed TLS certificates during setup. For local development, you may need to disable certificate verification — see the [Configuration](#configuration) section below.
 
 ## Install
 
@@ -79,7 +81,7 @@ llm = ChatOpenAI(model="gpt-4")
 tools = [DuckDuckGoSearchRun(), ShellTool()]
 
 # --- Add these 2 lines ---
-cordum = CordumAgent("http://localhost:8081", api_key="your-api-key")
+cordum = CordumAgent("https://localhost:8081", api_key="your-api-key")
 safe_tools = cordum.govern(tools, risk_tags=["write"])
 
 # --- Use safe_tools instead of tools ---
@@ -99,7 +101,7 @@ Best for quick adoption when you have many agents. Call once at app startup.
 from cordum_langchain_guard import patch_langchain
 
 patch_langchain(
-    gateway_url="http://localhost:8081",
+    gateway_url="https://localhost:8081",
     api_key="your-api-key",
     default_risk_tags=["write"],
 )
@@ -194,7 +196,7 @@ You can modify policies after installing the pack — through the Cordum dashboa
 
 ```bash
 # Example: allow a specific tool even with "write" tag
-curl -X POST http://localhost:8081/api/v1/policies \
+curl -X POST https://localhost:8081/api/v1/policies \
   -H "X-API-Key: $CORDUM_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -225,7 +227,7 @@ For teams with many existing LangChain agents:
 ```python
 # Add to your app startup — that's it
 from cordum_langchain_guard import patch_langchain
-patch_langchain(gateway_url="http://localhost:8081", api_key="...")
+patch_langchain(gateway_url="https://localhost:8081", api_key="...")
 ```
 
 All 20+ agents are now governed. Zero code changes to any agent file. Monitor the Cordum dashboard to see what your agents are doing.
@@ -262,13 +264,36 @@ rules:
 
 ```python
 cordum = CordumAgent(
-    gateway_url="http://localhost:8081",  # Cordum API Gateway URL
+    gateway_url="https://localhost:8081",  # Cordum API Gateway URL
     api_key="your-key",                   # API key (from .env or secrets manager)
     tenant_id="default",                  # Tenant for multi-tenant setups
     timeout=20.0,                         # HTTP request timeout (seconds)
     poll_interval=0.75,                   # Job completion poll frequency (seconds)
     poll_timeout=60.0,                    # Max wait for job completion (seconds)
 )
+```
+
+### TLS / Self-Signed Certificates
+
+For local development with Cordum's self-signed certs, set the environment variable:
+
+```bash
+export CORDUM_TLS_INSECURE=true
+```
+
+Or in Python, configure `httpx` before creating the agent:
+
+```python
+import httpx
+# For development only — do not use in production
+cordum = CordumAgent("https://localhost:8081", api_key="...")
+# The gateway client uses httpx which respects SSL_CERT_FILE env var
+```
+
+For production, point to your CA certificate:
+
+```bash
+export SSL_CERT_FILE=/path/to/cordum/certs/ca.crt
 ```
 
 ### cordum.govern()
@@ -287,7 +312,7 @@ safe_tools = cordum.govern(
 
 ```python
 patch_langchain(
-    gateway_url="http://localhost:8081",
+    gateway_url="https://localhost:8081",
     api_key="your-key",
     tenant_id="default",
     default_risk_tags=["write"],          # Applied to ALL tool calls globally
@@ -438,7 +463,7 @@ If you're just getting started, `cordum-guard` is simpler. When you need real go
 ## Troubleshooting
 
 **"Connection refused" when calling tools**
-- Is Cordum running? Check `curl http://localhost:8081/healthz`
+- Is Cordum running? Check `curl -sk https://localhost:8081/api/v1/health -H "X-API-Key: $CORDUM_API_KEY"`
 - Is your `gateway_url` correct?
 
 **Tools execute but nothing shows in the dashboard**
