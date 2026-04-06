@@ -1,94 +1,172 @@
 # langchain-guard
 
-Full CAP integration for LangChain agents. Tool calls become real CAP jobs — policy-evaluated, scheduled, worker-executed, and audited through the Cordum control plane.
+Govern your LangChain agents through Cordum. Tool calls become real CAP jobs — policy-evaluated, scheduled, worker-executed, and audited. Cordum doesn't just check permissions — it owns the execution.
 
-**Not just a policy check — Cordum owns the execution.**
+## Prerequisites
 
-## How It Works
-
-```
-LangChain Agent → tool call → CAP job submitted
-  → Safety Kernel evaluates policy
-  → Scheduler dispatches to worker pool
-  → Worker executes tool (inside Cordum's infrastructure)
-  → Result flows back to the agent
-```
+- A running Cordum instance ([quickstart](https://docs.cordum.io/quickstart))
+- Your `CORDUM_API_KEY` and gateway URL (default: `http://localhost:8081`)
+- A LangChain agent with tools you want to govern
 
 ## Install
 
 ```bash
-# Server-side: policies, schemas, workflows
+# 1. Install the pack (adds policies, schemas, and workflows to your Cordum instance)
 cordum packs install langchain-guard
 
-# Client-side: Python SDK
+# 2. Install the Python SDK in your agent's environment
 pip install cordum-langchain-guard[langchain]
 ```
 
 ## Quick Start
 
-### Pattern A: Per-Agent Wrapping (granular control)
+### Option A: Govern specific agents (recommended)
+
+Best when you need different risk tags or policies per agent.
 
 ```python
+from langchain.agents import create_react_agent
+from langchain_community.tools import DuckDuckGoSearchRun, ShellTool
 from cordum_langchain_guard import CordumAgent
 
-cordum = CordumAgent("http://localhost:8081", api_key="...")
+# Your existing tools
+tools = [DuckDuckGoSearchRun(), ShellTool()]
 
-# 1 line change per agent — tools now run through full CAP
+# Connect to Cordum (one-time setup, reuse across agents)
+cordum = CordumAgent(
+    gateway_url="http://localhost:8081",
+    api_key="your-api-key",
+)
+
+# Wrap tools — this is the only change to your agent code
 safe_tools = cordum.govern(tools, risk_tags=["write"])
+
+# Use the governed tools in your agent as normal
 agent = create_react_agent(llm, safe_tools)
+agent.invoke({"input": "List files in /tmp"})
 ```
 
-### Pattern B: Global Hook (zero per-agent changes)
+**What happens now:**
+- `DuckDuckGoSearchRun` → submitted as a CAP job → Safety Kernel checks policy → worker executes → result returned
+- `ShellTool` with `risk_tags=["write"]` → policy requires human approval → LLM gets `[AWAITING APPROVAL]` message immediately → human approves in Cordum dashboard → tool executes
+
+### Option B: Govern all agents at once (zero code changes)
+
+Best for quick adoption across many agents. Call once at app startup.
 
 ```python
 from cordum_langchain_guard import patch_langchain
 
-# One-time setup at app startup
+# One line at startup — every LangChain tool call now goes through Cordum
 patch_langchain(
     gateway_url="http://localhost:8081",
-    api_key="...",
+    api_key="your-api-key",
+    default_risk_tags=["write"],
 )
 
-# All agents — zero changes. Every tool call goes through CAP.
-agent = create_react_agent(llm, tools)  # unchanged
+# All your existing agents work unchanged
+agent1 = create_react_agent(llm, tools_1)  # governed automatically
+agent2 = create_react_agent(llm, tools_2)  # governed automatically
 ```
 
-## Migration Path
+To undo: `from cordum_langchain_guard import unpatch_langchain; unpatch_langchain()`
 
-| Phase | Approach | Effort |
-|-------|----------|--------|
-| Day 1 | `patch_langchain()` | Zero code changes, instant governance |
-| Week 2 | `cordum.govern(tools)` for critical agents | 1 line per agent |
-| Month 1 | Full per-agent governance with custom policies | Per-agent risk tags |
+## What the LLM Sees
 
-## Policy Defaults
+When a tool call goes through Cordum, the LLM gets different responses depending on the policy decision:
 
-The pack ships sensible default policies:
+| Decision | What the LLM receives | What happens |
+|----------|----------------------|--------------|
+| **ALLOW** | The normal tool result | Tool executed by Cordum worker, result returned |
+| **DENY** | `[BLOCKED] tool_name: reason` | Tool blocked, LLM can try a different approach |
+| **REQUIRE_APPROVAL** | `[AWAITING APPROVAL] tool_name: reason (job_id=...)` | Human must approve in dashboard; LLM can continue other work |
+| **THROTTLE** | The normal tool result (after a delay) | Cordum delays execution, then proceeds |
 
-| Risk Tag | Decision | Behavior |
-|----------|----------|----------|
-| `read` | ALLOW | Execute immediately |
-| `write` | REQUIRE_APPROVAL | Wait for human approval in dashboard |
-| `destructive` | DENY | Blocked, error returned to LLM |
-| `secrets` | DENY | Blocked, error returned to LLM |
+## Default Policies
 
-## Approval Handling
+The pack ships these policies out of the box:
 
-When a tool requires human approval, the adapter returns immediately to the LLM:
+| Risk Tag | Decision | Why |
+|----------|----------|-----|
+| `read` | ALLOW | Read-only operations are safe |
+| `write` | REQUIRE_APPROVAL | Write operations need a human in the loop |
+| `destructive` | DENY | Destructive operations are blocked entirely |
+| `secrets` | DENY | Accessing secrets is blocked entirely |
 
+### Customizing policies
+
+Edit the policy rules after installing the pack:
+
+```yaml
+# Override via Cordum dashboard (Policy Studio) or API:
+# POST /api/v1/policies
+rules:
+  - id: allow-search-tools
+    match:
+      capabilities: ["duckduckgo_search", "wikipedia"]
+      risk_tags: ["read"]
+    decision: allow
+
+  - id: approve-file-writes
+    match:
+      capabilities: ["shell_tool", "file_write"]
+      risk_tags: ["write"]
+    decision: require_approval
+    reason: "File system access requires approval"
+
+  - id: block-dangerous
+    match:
+      risk_tags: ["destructive"]
+    decision: deny
+    reason: "Destructive operations are not permitted"
 ```
-[AWAITING APPROVAL] delete_file: write actions require human approval
-(ref=apr-123, job_id=j-456). A human must approve this action in the
-Cordum dashboard before it will execute.
-```
 
-The LLM can continue doing other work while the approval is pending. No blocking.
+## Migration Guide
 
-## Remote Workers (Production)
+For teams with many existing LangChain agents:
 
-For production deployments, run tool execution as a separate worker process:
+| Phase | What to do | Effort |
+|-------|-----------|--------|
+| **Day 1** | Add `patch_langchain()` to your app startup | 1 line, zero agent changes |
+| **Week 2** | Move critical agents to `cordum.govern()` with per-agent risk tags | 1 line per agent |
+| **Month 1** | Define custom policies per agent type in Cordum dashboard | Policy YAML |
 
+## Configuration
+
+### CordumAgent parameters
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `gateway_url` | `http://localhost:8081` | Cordum API Gateway URL |
+| `api_key` | `""` | API key for authentication |
+| `tenant_id` | `"default"` | Tenant for multi-tenant deployments |
+| `timeout` | `20.0` | HTTP request timeout (seconds) |
+| `poll_interval` | `0.75` | How often to poll for job completion (seconds) |
+| `poll_timeout` | `60.0` | Max time to wait for a job to complete (seconds) |
+
+### govern() parameters
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `tools` | required | List of LangChain `BaseTool` instances |
+| `risk_tags` | `[]` | Risk tags applied to all tool calls (e.g. `["write", "network"]`) |
+| `topic` | `job.langchain-guard.tool` | CAP topic for job submission |
+| `labels` | `{}` | Extra key-value labels for policy matching |
+| `start_worker` | `True` | Start an in-process worker for tool execution |
+
+## Production: Remote Workers
+
+By default, tool execution happens in-process (same Python process as your agent). For production, run workers separately so they can scale independently:
+
+**Agent process** (submits jobs):
 ```python
+cordum = CordumAgent("http://gateway:8081", api_key="...")
+safe_tools = cordum.govern(tools, start_worker=False)  # no local worker
+```
+
+**Worker process** (executes tools):
+```python
+import asyncio
 from cordum_langchain_guard import ToolRegistry, create_remote_worker
 
 registry = ToolRegistry()
@@ -98,6 +176,7 @@ worker = create_remote_worker(
     registry,
     nats_url="nats://nats:4222",
     redis_url="redis://redis:6379",
+    max_parallel=4,
 )
 asyncio.run(worker.run())
 ```
