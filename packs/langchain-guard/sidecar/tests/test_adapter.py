@@ -4,11 +4,7 @@ import pytest
 import respx
 from httpx import Response
 
-from cordum_langchain_guard.gateway import (
-    ApprovalRequiredError,
-    GatewayClient,
-    JobResult,
-)
+from cordum_langchain_guard.gateway import GatewayClient
 
 
 # Mock langchain_core before importing adapter
