@@ -1,0 +1,7 @@
+[allowlist]
+  description = "Known false positives in git history"
+
+  # n8n pack config.go: profile.APIKey = cfg.N8nAPIKey
+  # This is Go code assigning a config field, not a leaked secret.
+  # The n8n pack was removed from main but the commit remains in history.
+  commits = ["8a229b2522c902829e5995efaa84b275e5f34e85"]
