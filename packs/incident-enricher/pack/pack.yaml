@@ -14,16 +14,22 @@ compatibility:
 topics:
   - name: job.incident-enricher.fetch
     capability: incident.fetch
+    inputSchema: incident-enricher/IncidentInput
+    outputSchema: incident-enricher/EvidenceBundle
     riskTags: ["network"]
     requires: ["network:egress"]
 
   - name: job.incident-enricher.summarize
     capability: incident.summarize
+    inputSchema: incident-enricher/EvidenceBundle
+    outputSchema: incident-enricher/Summary
     riskTags: ["network"]
     requires: ["llm"]
 
   - name: job.incident-enricher.post
     capability: incident.post
+    inputSchema: incident-enricher/Summary
+    outputSchema: incident-enricher/PostResult
     riskTags: ["network", "write"]
     requires: ["slack:webhook"]
 

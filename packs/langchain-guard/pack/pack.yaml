@@ -18,6 +18,8 @@ topics:
   - name: job.langchain-guard.tool
     riskTags: ["read"]
     capability: langchain-guard.tool
+    inputSchema: langchain-guard/ToolCallInput
+    outputSchema: langchain-guard/ToolCallResult
     requires: []
 
 resources:

@@ -14,6 +14,8 @@ compatibility:
 topics:
   - name: job.pic-standard.verify
     capability: pic-standard.verify
+    inputSchema: pic-standard/PicVerifyInput
+    outputSchema: pic-standard/PicVerifyOutput
     requires: ["network:egress"]
     riskTags: ["read", "network"]
 

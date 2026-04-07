@@ -17,11 +17,15 @@ topics:
     requires: ["network:egress"]
     riskTags: ["read", "network"]
     capability: jira.read
+    inputSchema: jira/JiraActionInput
+    outputSchema: jira/JiraActionResult
 
   - name: job.jira.write
     requires: ["network:egress"]
     riskTags: ["write", "network"]
     capability: jira.write
+    inputSchema: jira/JiraActionInput
+    outputSchema: jira/JiraActionResult
 
 resources:
   schemas:

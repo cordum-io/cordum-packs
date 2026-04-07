@@ -1,11 +1,9 @@
 module github.com/cordum/cordum/sdk
 
-go 1.25.0
-
-toolchain go1.25.8
+go 1.25.8
 
 require (
-	github.com/cordum-io/cap/v2 v2.8.5
+	github.com/cordum-io/cap/v2 v2.9.0
 	github.com/nats-io/nats.go v1.49.0
 	github.com/redis/go-redis/v9 v9.7.3
 	google.golang.org/grpc v1.79.3

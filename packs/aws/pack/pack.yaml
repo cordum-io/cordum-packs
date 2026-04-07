@@ -16,11 +16,15 @@ topics:
     requires: ["network:egress"]
     riskTags: ["read", "network"]
     capability: aws.read
+    inputSchema: aws/AWSActionInput
+    outputSchema: aws/AWSActionResult
 
   - name: job.aws.write
     requires: ["network:egress"]
     riskTags: ["write", "network"]
     capability: aws.write
+    inputSchema: aws/AWSActionInput
+    outputSchema: aws/AWSActionResult
 
 resources:
   schemas:

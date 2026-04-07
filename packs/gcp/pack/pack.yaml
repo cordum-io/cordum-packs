@@ -16,11 +16,15 @@ topics:
     requires: ["network:egress"]
     riskTags: ["read", "network"]
     capability: gcp.read
+    inputSchema: gcp/GCPActionInput
+    outputSchema: gcp/GCPActionResult
 
   - name: job.gcp.write
     requires: ["network:egress"]
     riskTags: ["write", "network"]
     capability: gcp.write
+    inputSchema: gcp/GCPActionInput
+    outputSchema: gcp/GCPActionResult
 
 resources:
   schemas:

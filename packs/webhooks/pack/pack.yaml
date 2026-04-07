@@ -16,11 +16,15 @@ topics:
     requires: []
     riskTags: ["read"]
     capability: webhooks.read
+    inputSchema: webhooks/WebhooksActionInput
+    outputSchema: webhooks/WebhooksActionResult
 
   - name: job.webhooks.write
     requires: []
     riskTags: ["write"]
     capability: webhooks.write
+    inputSchema: webhooks/WebhooksActionInput
+    outputSchema: webhooks/WebhooksActionResult
 
 resources:
   schemas:

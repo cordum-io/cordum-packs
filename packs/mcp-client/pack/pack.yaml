@@ -16,6 +16,8 @@ topics:
     requires: ["network:egress"]
     riskTags: ["write"]
     capability: mcp.client.call
+    inputSchema: mcp-client/McpCallInput
+    outputSchema: mcp-client/McpCallResult
 
 resources:
   schemas:

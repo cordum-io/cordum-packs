@@ -16,11 +16,15 @@ topics:
     requires: []
     riskTags: ["read"]
     capability: cron-triggers.read
+    inputSchema: cron-triggers/CronTriggersActionInput
+    outputSchema: cron-triggers/CronTriggersActionResult
 
   - name: job.cron-triggers.write
     requires: []
     riskTags: ["write"]
     capability: cron-triggers.write
+    inputSchema: cron-triggers/CronTriggersActionInput
+    outputSchema: cron-triggers/CronTriggersActionResult
 
 resources:
   schemas:
