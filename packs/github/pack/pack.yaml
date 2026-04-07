@@ -17,10 +17,14 @@ topics:
     requires: ["network:egress"]
     riskTags: ["read", "network"]
     capability: github.read
+    inputSchema: github/GitHubActionInput
+    outputSchema: github/GitHubActionResult
   - name: job.github.write
     requires: ["network:egress"]
     riskTags: ["write", "network"]
     capability: github.write
+    inputSchema: github/GitHubActionInput
+    outputSchema: github/GitHubActionResult
 
 resources:
   schemas:

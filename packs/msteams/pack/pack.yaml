@@ -16,11 +16,15 @@ topics:
     requires: ["network:egress"]
     riskTags: ["read", "network"]
     capability: msteams.read
+    inputSchema: msteams/MSTeamsActionInput
+    outputSchema: msteams/MSTeamsActionResult
 
   - name: job.msteams.write
     requires: ["network:egress"]
     riskTags: ["write", "network"]
     capability: msteams.write
+    inputSchema: msteams/MSTeamsActionInput
+    outputSchema: msteams/MSTeamsActionResult
 
 resources:
   schemas:

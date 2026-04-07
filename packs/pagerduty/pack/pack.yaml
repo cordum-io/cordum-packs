@@ -16,11 +16,15 @@ topics:
     requires: ["network:egress"]
     riskTags: ["read", "network"]
     capability: pagerduty.read
+    inputSchema: pagerduty/PagerDutyActionInput
+    outputSchema: pagerduty/PagerDutyActionResult
 
   - name: job.pagerduty.write
     requires: ["network:egress"]
     riskTags: ["write", "network"]
     capability: pagerduty.write
+    inputSchema: pagerduty/PagerDutyActionInput
+    outputSchema: pagerduty/PagerDutyActionResult
 
 resources:
   schemas:

@@ -17,11 +17,15 @@ topics:
     requires: ["network:egress"]
     riskTags: ["read", "network"]
     capability: slack.read
+    inputSchema: slack/SlackActionInput
+    outputSchema: slack/SlackActionResult
 
   - name: job.slack.write
     requires: ["network:egress"]
     riskTags: ["write", "network"]
     capability: slack.write
+    inputSchema: slack/SlackActionInput
+    outputSchema: slack/SlackActionResult
 
 resources:
   schemas:

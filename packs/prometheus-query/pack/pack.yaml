@@ -16,6 +16,8 @@ topics:
     requires: ["network:egress"]
     riskTags: ["read", "network"]
     capability: prometheus-query.read
+    inputSchema: prometheus-query/PrometheusQueryActionInput
+    outputSchema: prometheus-query/PrometheusQueryActionResult
 
 resources:
   schemas:

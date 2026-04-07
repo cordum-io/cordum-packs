@@ -16,6 +16,8 @@ topics:
     requires: ["network:egress"]
     riskTags: ["read", "network"]
     capability: opentelemetry.read
+    inputSchema: opentelemetry/OpenTelemetryActionInput
+    outputSchema: opentelemetry/OpenTelemetryActionResult
 
 resources:
   schemas:

@@ -1,11 +1,9 @@
 module github.com/cordum/cordum/sdk
 
-go 1.25.0
-
-toolchain go1.25.8
+go 1.25.8
 
 require (
-	github.com/cordum-io/cap/v2 v2.8.5
+	github.com/cordum-io/cap/v2 v2.9.0
 	github.com/nats-io/nats.go v1.49.0
 	github.com/redis/go-redis/v9 v9.7.3
 	google.golang.org/grpc v1.79.3
@@ -24,3 +22,5 @@ require (
 	golang.org/x/text v0.35.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20251202230838-ff82c1b0f217 // indirect
 )
+
+replace github.com/cordum-io/cap/v2 => ../../cap

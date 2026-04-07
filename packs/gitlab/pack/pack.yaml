@@ -16,11 +16,15 @@ topics:
     requires: ["network:egress"]
     riskTags: ["read", "network"]
     capability: gitlab.read
+    inputSchema: gitlab/GitLabActionInput
+    outputSchema: gitlab/GitLabActionResult
 
   - name: job.gitlab.write
     requires: ["network:egress"]
     riskTags: ["write", "network"]
     capability: gitlab.write
+    inputSchema: gitlab/GitLabActionInput
+    outputSchema: gitlab/GitLabActionResult
 
 resources:
   schemas:

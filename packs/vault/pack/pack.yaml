@@ -16,6 +16,8 @@ topics:
     requires: ["network:egress"]
     riskTags: ["secrets", "network"]
     capability: vault.read
+    inputSchema: vault/VaultActionInput
+    outputSchema: vault/VaultActionResult
 
 resources:
   schemas:
