@@ -16,11 +16,15 @@ topics:
     requires: ["network:egress"]
     riskTags: ["read", "network"]
     capability: servicenow.read
+    inputSchema: servicenow/ServiceNowActionInput
+    outputSchema: servicenow/ServiceNowActionResult
 
   - name: job.servicenow.write
     requires: ["network:egress"]
     riskTags: ["write", "network"]
     capability: servicenow.write
+    inputSchema: servicenow/ServiceNowActionInput
+    outputSchema: servicenow/ServiceNowActionResult
 
 resources:
   schemas:

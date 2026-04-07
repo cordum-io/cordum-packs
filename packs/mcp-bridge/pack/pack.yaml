@@ -16,6 +16,8 @@ topics:
     requires: ["network:egress"]
     riskTags: ["write", "network"]
     capability: cordum.mcp.bridge
+    inputSchema: mcp-bridge/ToolCall
+    outputSchema: mcp-bridge/ToolResult
 
 resources:
   schemas:

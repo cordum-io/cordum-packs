@@ -17,11 +17,15 @@ topics:
     requires: ["network:egress"]
     riskTags: ["read", "network"]
     capability: kubernetes-triage.read
+    inputSchema: kubernetes-triage/KubernetesTriageActionInput
+    outputSchema: kubernetes-triage/KubernetesTriageActionResult
 
   - name: job.kubernetes-triage.write
     requires: ["network:egress"]
     riskTags: ["write", "network"]
     capability: kubernetes-triage.write
+    inputSchema: kubernetes-triage/KubernetesTriageActionInput
+    outputSchema: kubernetes-triage/KubernetesTriageActionResult
 
 resources:
   schemas:

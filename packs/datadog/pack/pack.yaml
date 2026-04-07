@@ -16,11 +16,15 @@ topics:
     requires: ["network:egress"]
     riskTags: ["read", "network"]
     capability: datadog.read
+    inputSchema: datadog/DatadogActionInput
+    outputSchema: datadog/DatadogActionResult
 
   - name: job.datadog.write
     requires: ["network:egress"]
     riskTags: ["write", "network"]
     capability: datadog.write
+    inputSchema: datadog/DatadogActionInput
+    outputSchema: datadog/DatadogActionResult
 
 resources:
   schemas:

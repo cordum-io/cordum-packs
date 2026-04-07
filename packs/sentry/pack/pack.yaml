@@ -16,11 +16,15 @@ topics:
     requires: ["network:egress"]
     riskTags: ["read", "network"]
     capability: sentry.read
+    inputSchema: sentry/SentryActionInput
+    outputSchema: sentry/SentryActionResult
 
   - name: job.sentry.write
     requires: ["network:egress"]
     riskTags: ["write", "network"]
     capability: sentry.write
+    inputSchema: sentry/SentryActionInput
+    outputSchema: sentry/SentryActionResult
 
 resources:
   schemas:

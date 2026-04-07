@@ -16,11 +16,15 @@ topics:
     requires: ["network:egress"]
     riskTags: ["read", "network"]
     capability: azure.read
+    inputSchema: azure/AzureActionInput
+    outputSchema: azure/AzureActionResult
 
   - name: job.azure.write
     requires: ["network:egress"]
     riskTags: ["write", "network"]
     capability: azure.write
+    inputSchema: azure/AzureActionInput
+    outputSchema: azure/AzureActionResult
 
 resources:
   schemas:

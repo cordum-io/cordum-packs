@@ -13,6 +13,8 @@ compatibility:
 topics:
   - name: job.hello-pack.echo
     capability: hello.echo
+    inputSchema: hello-pack/HelloInput
+    outputSchema: hello-pack/HelloOutput
     riskTags: []
     requires: []
 

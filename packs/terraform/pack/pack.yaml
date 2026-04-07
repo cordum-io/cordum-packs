@@ -16,11 +16,15 @@ topics:
     requires: ["network:egress"]
     riskTags: ["read", "network"]
     capability: terraform.read
+    inputSchema: terraform/TerraformActionInput
+    outputSchema: terraform/TerraformActionResult
 
   - name: job.terraform.write
     requires: ["network:egress"]
     riskTags: ["write", "network"]
     capability: terraform.write
+    inputSchema: terraform/TerraformActionInput
+    outputSchema: terraform/TerraformActionResult
 
 resources:
   schemas:
