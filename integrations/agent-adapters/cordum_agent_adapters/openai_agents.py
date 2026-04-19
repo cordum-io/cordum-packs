@@ -65,12 +65,12 @@ __all__ = [
 ]
 
 
-# _normalise_strict_schema previously lived here; it now ships from the
-# shared `_schema` module so every adapter (CrewAI, AutoGen, OpenAI
-# Agents, LangChain) shares one schema-normalisation contract. The
-# private alias preserves any in-tree call sites the next refactor
-# might introduce.
-_normalise_strict_schema = normalise_strict_schema
+# Schema normalisation now ships from the shared `_schema` module so
+# every adapter (CrewAI, AutoGen, OpenAI Agents, LangChain) shares one
+# contract. Use `normalise_strict_schema` directly — the private alias
+# that used to live here was deleted after CodeQL flagged it as unused
+# (kept-for-future-callers justifications don't survive dead-code
+# review).
 
 
 def _flatten_content_blocks(result: Any) -> str:

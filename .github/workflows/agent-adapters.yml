@@ -42,6 +42,8 @@ jobs:
     name: Test (${{ matrix.python-version }} / ${{ matrix.extra }})
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions:
+      contents: read
     strategy:
       fail-fast: false
       matrix:
@@ -94,6 +96,8 @@ jobs:
     needs: test
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    permissions:
+      contents: read
     outputs:
       dist-path: integrations/agent-adapters/dist
     steps:
@@ -145,7 +149,8 @@ jobs:
       name: pypi
       url: https://pypi.org/project/cordum-adapters/
     permissions:
-      id-token: write   # OIDC token exchange for Trusted Publishers.
+      contents: read     # required to download the build artefact
+      id-token: write    # OIDC token exchange for Trusted Publishers.
     steps:
       - name: Download dist artefact
         uses: actions/download-artifact@v4

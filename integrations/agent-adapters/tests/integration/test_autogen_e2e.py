@@ -222,11 +222,13 @@ def test_autogen_e2e_policy_denied_tool_surfaces_in_run_and_audit(mcp_client_fac
     # AG2's tool-caller catches tool exceptions and renders them into a
     # tool-result message. We drive the turn directly so the exception
     # either flows through and lands in the response, or bubbles up
-    # (both are acceptable and exercised by assertion).
+    # (both are acceptable and verified below by inspecting the audit
+    # log rather than the return value). Drop the unused assignment so
+    # CodeQL stops flagging a dead binding.
     try:
-        response = asyncio.run(_drive_agent_one_turn(agent, "What's the weather?"))
+        asyncio.run(_drive_agent_one_turn(agent, "What's the weather?"))
     except CordumToolExecutionError:
-        response = None
+        pass
 
     # Regardless of which path surfaces, the logger must have recorded
     # the attempted get_weather invocation with an error in the result.

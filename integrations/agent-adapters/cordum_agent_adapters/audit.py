@@ -30,7 +30,7 @@ import threading
 import uuid
 from typing import Any, Dict, Optional
 
-from .errors import AdapterError, AdapterRetryExhaustedError
+from .errors import AdapterError
 from .mcp_client import McpRpcError, McpStdioClient, McpToolError
 from .retry import RetryPolicy, default_retryable, retry_call
 

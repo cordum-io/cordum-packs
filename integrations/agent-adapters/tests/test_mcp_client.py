@@ -87,9 +87,15 @@ def test_sync_context_manager_calls_close_on_exit() -> None:
 def test_sync_context_manager_calls_close_when_body_raises() -> None:
     client = _bare_client()
     client.close = MagicMock()  # type: ignore[method-assign]
-    with pytest.raises(RuntimeError):
+    # Use explicit try/except instead of nested pytest.raises + with so
+    # CodeQL's reachability analysis sees the close assertion below.
+    caught: Exception | None = None
+    try:
         with client:
             raise RuntimeError("boom")
+    except RuntimeError as exc:
+        caught = exc
+    assert isinstance(caught, RuntimeError), "RuntimeError must propagate"
     client.close.assert_called_once()
 
 
@@ -146,9 +152,14 @@ async def test_async_context_manager_closes() -> None:
 async def test_async_context_manager_closes_on_exception() -> None:
     client = _bare_client()
     client.close = MagicMock()  # type: ignore[method-assign]
-
-    with pytest.raises(ValueError):
+    # Same explicit try/except pattern as the sync variant so CodeQL's
+    # reachability analysis treats the close assertion below as live.
+    caught: Exception | None = None
+    try:
         async with client:
             raise ValueError("inner")
+    except ValueError as exc:
+        caught = exc
+    assert isinstance(caught, ValueError), "ValueError must propagate"
     await asyncio.sleep(0)
     client.close.assert_called_once()

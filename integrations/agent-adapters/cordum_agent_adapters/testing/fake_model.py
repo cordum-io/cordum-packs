@@ -15,7 +15,7 @@ than crashing collection.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, AsyncIterator, Dict, Iterator, List, Optional
+from typing import Any, AsyncIterator, Dict, Iterator, List
 
 try:
     # openai-agents >= 0.14 exposes the Model ABC at this path. Older

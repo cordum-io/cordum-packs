@@ -21,7 +21,7 @@ from __future__ import annotations
 import json
 import os
 import sys
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 # Fixture tools exposed by this stub. Keep shapes minimal — the adapter
 # doesn't care about descriptions beyond echoing them into args_schema.
