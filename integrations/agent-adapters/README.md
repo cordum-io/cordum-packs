@@ -41,8 +41,9 @@ pip install cordum-adapters[langchain]
 pip install cordum-adapters[all]              # picks modern AG2
 ```
 
-Python 3.9+ supported. `[dev]` adds pytest + build + twine for
-contributors.
+Python 3.10+ supported (framework deps `crewai>=0.30`, `autogen-core>=0.4`,
+`openai-agents>=0.1` all require ≥3.10). `[dev]` adds pytest + build +
+twine for contributors.
 
 ## MCP client quickstart (5 lines)
 
@@ -134,8 +135,13 @@ No. pyautogen 0.2 transitively requires `openai<1.0`; autogen-agentchat
 need to migrate, uninstall pyautogen first, then install the `[autogen]`
 extra.
 
-**Python version matrix.** Python 3.9, 3.10, 3.11, 3.12 are CI-covered.
-3.13 is expected to work; raise an issue if you hit a snag.
+**Python version matrix.** Python 3.11 and 3.12 are CI-covered
+(matrix `python-version: ['3.11', '3.12']` in
+`.github/workflows/agent-adapters.yml`). 3.10 is supported per
+`requires-python=">=3.10"` in `pyproject.toml` but not in CI. 3.13 is
+expected to work; raise an issue if you hit a snag. Python 3.9 is
+NOT supported — the underlying framework SDKs (crewai>=0.30,
+autogen-core>=0.4, openai-agents) require ≥3.10.
 
 **Windows path caveat.** `cordum-mcp-bridge` must be on `PATH`. On
 Windows/MSYS use forward slashes or rely on `shutil.which`; the

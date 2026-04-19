@@ -45,7 +45,18 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.9', '3.11', '3.12']
+        # The adapter targets pin framework floors that all require
+        # Python >=3.10 (crewai>=0.30 requires 3.10–3.13; autogen-core
+        # >=0.4 requires 3.10+; openai-agents uses PEP 604 `X | None`
+        # without eval_type_backport). Python 3.9 was originally in
+        # the matrix as an aspirational floor but has never actually
+        # worked — an early version without these framework floors let
+        # the test green; subsequent dep bumps broke it silently until
+        # a real CI run caught it. Drop 3.9 from CI and from
+        # `requires-python` in pyproject.toml so the claim matches
+        # reality and existing users on 3.9 get a clear pip error at
+        # install time rather than a confusing import failure mid-tutorial.
+        python-version: ['3.11', '3.12']
         # Each extra installed in its own matrix leg so pip dep-conflict
         # fallouts surface per-extra. autogen + autogen-classic run in
         # SEPARATE legs — never together (MUTUALLY EXCLUSIVE openai pins).
