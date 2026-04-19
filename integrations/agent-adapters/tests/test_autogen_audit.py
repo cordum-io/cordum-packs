@@ -12,8 +12,6 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock
 
-import pytest
-
 from cordum_agent_adapters.autogen.audit import (
     MAX_TURN_BYTES,
     CordumConversationLogger,

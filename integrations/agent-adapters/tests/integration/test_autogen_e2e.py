@@ -34,7 +34,6 @@ from autogen_agentchat.agents import AssistantAgent
 from autogen_agentchat.messages import TextMessage
 from autogen_core import FunctionCall, CancellationToken
 from autogen_core.models import (
-    AssistantMessage,
     ChatCompletionClient,
     CreateResult,
     LLMMessage,

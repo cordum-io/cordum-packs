@@ -7,7 +7,7 @@ validation via additionalProperties:false.
 from __future__ import annotations
 
 import datetime
-from typing import Any, Optional, get_args, get_origin
+from typing import Any, get_args, get_origin
 
 import pytest
 
@@ -256,7 +256,7 @@ def test_build_model_handles_missing_pydantic(monkeypatch: pytest.MonkeyPatch) -
     Simulate by making `pydantic` raise ImportError via sys.modules.
     """
     import sys
-    import cordum_agent_adapters._pydantic_models as mod
+    from cordum_agent_adapters import _pydantic_models as mod
 
     # Monkey-patch the local import — the function does a lazy import,
     # so we intercept by nuking pydantic from sys.modules and inserting

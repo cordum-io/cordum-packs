@@ -16,9 +16,8 @@ def test_build_crewai_tools_missing_dependency():
             hidden[mod] = sys.modules.pop(mod)
     try:
         with patch.dict(sys.modules, {"crewai_tools": None, "crewai": None, "crewai.tools": None}):
-            from cordum_agent_adapters.crewai import _load_base_tool
             # Force reimport by reloading
-            import cordum_agent_adapters.crewai as mod
+            from cordum_agent_adapters import crewai as mod
             importlib.reload(mod)
             with pytest.raises(RuntimeError, match="CrewAI is not installed"):
                 mod._load_base_tool()
@@ -113,7 +112,7 @@ def patched_base_tool(monkeypatch: pytest.MonkeyPatch) -> MagicMock:
 
     Returns a MagicMock so tests can assert on how it was called.
     """
-    import cordum_agent_adapters.crewai as mod
+    from cordum_agent_adapters import crewai as mod
     loader = MagicMock(return_value=_FakeBaseTool)
     monkeypatch.setattr(mod, "_load_base_tool", loader)
     return loader
@@ -254,7 +253,7 @@ def _install_fake_crewai(monkeypatch: pytest.MonkeyPatch) -> object:
 @pytest.fixture
 def fake_crewai_and_base(monkeypatch: pytest.MonkeyPatch) -> MagicMock:
     _install_fake_crewai(monkeypatch)
-    import cordum_agent_adapters.crewai as mod
+    from cordum_agent_adapters import crewai as mod
     monkeypatch.setattr(mod, "_load_base_tool", lambda: _FakeBaseTool)
     return monkeypatch
 
@@ -373,7 +372,7 @@ def test_build_crew_reports_unknown_task_agent(fake_crewai_and_base: pytest.Monk
 def test_build_crew_lazy_import_error_is_actionable() -> None:
     # Run in a clean subprocess-like state where crewai is absent:
     # remove it from sys.modules and intercept the lazy import.
-    import cordum_agent_adapters.crewai as mod
+    from cordum_agent_adapters import crewai as mod
     from cordum_agent_adapters.errors import AdapterSchemaError
 
     # Ensure `crewai` will fail to import by patching sys.modules.

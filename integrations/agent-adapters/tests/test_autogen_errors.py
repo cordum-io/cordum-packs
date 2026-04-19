@@ -1,8 +1,6 @@
 """Tests for the AutoGen adapter's MCP → AutoGen error mapping."""
 from __future__ import annotations
 
-import pytest
-
 from cordum_agent_adapters.autogen.errors import (
     CordumAutoGenError,
     CordumPolicyDeniedError,
