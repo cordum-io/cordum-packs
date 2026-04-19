@@ -130,11 +130,12 @@ def retry_call(
     wall-clock time is reported in milliseconds on the error.
     """
     start = time.monotonic()
-    last_exc: Optional[BaseException] = None
+    last_exc: Optional[Exception] = None
     for attempt in range(1, policy.max_attempts + 1):
         try:
             return fn(*args, **kwargs)
-        except BaseException as exc:  # noqa: BLE001 — intentional: policy decides retry
+        except Exception as exc:  # policy decides retry — BaseException
+            # (KeyboardInterrupt / SystemExit) must propagate, never retry.
             last_exc = exc
             if not policy.retryable(exc):
                 raise
@@ -167,11 +168,12 @@ async def retry_call_async(
     per attempt — necessary because a coroutine cannot be re-awaited.
     """
     start = time.monotonic()
-    last_exc: Optional[BaseException] = None
+    last_exc: Optional[Exception] = None
     for attempt in range(1, policy.max_attempts + 1):
         try:
             return await coro_factory()
-        except BaseException as exc:  # noqa: BLE001
+        except Exception as exc:  # KeyboardInterrupt / SystemExit / asyncio.CancelledError
+            # (which is BaseException-derived in 3.8+) must propagate.
             last_exc = exc
             if not policy.retryable(exc):
                 raise
