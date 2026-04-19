@@ -438,6 +438,22 @@ func (b *Bridge) executeTool(ctx context.Context, name string, args map[string]a
 			return nil, fmt.Errorf("job_id required")
 		}
 		return b.client.RetryDLQ(ctx, jobID)
+	case "cordum.audit.log_turn":
+		// Session id is required; validate it but otherwise do nothing.
+		// The gateway's MCP middleware has already chained a SIEMEvent
+		// for this tools/call; the adapter gets tamper-evident turn
+		// audit for free, without widening the bridge↔gateway surface.
+		sessionID := stringArg(args, "session_id")
+		if sessionID == "" {
+			return nil, fmt.Errorf("session_id required")
+		}
+		if _, ok := args["turn"].(map[string]any); !ok {
+			return nil, fmt.Errorf("turn must be an object")
+		}
+		return map[string]any{
+			"status":     "recorded",
+			"session_id": sessionID,
+		}, nil
 	default:
 		return nil, fmt.Errorf("unsupported tool: %s", name)
 	}
@@ -697,6 +713,31 @@ func (b *Bridge) buildTools() []mcp.Tool {
 					"job_id": map[string]any{"type": "string"},
 				},
 				"required": []string{"job_id"},
+			},
+		},
+		{
+			Name: "cordum.audit.log_turn",
+			// The implementation is intentionally a no-op that returns
+			// a success envelope. The gateway's MCP middleware already
+			// emits a SIEMEvent for every incoming tools/call, so the
+			// enclosing tools/call on this tool IS the audit record —
+			// tamper-evident, tenant-scoped, chained. Framework
+			// adapters (AutoGen, OpenAI Agents, CrewAI) call this tool
+			// on each conversation turn so the SIEM chain gets an
+			// entry for pure-LLM chatter as well as tool-call turns.
+			Description: "Record a conversation turn in the Cordum audit trail. Adapter-facing; " +
+				"invocation itself is audited — the tool body is a no-op.",
+			InputSchema: map[string]any{
+				"type": "object",
+				"properties": map[string]any{
+					"session_id": map[string]any{"type": "string"},
+					"turn": map[string]any{
+						"type":                 "object",
+						"additionalProperties": true,
+					},
+					"truncated": map[string]any{"type": "boolean"},
+				},
+				"required": []string{"session_id", "turn"},
 			},
 		},
 	}

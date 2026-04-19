@@ -1,10 +1,17 @@
+"""AutoGen 0.2 (classic / pyautogen) adapter.
+
+Mirrors the legacy single-file API verbatim so callers that imported
+``from cordum_agent_adapters.autogen import build_autogen_tools`` continue
+to work unchanged after the subpackage refactor. New functionality lives
+in ``modern.py`` (AG2 0.4+).
+"""
 from __future__ import annotations
 
 import json
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
-from .mcp_client import McpStdioClient
-from .openai_tools import mcp_tool_to_openai_tool, mcp_tools_to_openai_tools
+from ..mcp_client import McpStdioClient
+from ..openai_tools import mcp_tool_to_openai_tool, mcp_tools_to_openai_tools
 
 
 def _coerce_args(args: Tuple[Any, ...], kwargs: Dict[str, Any]) -> Dict[str, Any]:
@@ -32,7 +39,7 @@ def build_autogen_tools(
     tools: Optional[List[Dict[str, Any]]] = None,
     result_transform: Optional[Callable[[Dict[str, Any]], Any]] = None,
 ) -> Tuple[List[Dict[str, Any]], Dict[str, Callable[..., Any]]]:
-    """Build AutoGen-compatible function definitions and a callable function map.
+    """Build AutoGen 0.2-compatible function definitions and a callable function map.
 
     Returns ``(functions, function_map)`` where *functions* is a list of
     OpenAI function schemas and *function_map* maps tool names to callables.

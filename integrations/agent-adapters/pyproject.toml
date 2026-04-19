@@ -1,0 +1,166 @@
+[build-system]
+# setuptools-scm derives the package version from git tags matching
+# `adapters-v*` so release = tag. Between tags the wheel's version is a
+# PEP 440 post-release (setuptools-scm default with version_scheme
+# post-release + local_scheme no-local-version so it stays PyPI-compat).
+requires = ["setuptools>=68", "wheel", "setuptools_scm>=8"]
+build-backend = "setuptools.build_meta"
+
+[project]
+# DISTRIBUTION name (what `pip install` takes). The import name remains
+# `cordum_agent_adapters` so callers continue to `from
+# cordum_agent_adapters.autogen import ...` — the distribution/import
+# split is the standard scikit-learn / opencv-python pattern.
+name = "cordum-adapters"
+# Version is injected by setuptools-scm at build time. Keep this line
+# commented so a misconfigured scm setup fails loudly at build rather
+# than silently shipping a stale literal.
+dynamic = ["version"]
+description = "Cordum adapters for agent frameworks (CrewAI, AutoGen, OpenAI Agents, LangChain) over MCP."
+readme = { file = "README.md", content-type = "text/markdown" }
+requires-python = ">=3.9"
+license = { text = "BSL-1.1" }
+authors = [
+    { name = "Cordum", email = "engineering@cordum.io" },
+]
+keywords = ["cordum", "mcp", "crewai", "autogen", "openai", "langchain", "governance"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    # Business Source License 1.1 — see LICENSE. PyPI's "OSI Approved"
+    # classifier list doesn't include BSL, so we omit that line and
+    # rely on the project.license.text + the file for compliance.
+    "License :: Other/Proprietary License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+# Base install has ZERO heavy dependencies. The MCP stdio client is
+# stdlib-only; every framework-specific dep lives behind an extra so
+# users only pay for what they pick.
+dependencies = []
+
+[project.optional-dependencies]
+crewai = [
+    "crewai>=0.30",
+    "crewai-tools>=0.1",
+    "pydantic>=2.0",
+]
+# Modern AG2 (autogen-core / autogen-agentchat 0.4+).
+# ╔════════════════════════════════════════════════════════════════╗
+# ║ MUTUALLY EXCLUSIVE with `autogen-classic` below.              ║
+# ║ pyautogen 0.2 and autogen-agentchat 0.4+ transitively pin     ║
+# ║ incompatible openai versions. pip install will error if both  ║
+# ║ extras are requested in the same interpreter — pick one.      ║
+# ║ [all] defaults to modern AG2; callers still on pyautogen 0.2  ║
+# ║ must install `cordum-adapters[autogen-classic]` separately.   ║
+# ╚════════════════════════════════════════════════════════════════╝
+autogen = [
+    "autogen-core>=0.4",
+    "autogen-agentchat>=0.4",
+    "pydantic>=2.0",
+]
+# Legacy pyautogen 0.2 classic API. MUTUALLY EXCLUSIVE with `autogen`.
+autogen-classic = [
+    "pyautogen~=0.2",
+]
+# `openai` installs only the plain openai-python package used by the
+# function-calling schema helper in openai_tools.py.
+openai = [
+    "openai>=1.0",
+]
+# `openai-agents` installs the newer OpenAI Agents SDK (Runner,
+# FunctionTool, tracing) used by cordum_agent_adapters.openai_agents.
+openai-agents = [
+    "openai-agents>=0.1",
+    "pydantic>=2.0",
+]
+langchain = [
+    "langchain-core>=0.1",
+    "pydantic>=1.10",
+]
+# `all` picks modern AutoGen; callers still on pyautogen 0.2 must
+# install `cordum-adapters[autogen-classic]` separately.
+all = [
+    "cordum-adapters[crewai,autogen,openai,openai-agents,langchain]",
+]
+dev = [
+    "pytest>=8",
+    "pytest-asyncio>=0.23",
+    "pytest-mock>=3.12",
+    "pytest-timeout>=2.2",
+    "pytest-repeat>=0.9",
+    "aiohttp>=3.9",
+    "build>=1.0",
+    "twine>=4.0",
+    "ruff>=0.4",
+    "setuptools_scm>=8",
+]
+# `test` kept as a subset alias for historical invocations.
+test = [
+    "pytest>=8",
+    "pytest-asyncio>=0.23",
+    "pytest-mock>=3.12",
+    "pytest-timeout>=2.2",
+    "aiohttp>=3.9",
+]
+
+[project.urls]
+Homepage = "https://cordum.io"
+Documentation = "https://cordum.io/docs/adapters"
+Repository = "https://github.com/cordum-io/cordum-packs"
+Issues = "https://github.com/cordum-io/cordum-packs/issues"
+Changelog = "https://github.com/cordum-io/cordum-packs/blob/main/integrations/agent-adapters/CHANGELOG.md"
+
+[tool.setuptools]
+package-dir = { "" = "." }
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["cordum_agent_adapters*"]
+exclude = ["tests*"]
+
+[tool.setuptools.package-data]
+cordum_agent_adapters = ["py.typed"]
+
+# setuptools-scm derives the version from `adapters-v*` git tags rooted
+# in the cordum-packs repository root (two directories up from this
+# pyproject). PyPI-compatible scheme: tagged release gets the raw
+# version, between-tag commits get a predictable post-release version
+# (no local segment so TestPyPI/PyPI accept it).
+#
+# git_describe_command is load-bearing: cordum-packs carries unrelated
+# repository-wide tags (v0.6.6, etc.) that setuptools-scm would otherwise
+# try to parse against tag_regex, trip its internal assertion, and fail
+# `python -m build` with no env overrides. Passing --match 'adapters-v*'
+# makes git itself filter to adapter tags only, so the describe command
+# returns no-tag → setuptools-scm cleanly falls back to fallback_version.
+[tool.setuptools_scm]
+root = "../.."
+tag_regex = "^adapters-v(?P<version>[0-9]+(?:\\.[0-9]+)*(?:[-.]?[a-z0-9]+)?)$"
+git_describe_command = ["git", "describe", "--dirty", "--tags", "--long", "--match", "adapters-v*"]
+version_scheme = "post-release"
+local_scheme = "no-local-version"
+# Fallback version for checkouts with no .git or no matching tag
+# (tarball installs, shallow clones). Matches CHANGELOG entry.
+fallback_version = "0.2.0"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+asyncio_mode = "auto"
+addopts = "-ra --strict-markers"
+markers = [
+    "integration: end-to-end tests that require CORDUM_ADAPTERS_E2E=1",
+]
+
+[tool.mypy]
+python_version = "3.9"
+strict = true
+warn_unreachable = true
+disallow_untyped_defs = true
+ignore_missing_imports = true
