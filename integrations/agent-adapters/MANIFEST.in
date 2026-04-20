@@ -1,0 +1,25 @@
+# Wheel + sdist payload manifest. Keep the wheel lean (no tests, no
+# caches) but ship README, LICENSE, CHANGELOG, and the inline tutorials
+# so offline documentation works after `pip install cordum-adapters`.
+include README.md
+include LICENSE
+include CHANGELOG.md
+include pyproject.toml
+
+# py.typed signals to mypy/pyright that this package ships type hints
+# (PEP 561). *.pyi stubs are included if the package ever grows any.
+recursive-include cordum_agent_adapters py.typed *.pyi
+
+# Ship the framework tutorials as package data so users get local
+# docs alongside the install. sdist-only; the wheel tree stays flat.
+recursive-include docs/tutorials *.md
+
+# Exclude tests + caches from the distribution entirely.
+prune tests
+prune .pytest_cache
+prune build
+prune dist
+prune *.egg-info
+global-exclude __pycache__
+global-exclude *.py[co]
+global-exclude .DS_Store

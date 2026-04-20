@@ -1,0 +1,167 @@
+# Unit tests + PyPI publish for cordum-adapters.
+#
+# One-time PyPI Trusted Publisher setup (do NOT use long-lived tokens):
+#   1. On https://pypi.org/manage/account/publishing/ register a new
+#      pending publisher:
+#        PyPI project name:       cordum-adapters
+#        Owner / Repository:      cordum / cordum-packs
+#        Workflow:                agent-adapters.yml
+#        Environment (optional):  pypi
+#   2. Repeat on https://test.pypi.org/manage/account/publishing/ for
+#      TestPyPI dry-runs, using environment name `testpypi`.
+#   3. Push a tag matching `adapters-v*.*.*` on main; the publish job
+#      exchanges GitHub's OIDC token for a short-lived PyPI token
+#      scoped to this repo+workflow. No PYPI_API_TOKEN secret needed
+#      or stored anywhere.
+#
+# Fork safety: the publish job runs only on the upstream repo (via
+# `github.repository == 'cordum-io/cordum-packs'`) and only on tag pushes.
+# Forked PRs can exercise the `test` matrix but can never publish.
+
+name: agent-adapters
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'integrations/agent-adapters/**'
+      - '.github/workflows/agent-adapters.yml'
+    tags:
+      - 'adapters-v*.*.*'
+  pull_request:
+    paths:
+      - 'integrations/agent-adapters/**'
+      - '.github/workflows/agent-adapters.yml'
+
+defaults:
+  run:
+    working-directory: integrations/agent-adapters
+
+jobs:
+  test:
+    name: Test (${{ matrix.python-version }} / ${{ matrix.extra }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        # The adapter targets pin framework floors that all require
+        # Python >=3.10 (crewai>=0.30 requires 3.10–3.13; autogen-core
+        # >=0.4 requires 3.10+; openai-agents uses PEP 604 `X | None`
+        # without eval_type_backport). Python 3.9 was originally in
+        # the matrix as an aspirational floor but has never actually
+        # worked — an early version without these framework floors let
+        # the test green; subsequent dep bumps broke it silently until
+        # a real CI run caught it. Drop 3.9 from CI and from
+        # `requires-python` in pyproject.toml so the claim matches
+        # reality and existing users on 3.9 get a clear pip error at
+        # install time rather than a confusing import failure mid-tutorial.
+        python-version: ['3.11', '3.12']
+        # Each extra installed in its own matrix leg so pip dep-conflict
+        # fallouts surface per-extra. autogen + autogen-classic run in
+        # SEPARATE legs — never together (MUTUALLY EXCLUSIVE openai pins).
+        extra:
+          - crewai
+          - autogen
+          - autogen-classic
+          - openai
+          - openai-agents
+          - langchain
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # setuptools-scm derives version from git tags; we need full
+          # depth so the build step finds the adapters-v* tag history.
+          fetch-depth: 0
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: integrations/agent-adapters/pyproject.toml
+
+      - name: Install dev + ${{ matrix.extra }} extras
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev,${{ matrix.extra }}]"
+
+      - name: Run unit tests
+        run: pytest tests/ -m 'not integration' -v
+
+  build:
+    name: Build sdist + wheel
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    outputs:
+      dist-path: integrations/agent-adapters/dist
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: integrations/agent-adapters/pyproject.toml
+
+      - name: Install build tooling
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install build twine
+
+      - name: Build sdist + wheel
+        run: python -m build
+
+      - name: twine check
+        run: twine check dist/*
+
+      - name: Upload dist artefact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cordum-adapters-dist
+          path: integrations/agent-adapters/dist/*
+          if-no-files-found: error
+
+  publish:
+    # Trusted-Publisher (OIDC) release to PyPI. Runs ONLY on:
+    #   - a tag push matching adapters-v*.*.* (GitHub applies the
+    #     `on.push.tags` filter above to this ref),
+    #   - the upstream repository (forks cannot publish even if a
+    #     fork owner pushes an identically-named tag),
+    #   - after the build job has produced a signed dist artefact.
+    name: Publish to PyPI
+    needs: build
+    if: |
+      github.event_name == 'push' &&
+      startsWith(github.ref, 'refs/tags/adapters-v') &&
+      github.repository == 'cordum-io/cordum-packs'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: pypi
+      url: https://pypi.org/project/cordum-adapters/
+    permissions:
+      contents: read     # required to download the build artefact
+      id-token: write    # OIDC token exchange for Trusted Publishers.
+    steps:
+      - name: Download dist artefact
+        uses: actions/download-artifact@v4
+        with:
+          name: cordum-adapters-dist
+          path: dist
+
+      - name: Publish to PyPI (Trusted Publisher OIDC)
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          # No password / api_token — the action exchanges the GitHub
+          # OIDC token for a short-lived PyPI token scoped to this
+          # (repo, workflow) pair. Setup recorded in the top comment.
+          packages-dir: dist

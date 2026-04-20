@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import json
 import queue
 import shlex
@@ -8,7 +9,8 @@ import threading
 import time
 import sys
 from dataclasses import dataclass
-from typing import Any, Dict, Iterable, List, Optional
+from types import TracebackType
+from typing import Any, Dict, Iterable, List, Optional, Type
 
 
 class McpError(Exception):
@@ -42,8 +44,8 @@ class McpStdioClient:
         cwd: Optional[str] = None,
         timeout: float = 60.0,
         protocol_version: str = "2025-11-25",
-        client_name: str = "cordum-agent-adapters",
-        client_version: str = "0.1.0",
+        client_name: str = "cordum-adapters",
+        client_version: str = "0.2.0",
         auto_initialize: bool = True,
     ) -> None:
         self.command = self._normalize_command(command)
@@ -128,6 +130,71 @@ class McpStdioClient:
                 self._proc.wait(timeout=5)
             except subprocess.TimeoutExpired:
                 self._proc.kill()
+
+    # ------------------------------------------------------------------
+    # Async façade
+    #
+    # We delegate to the synchronous methods via run_in_executor rather
+    # than rewriting the stdio reader as an asyncio protocol. Rationale:
+    # the existing client already serialises on a single reader thread +
+    # queue, which is race-free. Re-implementing that in asyncio would
+    # mean another correctness review for a marginal latency win. Every
+    # framework we target (CrewAI, AutoGen) is happy with a coroutine
+    # that awaits a thread.
+    # ------------------------------------------------------------------
+
+    async def call_tool_async(
+        self, name: str, arguments: Optional[Dict[str, Any]] = None
+    ) -> dict:
+        """Async wrapper over :meth:`call_tool`.
+
+        Exceptions raised by the sync call propagate unchanged so
+        :func:`retry_call_async` can introspect them the same way it
+        does for sync calls.
+        """
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(None, self.call_tool, name, arguments)
+
+    async def list_tools_async(self) -> List[dict]:
+        """Async wrapper over :meth:`list_tools`."""
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(None, self.list_tools)
+
+    def is_alive(self) -> bool:
+        """Return True when the subprocess is still running.
+
+        Callers use this to decide whether to reconnect before the next
+        call; polling is cheap (one non-blocking syscall per call).
+        """
+        return self._proc.poll() is None
+
+    # Context-manager protocol. Covers both sync `with client:` and async
+    # `async with client:` usage. Close() is idempotent so double-exit is
+    # harmless.
+    def __enter__(self) -> "McpStdioClient":
+        return self
+
+    def __exit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc: Optional[BaseException],
+        tb: Optional[TracebackType],
+    ) -> None:
+        self.close()
+
+    async def __aenter__(self) -> "McpStdioClient":
+        return self
+
+    async def __aexit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc: Optional[BaseException],
+        tb: Optional[TracebackType],
+    ) -> None:
+        # close() is subprocess work — offload to a thread so the event
+        # loop keeps running if the child hangs and needs the 5s timeout.
+        loop = asyncio.get_running_loop()
+        await loop.run_in_executor(None, self.close)
 
     def _normalize_command(self, command: Iterable[str] | str) -> List[str]:
         if isinstance(command, str):

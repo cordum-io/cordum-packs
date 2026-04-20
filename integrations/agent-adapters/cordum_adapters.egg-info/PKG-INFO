@@ -1,3 +1,67 @@
+Metadata-Version: 2.4
+Name: cordum-adapters
+Version: 0.2.0.post387
+Summary: Cordum adapters for agent frameworks (CrewAI, AutoGen, OpenAI Agents, LangChain) over MCP.
+Author-email: Cordum <engineering@cordum.io>
+License: BSL-1.1
+Project-URL: Homepage, https://cordum.io
+Project-URL: Documentation, https://cordum.io/docs/adapters
+Project-URL: Repository, https://github.com/cordum/cordum-packs
+Project-URL: Issues, https://github.com/cordum/cordum-packs/issues
+Project-URL: Changelog, https://github.com/cordum/cordum-packs/blob/main/integrations/agent-adapters/CHANGELOG.md
+Keywords: cordum,mcp,crewai,autogen,openai,langchain,governance
+Classifier: Development Status :: 4 - Beta
+Classifier: Intended Audience :: Developers
+Classifier: License :: Other/Proprietary License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Requires-Python: >=3.9
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Provides-Extra: crewai
+Requires-Dist: crewai>=0.30; extra == "crewai"
+Requires-Dist: crewai-tools>=0.1; extra == "crewai"
+Requires-Dist: pydantic>=2.0; extra == "crewai"
+Provides-Extra: autogen
+Requires-Dist: autogen-core>=0.4; extra == "autogen"
+Requires-Dist: autogen-agentchat>=0.4; extra == "autogen"
+Requires-Dist: pydantic>=2.0; extra == "autogen"
+Provides-Extra: autogen-classic
+Requires-Dist: pyautogen~=0.2; extra == "autogen-classic"
+Provides-Extra: openai
+Requires-Dist: openai>=1.0; extra == "openai"
+Provides-Extra: openai-agents
+Requires-Dist: openai-agents>=0.1; extra == "openai-agents"
+Requires-Dist: pydantic>=2.0; extra == "openai-agents"
+Provides-Extra: langchain
+Requires-Dist: langchain-core>=0.1; extra == "langchain"
+Requires-Dist: pydantic>=1.10; extra == "langchain"
+Provides-Extra: all
+Requires-Dist: cordum-adapters[autogen,crewai,langchain,openai,openai-agents]; extra == "all"
+Provides-Extra: dev
+Requires-Dist: pytest>=8; extra == "dev"
+Requires-Dist: pytest-asyncio>=0.23; extra == "dev"
+Requires-Dist: pytest-mock>=3.12; extra == "dev"
+Requires-Dist: pytest-timeout>=2.2; extra == "dev"
+Requires-Dist: pytest-repeat>=0.9; extra == "dev"
+Requires-Dist: aiohttp>=3.9; extra == "dev"
+Requires-Dist: build>=1.0; extra == "dev"
+Requires-Dist: twine>=4.0; extra == "dev"
+Requires-Dist: ruff>=0.4; extra == "dev"
+Requires-Dist: setuptools_scm>=8; extra == "dev"
+Provides-Extra: test
+Requires-Dist: pytest>=8; extra == "test"
+Requires-Dist: pytest-asyncio>=0.23; extra == "test"
+Requires-Dist: pytest-mock>=3.12; extra == "test"
+Requires-Dist: pytest-timeout>=2.2; extra == "test"
+Requires-Dist: aiohttp>=3.9; extra == "test"
+Dynamic: license-file
+
 # cordum-adapters
 
 Ship any AI-agent framework through [Cordum](https://cordum.io) for
@@ -6,7 +70,7 @@ with a one-line adapter plus your existing framework code.
 
 ## What this is
 
-`cordum-adapters` wraps the [Cordum MCP bridge](https://github.com/cordum-io/cordum-packs/tree/main/packs/mcp-bridge)
+`cordum-adapters` wraps the [Cordum MCP bridge](https://github.com/cordum/cordum-packs/tree/main/packs/mcp-bridge)
 as native tool objects for four agent frameworks:
 
 | Framework | Install | Tool type | Module |
@@ -41,9 +105,8 @@ pip install cordum-adapters[langchain]
 pip install cordum-adapters[all]              # picks modern AG2
 ```
 
-Python 3.10+ supported (framework deps `crewai>=0.30`, `autogen-core>=0.4`,
-`openai-agents>=0.1` all require ≥3.10). `[dev]` adds pytest + build +
-twine for contributors.
+Python 3.9+ supported. `[dev]` adds pytest + build + twine for
+contributors.
 
 ## MCP client quickstart (5 lines)
 
@@ -59,7 +122,7 @@ print([tool["name"] for tool in client.list_tools()])
 ```
 
 `cordum-mcp-bridge` is a Go binary shipped by
-[cordum-packs/packs/mcp-bridge](https://github.com/cordum-io/cordum-packs/tree/main/packs/mcp-bridge).
+[cordum-packs/packs/mcp-bridge](https://github.com/cordum/cordum-packs/tree/main/packs/mcp-bridge).
 Build with `go install` or copy from a release artefact onto your
 `$PATH`.
 
@@ -135,13 +198,8 @@ No. pyautogen 0.2 transitively requires `openai<1.0`; autogen-agentchat
 need to migrate, uninstall pyautogen first, then install the `[autogen]`
 extra.
 
-**Python version matrix.** Python 3.11 and 3.12 are CI-covered
-(matrix `python-version: ['3.11', '3.12']` in
-`.github/workflows/agent-adapters.yml`). 3.10 is supported per
-`requires-python=">=3.10"` in `pyproject.toml` but not in CI. 3.13 is
-expected to work; raise an issue if you hit a snag. Python 3.9 is
-NOT supported — the underlying framework SDKs (crewai>=0.30,
-autogen-core>=0.4, openai-agents) require ≥3.10.
+**Python version matrix.** Python 3.9, 3.10, 3.11, 3.12 are CI-covered.
+3.13 is expected to work; raise an issue if you hit a snag.
 
 **Windows path caveat.** `cordum-mcp-bridge` must be on `PATH`. On
 Windows/MSYS use forward slashes or rely on `shutil.which`; the
@@ -163,4 +221,4 @@ engineering@cordum.io for commercial licensing.
 - [Cordum docs](https://cordum.io/docs)
 - [Cordum API reference](https://github.com/cordum/cordum/blob/main/docs/api/openapi/cordum-api.yaml)
 - [Changelog](CHANGELOG.md)
-- [Issues](https://github.com/cordum-io/cordum-packs/issues)
+- [Issues](https://github.com/cordum/cordum-packs/issues)

@@ -214,3 +214,103 @@ func TestJsonContent(t *testing.T) {
 	// Verify the result satisfies the mcp.ResourceContent struct shape.
 	_ = mcp.ResourceContent{}
 }
+
+// TestAuditLogTurnToolRegistered pins the cordum.audit.log_turn tool in
+// the bridge's advertised catalogue. Adapters look this name up via
+// list_tools; if it's missing they fall back to a debug log rather than
+// raising, so a silent rename would lose audit fidelity without any
+// test catching it.
+func TestAuditLogTurnToolRegistered(t *testing.T) {
+	b := &Bridge{}
+	tools := b.buildTools()
+
+	var found *mcp.Tool
+	for i := range tools {
+		if tools[i].Name == "cordum.audit.log_turn" {
+			found = &tools[i]
+			break
+		}
+	}
+	if found == nil {
+		t.Fatalf("cordum.audit.log_turn tool not found in bridge catalogue")
+	}
+
+	schema := found.InputSchema
+	if schema == nil {
+		t.Fatalf("inputSchema is nil")
+	}
+	required, ok := schema["required"].([]string)
+	if !ok {
+		t.Fatalf("required is not []string, got %T", schema["required"])
+	}
+	wantRequired := map[string]bool{"session_id": true, "turn": true}
+	for _, r := range required {
+		if !wantRequired[r] {
+			t.Errorf("unexpected required field %q", r)
+		}
+		delete(wantRequired, r)
+	}
+	if len(wantRequired) > 0 {
+		t.Errorf("missing required fields: %v", wantRequired)
+	}
+}
+
+// TestExecuteToolAuditLogTurn exercises the tool-body no-op path for
+// cordum.audit.log_turn: session_id required, turn required to be an
+// object, successful invocation returns a status envelope. The
+// gateway's MCP middleware emits the SIEMEvent for the enclosing
+// tools/call, so the body intentionally does no gateway I/O.
+func TestExecuteToolAuditLogTurn(t *testing.T) {
+	cases := []struct {
+		name    string
+		args    map[string]any
+		wantErr string
+	}{
+		{
+			name: "happy path",
+			args: map[string]any{
+				"session_id": "sess-1",
+				"turn":       map[string]any{"kind": "tool_call", "tool_name": "echo"},
+			},
+		},
+		{
+			name:    "missing session_id",
+			args:    map[string]any{"turn": map[string]any{"kind": "x"}},
+			wantErr: "session_id required",
+		},
+		{
+			name:    "turn not an object",
+			args:    map[string]any{"session_id": "sess-1", "turn": "not-a-map"},
+			wantErr: "turn must be an object",
+		},
+	}
+
+	b := &Bridge{}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			result, err := b.executeTool(t.Context(), "cordum.audit.log_turn", tc.args)
+			if tc.wantErr != "" {
+				if err == nil {
+					t.Fatalf("expected error %q, got result %+v", tc.wantErr, result)
+				}
+				if err.Error() != tc.wantErr {
+					t.Errorf("error: got %q, want %q", err.Error(), tc.wantErr)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			envelope, ok := result.(map[string]any)
+			if !ok {
+				t.Fatalf("result is not a map, got %T", result)
+			}
+			if envelope["status"] != "recorded" {
+				t.Errorf("status: got %v, want %q", envelope["status"], "recorded")
+			}
+			if envelope["session_id"] != "sess-1" {
+				t.Errorf("session_id: got %v, want %q", envelope["session_id"], "sess-1")
+			}
+		})
+	}
+}
