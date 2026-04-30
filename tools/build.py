@@ -58,6 +58,16 @@ def should_skip(path: Path, pack_dir: Path) -> bool:
     return False
 
 
+def is_sidecar_only(pack_dir: Path) -> bool:
+    """Return true for catalogless integration dirs that only ship a sidecar."""
+
+    try:
+        visible_entries = {entry.name for entry in pack_dir.iterdir() if not entry.name.startswith(".")}
+    except OSError:
+        return False
+    return visible_entries == {"sidecar"} and (pack_dir / "sidecar").is_dir()
+
+
 def build_bundle(pack_root: Path, pack_id: str, version: str) -> Path:
     out_dir = PUBLIC_DIR / "packs" / pack_id / version
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -132,14 +142,21 @@ def build_catalog_entry(manifest: dict, bundle_path: Path, base_url: str) -> dic
 def build_catalog(packs_dir: Path, base_url: str) -> list:
     entries = []
     for pack_dir in sorted(packs_dir.iterdir()):
-        if not pack_dir.is_dir():
+        if pack_dir.is_symlink():
+            print(f"skipping {pack_dir}: symlink is not a pack bundle", file=sys.stderr)
+            continue
+        try:
+            if not pack_dir.is_dir():
+                continue
+        except OSError as exc:
+            print(f"skipping {pack_dir}: cannot inspect entry ({exc})", file=sys.stderr)
             continue
         if should_skip(pack_dir, packs_dir):
             continue
         try:
             manifest, pack_root = find_manifest(pack_dir)
         except FileNotFoundError:
-            if pack_dir.is_symlink():
+            if is_sidecar_only(pack_dir):
                 print(f"skipping {pack_dir}: pack.yaml not found", file=sys.stderr)
                 continue
             raise
