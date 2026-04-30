@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import gzip
 import hashlib
 import json
 import os
@@ -16,6 +17,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PACKS_DIR = ROOT / "packs"
 PUBLIC_DIR = ROOT / "public"
 STATS_TEMPLATE = ROOT / "tools" / "templates" / "stats" / "index.html"
+DEFAULT_PACKS_BASE_URL = "https://packs.cordum.io"
 
 
 def find_manifest(pack_dir: Path) -> tuple[dict, Path]:
@@ -68,19 +70,56 @@ def is_sidecar_only(pack_dir: Path) -> bool:
     return visible_entries == {"sidecar"} and (pack_dir / "sidecar").is_dir()
 
 
-def build_bundle(pack_root: Path, pack_id: str, version: str) -> Path:
-    out_dir = PUBLIC_DIR / "packs" / pack_id / version
+def build_bundle(pack_root: Path, pack_id: str, version: str, public_dir: Path) -> Path:
+    out_dir = public_dir / "packs" / pack_id / version
     out_dir.mkdir(parents=True, exist_ok=True)
     bundle_path = out_dir / "pack.tgz"
     if bundle_path.exists():
         bundle_path.unlink()
-    with tarfile.open(bundle_path, "w:gz") as tar:
-        for path in pack_root.rglob("*"):
-            if not path.is_file() or should_skip(path, pack_root):
-                continue
-            arcname = path.relative_to(pack_root)
-            tar.add(path, arcname=str(arcname))
+    with bundle_path.open("wb") as raw_bundle:
+        with gzip.GzipFile(filename="", mode="wb", fileobj=raw_bundle, mtime=0) as gz_bundle:
+            with tarfile.open(fileobj=gz_bundle, mode="w") as tar:
+                for path in iter_bundle_files(pack_root):
+                    arcname = path.relative_to(pack_root).as_posix()
+                    tarinfo = tar.gettarinfo(str(path), arcname=arcname)
+                    tarinfo.uid = 0
+                    tarinfo.gid = 0
+                    tarinfo.uname = ""
+                    tarinfo.gname = ""
+                    tarinfo.mtime = 0
+                    with path.open("rb") as handle:
+                        tar.addfile(tarinfo, handle)
     return bundle_path
+
+
+def resolve_base_url(value: str | None) -> str:
+    base_url = str(value or DEFAULT_PACKS_BASE_URL).strip().rstrip("/")
+    return base_url or DEFAULT_PACKS_BASE_URL
+
+
+def verify_bundle_digest(bundle_path: Path, expected_sha256: str) -> None:
+    actual_sha256 = sha256_file(bundle_path)
+    if actual_sha256 != expected_sha256:
+        raise ValueError(
+            f"bundle digest mismatch for {bundle_path}: catalog={expected_sha256} actual={actual_sha256}"
+        )
+
+
+def verify_catalog_digests(entries: list, public_dir: Path) -> None:
+    for entry in entries:
+        pack_id = str(entry["id"])
+        version = str(entry["version"])
+        bundle_path = public_dir / "packs" / pack_id / version / "pack.tgz"
+        verify_bundle_digest(bundle_path, str(entry["sha256"]))
+
+
+def iter_bundle_files(pack_root: Path) -> list[Path]:
+    paths = []
+    for path in sorted(pack_root.rglob("*"), key=lambda item: item.relative_to(pack_root).as_posix()):
+        if not path.is_file() or should_skip(path, pack_root):
+            continue
+        paths.append(path)
+    return paths
 
 
 def sha256_file(path: Path) -> str:
@@ -139,7 +178,7 @@ def build_catalog_entry(manifest: dict, bundle_path: Path, base_url: str) -> dic
     }
 
 
-def build_catalog(packs_dir: Path, base_url: str) -> list:
+def build_catalog(packs_dir: Path, base_url: str, public_dir: Path) -> list:
     entries = []
     for pack_dir in sorted(packs_dir.iterdir()):
         if pack_dir.is_symlink():
@@ -165,7 +204,7 @@ def build_catalog(packs_dir: Path, base_url: str) -> list:
         version = str(metadata.get("version") or "").strip()
         if not pack_id or not version:
             raise ValueError(f"pack metadata.id/version required in {pack_dir}")
-        bundle_path = build_bundle(pack_root, pack_id, version)
+        bundle_path = build_bundle(pack_root, pack_id, version, public_dir)
         entries.append(build_catalog_entry(manifest, bundle_path, base_url))
     entries.sort(key=lambda item: item["id"])
     return entries
@@ -198,14 +237,14 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Build Cordum pack bundles and catalog.")
     parser.add_argument("--packs-dir", default=str(PACKS_DIR), help="Directory containing pack folders.")
     parser.add_argument("--public-dir", default=str(PUBLIC_DIR), help="Output directory for bundles + catalog.")
-    parser.add_argument("--base-url", default=os.environ.get("PACKS_BASE_URL", "https://packs.cordum.io"))
-    parser.add_argument("--domain", default=os.environ.get("PACKS_DOMAIN", "packs.cordum.io"))
+    parser.add_argument("--base-url", default=os.environ.get("PACKS_BASE_URL") or DEFAULT_PACKS_BASE_URL)
+    parser.add_argument("--domain", default=os.environ.get("PACKS_DOMAIN") or "packs.cordum.io")
     parser.add_argument("--clean", action="store_true", help="Remove existing public output before building.")
     args = parser.parse_args()
 
     packs_dir = Path(args.packs_dir)
     public_dir = Path(args.public_dir)
-    base_url = str(args.base_url).rstrip("/")
+    base_url = resolve_base_url(args.base_url)
     if not packs_dir.exists():
         print(f"packs dir not found: {packs_dir}", file=sys.stderr)
         return 1
@@ -221,7 +260,8 @@ def main() -> int:
             else:
                 child.unlink()
 
-    entries = build_catalog(packs_dir, base_url)
+    entries = build_catalog(packs_dir, base_url, public_dir)
+    verify_catalog_digests(entries, public_dir)
     public_dir.mkdir(parents=True, exist_ok=True)
     catalog_path = public_dir / "catalog.json"
     write_catalog(entries, catalog_path)
