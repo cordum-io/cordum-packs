@@ -1,26 +1,25 @@
 Metadata-Version: 2.4
 Name: cordum-adapters
-Version: 0.2.0.post387
+Version: 0.2.2.post5
 Summary: Cordum adapters for agent frameworks (CrewAI, AutoGen, OpenAI Agents, LangChain) over MCP.
 Author-email: Cordum <engineering@cordum.io>
 License: BSL-1.1
 Project-URL: Homepage, https://cordum.io
 Project-URL: Documentation, https://cordum.io/docs/adapters
-Project-URL: Repository, https://github.com/cordum/cordum-packs
-Project-URL: Issues, https://github.com/cordum/cordum-packs/issues
-Project-URL: Changelog, https://github.com/cordum/cordum-packs/blob/main/integrations/agent-adapters/CHANGELOG.md
+Project-URL: Repository, https://github.com/cordum-io/cordum-packs
+Project-URL: Issues, https://github.com/cordum-io/cordum-packs/issues
+Project-URL: Changelog, https://github.com/cordum-io/cordum-packs/blob/main/integrations/agent-adapters/CHANGELOG.md
 Keywords: cordum,mcp,crewai,autogen,openai,langchain,governance
 Classifier: Development Status :: 4 - Beta
 Classifier: Intended Audience :: Developers
 Classifier: License :: Other/Proprietary License
 Classifier: Operating System :: OS Independent
 Classifier: Programming Language :: Python :: 3
-Classifier: Programming Language :: Python :: 3.9
 Classifier: Programming Language :: Python :: 3.10
 Classifier: Programming Language :: Python :: 3.11
 Classifier: Programming Language :: Python :: 3.12
 Classifier: Topic :: Software Development :: Libraries :: Python Modules
-Requires-Python: >=3.9
+Requires-Python: >=3.10
 Description-Content-Type: text/markdown
 License-File: LICENSE
 Provides-Extra: crewai
@@ -70,7 +69,7 @@ with a one-line adapter plus your existing framework code.
 
 ## What this is
 
-`cordum-adapters` wraps the [Cordum MCP bridge](https://github.com/cordum/cordum-packs/tree/main/packs/mcp-bridge)
+`cordum-adapters` wraps the [Cordum MCP bridge](https://github.com/cordum-io/cordum-packs/tree/main/packs/mcp-bridge)
 as native tool objects for four agent frameworks:
 
 | Framework | Install | Tool type | Module |
@@ -105,8 +104,9 @@ pip install cordum-adapters[langchain]
 pip install cordum-adapters[all]              # picks modern AG2
 ```
 
-Python 3.9+ supported. `[dev]` adds pytest + build + twine for
-contributors.
+Python 3.10+ supported (framework deps `crewai>=0.30`, `autogen-core>=0.4`,
+`openai-agents>=0.1` all require ≥3.10). `[dev]` adds pytest + build +
+twine for contributors.
 
 ## MCP client quickstart (5 lines)
 
@@ -122,7 +122,7 @@ print([tool["name"] for tool in client.list_tools()])
 ```
 
 `cordum-mcp-bridge` is a Go binary shipped by
-[cordum-packs/packs/mcp-bridge](https://github.com/cordum/cordum-packs/tree/main/packs/mcp-bridge).
+[cordum-packs/packs/mcp-bridge](https://github.com/cordum-io/cordum-packs/tree/main/packs/mcp-bridge).
 Build with `go install` or copy from a release artefact onto your
 `$PATH`.
 
@@ -198,8 +198,13 @@ No. pyautogen 0.2 transitively requires `openai<1.0`; autogen-agentchat
 need to migrate, uninstall pyautogen first, then install the `[autogen]`
 extra.
 
-**Python version matrix.** Python 3.9, 3.10, 3.11, 3.12 are CI-covered.
-3.13 is expected to work; raise an issue if you hit a snag.
+**Python version matrix.** Python 3.11 and 3.12 are CI-covered
+(matrix `python-version: ['3.11', '3.12']` in
+`.github/workflows/agent-adapters.yml`). 3.10 is supported per
+`requires-python=">=3.10"` in `pyproject.toml` but not in CI. 3.13 is
+expected to work; raise an issue if you hit a snag. Python 3.9 is
+NOT supported — the underlying framework SDKs (crewai>=0.30,
+autogen-core>=0.4, openai-agents) require ≥3.10.
 
 **Windows path caveat.** `cordum-mcp-bridge` must be on `PATH`. On
 Windows/MSYS use forward slashes or rely on `shutil.which`; the
@@ -221,4 +226,4 @@ engineering@cordum.io for commercial licensing.
 - [Cordum docs](https://cordum.io/docs)
 - [Cordum API reference](https://github.com/cordum/cordum/blob/main/docs/api/openapi/cordum-api.yaml)
 - [Changelog](CHANGELOG.md)
-- [Issues](https://github.com/cordum/cordum-packs/issues)
+- [Issues](https://github.com/cordum-io/cordum-packs/issues)

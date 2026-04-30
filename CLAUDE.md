@@ -49,6 +49,25 @@ packs/<pack-name>/
 
 The `pack.yaml` defines what topics the pack handles, input/output schemas, bundled workflows, and policy overlays.
 
+#### Topic Registry integration (added 2026-04)
+
+`pack install` now registers each declared topic in the cordum control-plane Topic Registry (`/api/v1/topics`); `pack uninstall` removes them. Pack manifest declarations include:
+
+- `inputSchema` / `outputSchema` — JSON Schema draft-07 references that the gateway validates at job-submit time when `SCHEMA_ENFORCEMENT=warn|enforce` is set on the cordum side.
+- `pool` — target worker pool (must exist or be auto-provisioned).
+- `pack_id` — back-reference to the owning pack.
+
+Manifests must keep the schema files under `pack/schemas/` consistent with what the worker actually accepts and emits — submit-time schema enforcement on the cordum side will reject jobs whose payloads don't match the registered shape.
+
+`cordumctl pack verify <pack_id>` runs policy simulation tests against the registered topics and pack policies before publish.
+
+### Cordum platform context (recent)
+
+For website / marketing copy or for generated docs, note:
+
+- `cordum-enterprise` repo retired 2026-04-23. Enterprise features (SAML/OIDC SSO, SCIM, advanced RBAC, SIEM export, legal hold) are now in core `cordum` behind license entitlements. Packs do not need to be re-licensed per environment; they remain BUSL-1.1.
+- CAP protocol v2.9.0: `Agent.Start()` auto-publishes `Handshake{ready_topics, auth_token}`. SDK consumers don't need to call `publishHandshake()` manually anymore.
+
 ## 28 Packs by Category
 
 | Category | Packs |

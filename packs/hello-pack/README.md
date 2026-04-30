@@ -50,3 +50,32 @@ curl -sS -X POST http://localhost:8081/api/v1/workflows/hello-pack.echo/runs \
 ```bash
 go run ./cmd/cordumctl pack uninstall hello-pack
 ```
+
+## Signing (reference workflow)
+
+Every published pack ships with an Ed25519 signature that binds
+`pack.yaml` and its referenced schemas/workflows/overlays to a
+known publisher. The toolchain is documented at
+[`docs/packs/signing.md`](../../../cordum/docs/packs/signing.md); the
+short version for this reference pack is:
+
+```bash
+# One-time: generate a signing key.
+cordumctl pack keygen
+
+# Sign the pack. Writes pack.yaml.sig next to pack.yaml.
+cordumctl pack sign packs/hello-pack
+
+# Export the public key for registry submission.
+cordumctl pack export-key
+
+# Operators verify with a trusted keyring.
+cordumctl pack verify-signature packs/hello-pack \
+  --trusted-keys /etc/cordum/trusted-pack-keys
+```
+
+This reference pack intentionally does **not** ship a checked-in
+`pack.yaml.sig`. Committing a signing key (even labelled
+"test-only") invites drive-by copy-paste into a production pack;
+the round-trip is proven by `cmd/cordumctl/pack_sign_test.go`
+instead.
