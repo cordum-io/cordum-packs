@@ -1,0 +1,15 @@
+.git
+.gomodcache
+.worktrees
+bin
+dist
+vendor
+node_modules
+**/node_modules
+*.log
+*.tmp
+*.test
+*.out
+*.exe
+.env*
+credentials*

@@ -3,8 +3,8 @@ version: "3.9"
 services:
   fetcher:
     build:
-      context: ..
-      dockerfile: Dockerfile
+      context: ../../..
+      dockerfile: packs/incident-enricher/Dockerfile
       args:
         SERVICE: fetcher
     env_file:
@@ -15,8 +15,8 @@ services:
 
   summarizer:
     build:
-      context: ..
-      dockerfile: Dockerfile
+      context: ../../..
+      dockerfile: packs/incident-enricher/Dockerfile
       args:
         SERVICE: summarizer
     env_file:
@@ -27,8 +27,8 @@ services:
 
   poster:
     build:
-      context: ..
-      dockerfile: Dockerfile
+      context: ../../..
+      dockerfile: packs/incident-enricher/Dockerfile
       args:
         SERVICE: poster
     env_file:
@@ -39,8 +39,8 @@ services:
 
   ingester:
     build:
-      context: ..
-      dockerfile: Dockerfile
+      context: ../../..
+      dockerfile: packs/incident-enricher/Dockerfile
       args:
         SERVICE: ingester
     env_file:
