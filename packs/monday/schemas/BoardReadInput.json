@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["boardId"],
+  "properties": {
+    "boardId": {"type": ["string", "integer"]},
+    "includeColumns": {"type": "boolean", "default": true},
+    "limit": {"type": "integer", "minimum": 1, "maximum": 500}
+  },
+  "additionalProperties": false
+}

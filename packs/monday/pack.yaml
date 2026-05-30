@@ -1,0 +1,99 @@
+apiVersion: cordum.io/v1alpha1
+kind: Pack
+
+metadata:
+  id: monday
+  version: 0.1.0
+  title: Monday.com
+  description: >
+    Monday.com policy and topic bundle for governing board reads, status-column
+    updates, and server-classified destructive GraphQL operations.
+
+compatibility:
+  protocolVersion: 1
+  minCoreVersion: 0.6.0
+
+topics:
+  - name: job.monday.board.read
+    capability: monday.board.read
+    inputSchema: monday/BoardReadInput
+    outputSchema: monday/BoardReadOutput
+    riskTags: ["read"]
+    requires: ["network:egress"]
+
+  - name: job.monday.status.update
+    capability: monday.status.update
+    inputSchema: monday/StatusUpdateInput
+    outputSchema: monday/StatusUpdateOutput
+    riskTags: ["write", "status_update"]
+    requires: ["network:egress"]
+
+  - name: job.monday.graphql.read
+    capability: monday.graphql.read
+    inputSchema: monday/GraphQLInput
+    outputSchema: monday/GraphQLOutput
+    riskTags: ["read", "graphql"]
+    requires: ["network:egress"]
+
+  - name: job.monday.graphql.write
+    capability: monday.graphql.write
+    inputSchema: monday/GraphQLInput
+    outputSchema: monday/GraphQLOutput
+    riskTags: ["write", "graphql"]
+    requires: ["network:egress"]
+
+  - name: job.monday.graphql.destructive
+    capability: monday.graphql.destructive
+    inputSchema: monday/GraphQLInput
+    outputSchema: monday/GraphQLOutput
+    riskTags: ["destructive", "graphql"]
+    requires: ["network:egress"]
+
+resources:
+  schemas:
+    - id: monday/BoardReadInput
+      path: schemas/BoardReadInput.json
+    - id: monday/BoardReadOutput
+      path: schemas/BoardReadOutput.json
+    - id: monday/StatusUpdateInput
+      path: schemas/StatusUpdateInput.json
+    - id: monday/StatusUpdateOutput
+      path: schemas/StatusUpdateOutput.json
+    - id: monday/GraphQLInput
+      path: schemas/GraphQLInput.json
+    - id: monday/GraphQLOutput
+      path: schemas/GraphQLOutput.json
+  workflows: []
+
+overlays:
+  policy:
+    - name: monday
+      strategy: bundle_fragment
+      path: overlays/policy.fragment.yaml
+
+tests:
+  policySimulations:
+    - name: read_allowed
+      request:
+        tenantId: default
+        topic: job.monday.board.read
+        riskTags: ["read"]
+      expectDecision: ALLOW
+    - name: status_update_allowed
+      request:
+        tenantId: default
+        topic: job.monday.status.update
+        riskTags: ["write", "status_update"]
+      expectDecision: ALLOW
+    - name: destructive_denied
+      request:
+        tenantId: default
+        topic: job.monday.graphql.destructive
+        riskTags: ["destructive", "graphql"]
+      expectDecision: DENY
+    - name: spoofed_destructive_still_denied
+      request:
+        tenantId: default
+        topic: job.monday.graphql.destructive
+        riskTags: ["read"]
+      expectDecision: DENY

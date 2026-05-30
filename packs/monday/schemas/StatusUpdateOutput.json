@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "message": {"type": "string"},
+    "item_id": {"type": "string"},
+    "item_name": {"type": "string"},
+    "item_url": {"type": "string"}
+  },
+  "additionalProperties": true
+}
