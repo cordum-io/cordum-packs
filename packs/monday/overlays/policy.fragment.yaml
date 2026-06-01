@@ -1,0 +1,36 @@
+version: v1
+rules:
+  - id: monday-read-allow
+    match:
+      topics:
+        - job.monday.board.read
+        - job.monday.graphql.read
+      risk_tags:
+        - read
+    decision: allow
+    reason: "Monday read-only operations are allowed for the demo sandbox."
+
+  - id: monday-status-update-allow
+    match:
+      topics:
+        - job.monday.status.update
+      risk_tags:
+        - status_update
+    decision: allow
+    reason: "Monday sandbox status-column updates are allowed."
+
+  - id: monday-destructive-deny
+    match:
+      topics:
+        - job.monday.graphql.destructive
+    decision: deny
+    reason: "Monday destructive GraphQL operations are denied unless a separate content-aware MCP gate explicitly allows them."
+
+  - id: monday-generic-write-review
+    match:
+      topics:
+        - job.monday.graphql.write
+      risk_tags:
+        - write
+    decision: require_approval
+    reason: "General Monday GraphQL writes require human approval."

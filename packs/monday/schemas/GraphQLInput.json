@@ -1,0 +1,10 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["query"],
+  "properties": {
+    "query": {"type": "string"},
+    "variables": {"type": ["object", "null"]}
+  },
+  "additionalProperties": false
+}

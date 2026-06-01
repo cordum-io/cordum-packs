@@ -1,0 +1,24 @@
+id: monday.board-read
+name: Monday Board Read
+description: Read a Monday.com board through a single governed worker step.
+version: "0.1.0"
+timeout_sec: 30
+steps:
+  read:
+    id: read
+    name: Read board
+    type: worker
+    topic: job.monday.board.read
+    input:
+      boardId: ${input.boardId}
+      includeColumns: ${input.includeColumns}
+      limit: ${input.limit}
+    input_schema_id: monday/BoardReadInput
+    output_schema_id: monday/BoardReadOutput
+    meta:
+      pack_id: monday
+      capability: monday.board.read
+      risk_tags:
+        - read
+      requires:
+        - "network:egress"
