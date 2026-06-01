@@ -1,0 +1,29 @@
+{
+  "simulations": [
+    {
+      "name": "read_allowed",
+      "request": {"tenantId": "default", "topic": "job.monday.board.read", "riskTags": ["read"]},
+      "expectDecision": "ALLOW"
+    },
+    {
+      "name": "status_update_allowed",
+      "request": {"tenantId": "default", "topic": "job.monday.status.update", "riskTags": ["write", "status_update"]},
+      "expectDecision": "ALLOW"
+    },
+    {
+      "name": "graphql_write_requires_approval",
+      "request": {"tenantId": "default", "topic": "job.monday.graphql.write", "riskTags": ["write", "graphql"]},
+      "expectDecision": "REQUIRE_APPROVAL"
+    },
+    {
+      "name": "destructive_denied",
+      "request": {"tenantId": "default", "topic": "job.monday.graphql.destructive", "riskTags": ["destructive", "graphql"]},
+      "expectDecision": "DENY"
+    },
+    {
+      "name": "spoofed_destructive_still_denied",
+      "request": {"tenantId": "default", "topic": "job.monday.graphql.destructive", "riskTags": ["read"]},
+      "expectDecision": "DENY"
+    }
+  ]
+}

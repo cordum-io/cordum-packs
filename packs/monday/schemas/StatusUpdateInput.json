@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["boardId", "itemId", "columnValues"],
+  "properties": {
+    "boardId": {"type": ["string", "integer"]},
+    "itemId": {"type": ["string", "integer"]},
+    "columnValues": {"type": ["string", "object"]}
+  },
+  "additionalProperties": false
+}
