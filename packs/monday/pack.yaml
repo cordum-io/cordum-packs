@@ -63,9 +63,22 @@ resources:
       path: schemas/GraphQLInput.json
     - id: monday/GraphQLOutput
       path: schemas/GraphQLOutput.json
-  workflows: []
+  workflows:
+    - id: monday.board-read
+      path: workflows/board_read.yaml
 
 overlays:
+  config:
+    - name: pools
+      scope: system
+      key: pools
+      strategy: json_merge_patch
+      path: overlays/pools.patch.yaml
+    - name: timeouts
+      scope: system
+      key: timeouts
+      strategy: json_merge_patch
+      path: overlays/timeouts.patch.yaml
   policy:
     - name: monday
       strategy: bundle_fragment

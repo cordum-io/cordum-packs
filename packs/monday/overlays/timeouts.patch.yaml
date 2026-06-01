@@ -1,0 +1,16 @@
+topics:
+  job.monday.board.read:
+    timeout_seconds: 30
+    max_retries: 2
+  job.monday.status.update:
+    timeout_seconds: 30
+    max_retries: 2
+  job.monday.graphql.read:
+    timeout_seconds: 30
+    max_retries: 2
+  job.monday.graphql.write:
+    timeout_seconds: 30
+    max_retries: 1
+  job.monday.graphql.destructive:
+    timeout_seconds: 30
+    max_retries: 0

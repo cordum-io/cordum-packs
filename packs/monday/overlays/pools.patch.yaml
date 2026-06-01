@@ -1,0 +1,10 @@
+topics:
+  job.monday.board.read: monday
+  job.monday.status.update: monday
+  job.monday.graphql.read: monday
+  job.monday.graphql.write: monday
+  job.monday.graphql.destructive: monday
+pools:
+  monday:
+    requires:
+      - "network:egress"
