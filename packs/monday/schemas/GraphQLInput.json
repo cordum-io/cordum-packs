@@ -4,7 +4,7 @@
   "required": ["query"],
   "properties": {
     "query": {"type": "string"},
-    "variables": {"type": ["string", "object", "null"]}
+    "variables": {"type": ["object", "null"]}
   },
   "additionalProperties": false
 }

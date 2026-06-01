@@ -98,6 +98,12 @@ tests:
         topic: job.monday.status.update
         riskTags: ["write", "status_update"]
       expectDecision: ALLOW
+    - name: graphql_write_requires_approval
+      request:
+        tenantId: default
+        topic: job.monday.graphql.write
+        riskTags: ["write", "graphql"]
+      expectDecision: REQUIRE_APPROVAL
     - name: destructive_denied
       request:
         tenantId: default

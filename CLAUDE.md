@@ -41,7 +41,7 @@ python tools/pack_scaffold.py my-pack --title "My Pack" --description "..."
 
 ## Pack Structure
 
-```
+```text
 packs/<pack-name>/
 ├── pack/                       # the installable bundle (build.py also accepts pack.yaml at pack root)
 │   ├── pack.yaml               # manifest (see below)
@@ -112,7 +112,7 @@ Python package (PyPI distribution name `cordum-adapters`, import `cordum_agent_a
 | Cloud (bundle-only) | aws, azure, gcp |
 | Monitoring | datadog, opentelemetry, prometheus-query, sentry |
 | Communication | slack, msteams, pagerduty |
-| VCS/CI/IaC | github, gitlab, terraform |
+| VCS/CI/IaC | GitHub, gitlab, terraform |
 | Ticketing | jira, servicenow |
 | Infrastructure | kubernetes-triage, vault |
 | MCP / Bridge | mcp-bridge, mcp-client, webhooks |
