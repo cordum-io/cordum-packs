@@ -199,8 +199,24 @@ func (w *Worker) dispatch(ctx context.Context, msg *nats.Msg, handler func(conte
 		return
 	}
 	if w.sem != nil {
-		w.sem <- struct{}{}
-		atomic.AddInt32(&w.active, 1)
+		// Acquire a slot or bail out when the run context ends: a canceled
+		// worker must not keep the NATS callback blocked on a full semaphore
+		// (that wedges Close's Drain and stalls the subscription).
+		select {
+		case w.sem <- struct{}{}:
+			atomic.AddInt32(&w.active, 1)
+		case <-ctx.Done():
+			return
+		}
+		// Defense in depth: do not START new work once shutdown has begun.
+		// A handler that is already running keeps running and still publishes
+		// its result (Drain flushes pending publishes); cancellation only
+		// refuses new work.
+		if ctx.Err() != nil {
+			<-w.sem
+			atomic.AddInt32(&w.active, -1)
+			return
+		}
 	}
 
 	go func() {
