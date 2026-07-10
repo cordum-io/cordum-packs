@@ -26,7 +26,7 @@ jobs:
     outputs:
       matrix: ${{ steps.scan.outputs.matrix }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Scan packs
         id: scan
@@ -67,17 +67,17 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Checkout CAP
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: cordum-io/cap
           path: .deps/cap
           fetch-depth: 1
 
       - name: Checkout Cordum
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: cordum-io/cordum
           path: .deps/cordum
@@ -114,17 +114,17 @@ jobs:
       max-parallel: 10
       matrix: ${{ fromJson(needs.discover.outputs.matrix) }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Checkout CAP
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: cordum-io/cap
           path: .deps/cap
           fetch-depth: 1
 
       - name: Checkout Cordum
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: cordum-io/cordum
           path: .deps/cordum
