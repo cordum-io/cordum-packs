@@ -70,7 +70,7 @@ jobs:
           - openai-agents
           - langchain
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           # setuptools-scm derives version from git tags; we need full
           # depth so the build step finds the adapters-v* tag history.
@@ -101,7 +101,7 @@ jobs:
     outputs:
       dist-path: integrations/agent-adapters/dist
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 

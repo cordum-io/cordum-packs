@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -77,14 +77,14 @@ jobs:
           ignore-unfixed: true
 
       - name: Checkout Go dependency sources
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: cordum-io/cap
           path: .deps/cap
           fetch-depth: 1
 
       - name: Checkout Cordum SDK source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: cordum-io/cordum
           path: .deps/cordum
@@ -127,7 +127,7 @@ jobs:
       PACKS_DOMAIN: ${{ secrets.PACKS_DOMAIN }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -172,7 +172,7 @@ jobs:
       name: production
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Download public artifact
         uses: actions/download-artifact@v4
