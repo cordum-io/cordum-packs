@@ -7,7 +7,7 @@ require (
 	github.com/cordum/cordum/sdk v0.2.0
 	github.com/nats-io/nats.go v1.52.0
 	github.com/redis/go-redis/v9 v9.21.0
-	google.golang.org/protobuf v1.36.11
+	google.golang.org/protobuf v1.36.12
 )
 
 require (
