@@ -30,6 +30,11 @@ jobs:
           go-version-file: sdk/go.mod
           cache: false
 
+      # setup-go v6+ exports GOTOOLCHAIN=local; packs may require a newer go than sdk/go.mod.
+      - name: Fix Go env
+        if: matrix.language == 'go'
+        run: echo "GOTOOLCHAIN=auto" >> "$GITHUB_ENV"
+
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v4
         with:

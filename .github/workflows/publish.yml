@@ -48,6 +48,10 @@ jobs:
         with:
           go-version: "1.25.8"
 
+      # setup-go v6+ exports GOTOOLCHAIN=local; let go switch to each module's go directive.
+      - name: Fix Go env
+        run: echo "GOTOOLCHAIN=auto" >> "$GITHUB_ENV"
+
       - name: Go format check
         run: |
           set -euo pipefail
