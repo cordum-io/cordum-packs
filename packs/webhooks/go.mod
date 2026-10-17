@@ -1,6 +1,6 @@
 module github.com/cordum-io/cordum-packs/packs/webhooks
 
-go 1.25.9
+go 1.25.12
 
 require github.com/cordum/cordum/sdk v0.2.0
 
