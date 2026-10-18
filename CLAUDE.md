@@ -11,7 +11,7 @@ There are **25 packs** under `packs/`. Of these, 21 ship Go runtime code (a `go.
 - **No root `go.mod`** — each Go pack is an independent module (the root `go.sum` is empty/vestigial).
 - **Pack module path:** `github.com/cordum-io/cordum-packs/packs/<name>`
 - **Shared SDK module:** `github.com/cordum/cordum/sdk` (in `sdk/`), consumed via a local `replace github.com/cordum/cordum/sdk => ../../sdk` directive in each pack's `go.mod` (version pinned `v0.2.0`).
-- **Go:** 1.25.12 (1.26.0 in packs on nats.go v1.54). **CAP:** `github.com/cordum-io/cap/v2 v2.17.0`, kept identical across the SDK and every pack by `sdk/runtime/cap_version_consistency_test.go`. Deps: NATS, redis/go-redis, gRPC, Protobuf.
+- **Go:** 1.26.0 (golang.org/x/net v0.60.0 requires it). **CAP:** `github.com/cordum-io/cap/v2 v2.17.0`, kept identical across the SDK and every pack by `sdk/runtime/cap_version_consistency_test.go`. Deps: NATS, redis/go-redis, gRPC, Protobuf.
 
 ## Common Commands
 

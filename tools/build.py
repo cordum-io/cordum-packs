@@ -76,19 +76,19 @@ def build_bundle(pack_root: Path, pack_id: str, version: str, public_dir: Path) 
     bundle_path = out_dir / "pack.tgz"
     if bundle_path.exists():
         bundle_path.unlink()
-    with bundle_path.open("wb") as raw_bundle:
-        with gzip.GzipFile(filename="", mode="wb", fileobj=raw_bundle, mtime=0) as gz_bundle:
-            with tarfile.open(fileobj=gz_bundle, mode="w") as tar:
-                for path in iter_bundle_files(pack_root):
-                    arcname = path.relative_to(pack_root).as_posix()
-                    tarinfo = tar.gettarinfo(str(path), arcname=arcname)
-                    tarinfo.uid = 0
-                    tarinfo.gid = 0
-                    tarinfo.uname = ""
-                    tarinfo.gname = ""
-                    tarinfo.mtime = 0
-                    with path.open("rb") as handle:
-                        tar.addfile(tarinfo, handle)
+    with bundle_path.open("wb") as raw_bundle, gzip.GzipFile(
+        filename="", mode="wb", fileobj=raw_bundle, mtime=0
+    ) as gz_bundle, tarfile.open(fileobj=gz_bundle, mode="w") as tar:
+        for path in iter_bundle_files(pack_root):
+            arcname = path.relative_to(pack_root).as_posix()
+            tarinfo = tar.gettarinfo(str(path), arcname=arcname)
+            tarinfo.uid = 0
+            tarinfo.gid = 0
+            tarinfo.uname = ""
+            tarinfo.gname = ""
+            tarinfo.mtime = 0
+            with path.open("rb") as handle:
+                tar.addfile(tarinfo, handle)
     return bundle_path
 
 
