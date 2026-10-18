@@ -6,7 +6,7 @@ import json
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 try:
     import yaml
@@ -21,7 +21,7 @@ PACKS_DIR = ROOT / "packs"
 class PackAudit:
     pack_dir: Path
     pack_id: str
-    errors: List[str]
+    errors: list[str]
 
 
 def should_skip(path: Path, packs_dir: Path) -> bool:
@@ -34,7 +34,7 @@ def should_skip(path: Path, packs_dir: Path) -> bool:
     return False
 
 
-def find_manifest(pack_dir: Path) -> Tuple[Dict[str, Any], Path]:
+def find_manifest(pack_dir: Path) -> tuple[dict[str, Any], Path]:
     candidates = (
         pack_dir / "pack.yaml",
         pack_dir / "pack.yml",
@@ -57,7 +57,7 @@ def _has_files(path: Path, pattern: str) -> bool:
 
 
 def audit_pack(pack_dir: Path) -> PackAudit:
-    errors: List[str] = []
+    errors: list[str] = []
     pack_id = pack_dir.name
 
     try:
@@ -103,7 +103,7 @@ def audit_pack(pack_dir: Path) -> PackAudit:
     return PackAudit(pack_dir=pack_dir, pack_id=str(pack_id), errors=errors)
 
 
-def render_text(results: List[PackAudit]) -> int:
+def render_text(results: list[PackAudit]) -> int:
     total_errors = sum(len(result.errors) for result in results)
     if not total_errors:
         print("All packs passed audit.")
@@ -119,7 +119,7 @@ def render_text(results: List[PackAudit]) -> int:
     return 1
 
 
-def render_json(results: List[PackAudit]) -> int:
+def render_json(results: list[PackAudit]) -> int:
     payload = [
         {"pack": result.pack_id, "path": str(result.pack_dir), "errors": result.errors}
         for result in results
@@ -139,7 +139,7 @@ def main() -> int:
         print(f"packs dir not found: {packs_dir}", file=sys.stderr)
         return 2
 
-    results: List[PackAudit] = []
+    results: list[PackAudit] = []
     for pack_dir in sorted(packs_dir.iterdir()):
         if not pack_dir.is_dir():
             continue

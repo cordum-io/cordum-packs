@@ -39,8 +39,7 @@ def iter_lines(path: Path):
     else:
         opener = open
     with opener(path, "rt", encoding="utf-8", errors="replace") as handle:
-        for line in handle:
-            yield line
+        yield from handle
 
 
 def parse_line(line: str):

@@ -1,0 +1,3 @@
+# tools/stats/packs_log_stats.py runs on the packs server, so keep the
+# syntax portable to older Pythons (no datetime.UTC, which needs 3.11).
+target-version = "py39"
