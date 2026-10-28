@@ -25,8 +25,10 @@ def pytest_collection_modifyitems(config: pytest.Config, items: list) -> None:
     skip_marker = pytest.mark.skip(
         reason=f"set {E2E_FLAG}=1 to run integration tests"
     )
+    integration_dir = Path(__file__).parent
     for item in items:
-        item.add_marker(skip_marker)
+        if integration_dir in item.path.parents:
+            item.add_marker(skip_marker)
 
 
 @pytest.fixture

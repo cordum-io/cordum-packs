@@ -1,0 +1,26 @@
+default_decision: deny
+rules:
+  - id: langgraph-demo-allow-run
+    match:
+      topics: [job.mcp-bridge.tool]
+      capabilities: [cordum.workflow.run]
+      mcp:
+        allow_tools: [cordum.workflow.run]
+    decision: allow
+    reason: Local transform workflow may run.
+  - id: langgraph-demo-deny-cancel
+    match:
+      topics: [job.mcp-bridge.tool]
+      capabilities: [cordum.workflow.cancel]
+      mcp:
+        allow_tools: [cordum.workflow.cancel]
+    decision: deny
+    reason: Cancellation is forbidden in this educational fixture.
+  - id: langgraph-demo-approve-rerun
+    match:
+      topics: [job.mcp-bridge.tool]
+      capabilities: [cordum.workflow.rerun]
+      mcp:
+        allow_tools: [cordum.workflow.rerun]
+    decision: require_approval
+    reason: A second operator must approve rerunning this local workflow.
