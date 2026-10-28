@@ -10,10 +10,10 @@ import json
 import sys
 from pathlib import Path
 
-import httpx
 import pytest
 
 pytest.importorskip("langgraph")
+httpx = pytest.importorskip("httpx")
 from cordum_agent_adapters.mcp_client import McpToolError
 from langchain_core.tools import BaseTool
 from langgraph.types import Command

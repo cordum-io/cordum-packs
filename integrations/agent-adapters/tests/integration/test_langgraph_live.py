@@ -11,10 +11,10 @@ import os
 from pathlib import Path
 from urllib.parse import urlparse
 
-import httpx
 import pytest
 
 pytest.importorskip("langgraph")
+httpx = pytest.importorskip("httpx")
 redis = pytest.importorskip("redis")
 from cordum_agent_adapters.mcp_client import McpStdioClient
 from langgraph.types import Command

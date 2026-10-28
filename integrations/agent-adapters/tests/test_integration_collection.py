@@ -1,6 +1,8 @@
 """The integration opt-in must leave normal unit tests runnable."""
 
 import importlib.util
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -45,3 +47,32 @@ def test_enabled_integration_tests_are_not_skipped(collection_hook, monkeypatch,
     collection_hook(mocker.Mock(), [integration])
 
     integration.add_marker.assert_not_called()
+
+
+def test_graph_modules_skip_without_optional_http_client():
+    """Other framework extras need not install the demo's HTTP client."""
+    tests_dir = Path(__file__).parent
+    script = """
+import importlib.abc
+import runpy
+import sys
+import pytest
+
+class WithoutHttpx(importlib.abc.MetaPathFinder):
+    def find_spec(self, fullname, path=None, target=None):
+        if fullname.split('.')[0] == 'httpx':
+            raise ModuleNotFoundError("No module named 'httpx'", name='httpx')
+sys.meta_path.insert(0, WithoutHttpx())
+for path in sys.argv[1:]:
+    try:
+        runpy.run_path(path)
+    except pytest.skip.Exception:
+        continue
+    raise AssertionError('Expected optional-dependency skip: ' + path)
+"""
+    result = subprocess.run(
+        [sys.executable, "-c", script, str(tests_dir / "test_langgraph_demo.py"),
+         str(tests_dir / "integration" / "test_langgraph_live.py")],
+        capture_output=True, text=True, timeout=15, check=False,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
