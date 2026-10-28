@@ -21,6 +21,17 @@ BIN = HERE / "bin"
 FLAGS = subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0
 
 
+def ports_for_offset(offset: int) -> dict[str, int]:
+    """Keep original ports by default; permit independent disposable demos."""
+    if not 0 <= offset <= 46440:
+        raise ValueError("port offset must be between 0 and 46440")
+    return {name: port + offset for name, port in {
+        "nats": 14222, "redis": 16379, "gateway_http": 18081,
+        "gateway_grpc": 18080, "gateway_metrics": 19092,
+        "scheduler_metrics": 19090, "safety": 15051, "safety_admin": 19095,
+    }.items()}
+
+
 def write_private_json(path: Path, payload: dict) -> None:
     """Create a secret-bearing runtime file exclusively with owner-only mode."""
     fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
@@ -35,7 +46,13 @@ def write_private_json(path: Path, payload: dict) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("core_source", type=Path, help="clean isolated Cordum Core checkout")
-    source = parser.parse_args().core_source.resolve()
+    parser.add_argument("--port-offset", type=int, default=0, help="add to every loopback listener (0-46440)")
+    args = parser.parse_args()
+    try:
+        ports = ports_for_offset(args.port_offset)
+    except ValueError as exc:
+        parser.error(str(exc))
+    source = args.core_source.resolve()
     if not (source / "go.mod").is_file():
         raise SystemExit("Pass an isolated Cordum core checkout")
     revision = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=source, text=True).strip()
@@ -50,18 +67,18 @@ def main() -> None:
     try:
         if (HERE / "runtime.json").exists() or (HERE / "compose.runtime.json").exists():
             raise SystemExit("Existing runtime files found; inspect the prior fixture before starting another")
-        serve(source, revision)
+        serve(source, revision, ports)
     finally:
         lock_path.unlink(missing_ok=True)
 
 
-def serve(source: Path, revision: str) -> None:
+def serve(source: Path, revision: str, ports: dict[str, int]) -> None:
     BIN.mkdir(exist_ok=True)
     requester, approver, redis_pass, nats_token = [secrets.token_hex(24) for _ in range(4)]
     project = f"cordum-langgraph-{os.getpid()}-{secrets.token_hex(4)}"
     compose = HERE / "compose.runtime.json"
     runtime_path = HERE / "runtime.json"
-    nats_port, redis_port, gateway_port = 14222, 16379, 18081
+    nats_port, redis_port, gateway_port = ports["nats"], ports["redis"], ports["gateway_http"]
     compose_config = {"services": {
         "nats": {
             "image": "nats@sha256:5498ba57b9471840be3d15b033a4eec554d1c02fa6c2cc0ca2d888637f6c6e2f",
@@ -90,8 +107,8 @@ def serve(source: Path, revision: str) -> None:
         "NATS_URL": f"nats://{nats_token}@127.0.0.1:{nats_port}",
         "NATS_USE_JETSTREAM": "1",
         "REDIS_URL": f"redis://:{redis_pass}@127.0.0.1:{redis_port}",
-        "SAFETY_KERNEL_ADDR": "127.0.0.1:15051",
-        "SAFETY_KERNEL_ADMIN_ADDR": "127.0.0.1:19095",
+        "SAFETY_KERNEL_ADDR": f"127.0.0.1:{ports['safety']}",
+        "SAFETY_KERNEL_ADMIN_ADDR": f"127.0.0.1:{ports['safety_admin']}",
         "SAFETY_POLICY_PATH": str(HERE / "safety.yaml"),
         "POOL_CONFIG_PATH": str(HERE / "pools.yaml"),
         "TIMEOUT_CONFIG_PATH": str(HERE / "timeouts.yaml"),
@@ -99,9 +116,9 @@ def serve(source: Path, revision: str) -> None:
         "OUTPUT_POLICY_ENABLED": "false", "TENANT_ID": "default",
         "CORDUM_API_KEY": requester, "CORDUM_API_KEYS": requester + "," + approver,
         "GATEWAY_HTTP_ADDR": f"127.0.0.1:{gateway_port}",
-        "GATEWAY_GRPC_ADDR": "127.0.0.1:18080",
-        "GATEWAY_METRICS_ADDR": "127.0.0.1:19092",
-        "SCHEDULER_METRICS_ADDR": "127.0.0.1:19090",
+        "GATEWAY_GRPC_ADDR": f"127.0.0.1:{ports['gateway_grpc']}",
+        "GATEWAY_METRICS_ADDR": f"127.0.0.1:{ports['gateway_metrics']}",
+        "SCHEDULER_METRICS_ADDR": f"127.0.0.1:{ports['scheduler_metrics']}",
     })
     services = ["cordum-safety-kernel", "cordum-scheduler", "cordum-api-gateway"]
     processes, logs, created_files = [], [], []
@@ -156,6 +173,8 @@ def serve(source: Path, revision: str) -> None:
             "tenant_id": "default", "nats_url": env["NATS_URL"], "redis_url": env["REDIS_URL"],
             "workflow_id": workflow_id, "source_run_id": source_run_id,
             "core_revision": revision, "project": project,
+            "scheduler_metrics_url": f"http://127.0.0.1:{ports['scheduler_metrics']}/metrics",
+            "gateway_metrics_url": f"http://127.0.0.1:{ports['gateway_metrics']}/metrics",
             "go_version": subprocess.check_output(["go", "version"], cwd=source, text=True).strip(),
             "python_version": sys.version.split()[0],
         }

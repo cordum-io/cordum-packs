@@ -65,6 +65,11 @@ Build with `go install` or copy from a release artefact onto your
 
 ## CrewAI — 15-minute tutorial
 
+[Run the native CrewAI governance demo](docs/crewai-governance.md) for real
+allow, deny, separate-operator approval, and same-job observation against a
+disposable local control plane. It uses no model provider and explicitly
+depends on the unmerged PR418 bridge/fixture work.
+
 ```python
 from cordum_agent_adapters.crewai import build_crewai_tools
 tools = build_crewai_tools(client)

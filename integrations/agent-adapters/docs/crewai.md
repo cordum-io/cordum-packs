@@ -1,5 +1,10 @@
 # CrewAI adapter for Cordum
 
+For current MCP bridge/CAP job allow, deny, and same-original-job human
+approval, use the [tested native CrewAI governance example](crewai-governance.md).
+Its flow observes the original job after a separate operator decision. The
+legacy MCP approval API/retry examples below describe a different API path.
+
 Bridge your CrewAI agents to the governed Cordum MCP surface in one
 import. Every tool your Crew calls flows through Cordum's policy engine,
 producing the approval gates, audit chain, and SIEM events you already

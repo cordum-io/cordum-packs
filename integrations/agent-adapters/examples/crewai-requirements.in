@@ -1,0 +1,11 @@
+# Native tools only; no model-provider API is called by this demo.
+crewai==1.15.32
+crewai-tools==1.15.32
+pydantic==2.12.5
+httpx==0.28.1
+redis==8.1.0
+pytest==9.2.0
+pytest-asyncio==1.4.1
+pytest-mock==3.17.0
+pytest-timeout==2.4.0
+aiohttp==3.14.5

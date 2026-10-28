@@ -72,6 +72,15 @@ The default test ports are 127.0.0.1:14222 (NATS), :16379 (Redis), :15051
 Startup fails if a required port is already occupied; it does not stop
 preexisting processes.
 
+To run an independent copy from another worktree, add `--port-offset 10000`
+to shift every listener by 10000 (for example Gateway HTTP :28081, Scheduler
+metrics :29090, Gateway metrics :29092). Offsets must be 0-46440. Each instance
+still needs its own fixture directory and clean Core checkout. The private
+runtime file includes `scheduler_metrics_url` and `gateway_metrics_url` for
+local observability; the endpoints contain only this disposable workload.
+
+The same fixture is reused by the [native CrewAI tool demo](../../docs/crewai-governance.md).
+
 The October 28 2026 local verification used clean Core revision
 `2bc671415a1eee49610dd2ca767f0a30501db382`. Cached `latest` Cordum service
 images were not used: they pointed at older July code. Build metadata records

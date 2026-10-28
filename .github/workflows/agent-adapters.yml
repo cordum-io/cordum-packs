@@ -114,9 +114,33 @@ jobs:
       - name: Run graph and adapter unit tests
         run: python -m pytest tests -m 'not integration' --timeout=30 -q
 
+  crewai-demo:
+    name: CrewAI native tool demo (3.12)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    env:
+      CREWAI_TELEMETRY_ENABLED: 'false'
+      OTEL_SDK_DISABLED: 'true'
+      DO_NOT_TRACK: '1'
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Install tested native tool dependencies
+        run: |
+          python -m pip install -r examples/crewai-requirements.txt
+          python -m pip install -e .
+      - name: Verify native tools and disposable fixture ports
+        run: python -m pytest tests/test_crewai_demo.py tests/test_local_fixture_ports.py --timeout=30 -q
+
   build:
     name: Build sdist + wheel
-    needs: [test, langgraph]
+    needs: [test, langgraph, crewai-demo]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
