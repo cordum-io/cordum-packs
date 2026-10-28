@@ -101,4 +101,3 @@ def test_unrecognized_failure_is_not_a_governance_outcome(crewai_demo):
     transport = Transport("FAILED")
     with pytest.raises(AdapterToolCallError):
         crewai_demo.invoke_tool(build_crewai_tools(transport)[0], {"workflow_id": "local"})
-
