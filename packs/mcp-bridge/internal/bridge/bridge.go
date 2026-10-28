@@ -46,6 +46,8 @@ type Config struct {
 	CallTimeout   time.Duration
 	PollInterval  time.Duration
 	MaxParallel   int32
+	// AllowUnsigned permits legacy CAP packets only for local development.
+	AllowUnsigned bool
 }
 
 type Bridge struct {
@@ -77,6 +79,9 @@ func New(cfg Config) (*Bridge, error) {
 	}
 	if cfg.RedisURL == "" {
 		return nil, fmt.Errorf("redis url required")
+	}
+	if err := validateUnsignedTransport(cfg); err != nil {
+		return nil, err
 	}
 	if cfg.Pool == "" {
 		cfg.Pool = "mcp-bridge"
@@ -122,15 +127,24 @@ func New(cfg Config) (*Bridge, error) {
 		return nil, err
 	}
 	agent := &runtime.Agent{
-		NATS:     nc,
-		Store:    store,
-		RedisURL: cfg.RedisURL,
-		SenderID: workerID,
+		NATS:          nc,
+		Store:         store,
+		RedisURL:      cfg.RedisURL,
+		SenderID:      workerID,
+		AllowUnsigned: cfg.AllowUnsigned,
+	}
+	client := newGatewayClient(cfg.GatewayURL, cfg.APIKey, cfg.TenantID)
+	if cfg.AllowUnsigned {
+		// Preserve the validated local endpoint boundary and do not forward
+		// gateway credentials to any redirect target in legacy development mode.
+		client.httpClient.CheckRedirect = func(*http.Request, []*http.Request) error {
+			return http.ErrUseLastResponse
+		}
 	}
 
 	b := &Bridge{
 		cfg:      cfg,
-		client:   newGatewayClient(cfg.GatewayURL, cfg.APIKey, cfg.TenantID),
+		client:   client,
 		agent:    agent,
 		natsConn: nc,
 		workerID: workerID,
@@ -285,6 +299,21 @@ func (b *Bridge) submitToolJob(ctx context.Context, name string, args map[string
 	jobReq := buildJobRequest(name, args, b.cfg)
 	resp, err := b.client.SubmitJob(ctx, jobReq)
 	if err != nil {
+		var responseErr *gatewayHTTPError
+		if errors.As(err, &responseErr) && responseErr.StatusCode == http.StatusForbidden {
+			var denial struct {
+				JobID string `json:"job_id"`
+			}
+			if json.Unmarshal(responseErr.Body, &denial) == nil && strings.TrimSpace(denial.JobID) != "" {
+				// A submit-time policy rejection can persist its denied job before
+				// returning 403. Authentication failures also use 403, so require
+				// the referenced stored job to confirm the policy denial.
+				job, lookupErr := b.client.GetJob(ctx, denial.JobID)
+				if lookupErr == nil && job.ID == denial.JobID && strings.EqualFold(job.State, "DENIED") {
+					return job.AsResult(), job.AsError()
+				}
+			}
+		}
 		return nil, err
 	}
 	pending := b.register(resp.JobID)
@@ -792,6 +821,16 @@ type gatewayClient struct {
 	httpClient *http.Client
 }
 
+type gatewayHTTPError struct {
+	StatusCode int
+	Body       []byte
+	message    string
+}
+
+func (e *gatewayHTTPError) Error() string {
+	return "gateway error: " + e.message
+}
+
 func newGatewayClient(baseURL, apiKey, tenantID string) *gatewayClient {
 	return &gatewayClient{
 		baseURL:    strings.TrimRight(baseURL, "/"),
@@ -1010,7 +1049,7 @@ func (c *gatewayClient) doJSONWithHeaders(ctx context.Context, method, path stri
 		if msg == "" {
 			msg = resp.Status
 		}
-		return fmt.Errorf("gateway error: %s", msg)
+		return &gatewayHTTPError{StatusCode: resp.StatusCode, Body: data, message: msg}
 	}
 	if out == nil {
 		return nil
