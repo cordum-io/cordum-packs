@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"os"
 	"os/signal"
@@ -18,7 +19,11 @@ import (
 
 func main() {
 	logging.Init("mcp-bridge")
-	cfg := loadConfig()
+	cfg, err := loadConfig()
+	if err != nil {
+		slog.Error("bridge config failed", "error", err)
+		os.Exit(1)
+	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
@@ -43,7 +48,7 @@ func main() {
 	}
 }
 
-func loadConfig() bridge.Config {
+func loadConfig() (bridge.Config, error) {
 	cfg := bridge.Config{
 		GatewayURL:    envOr("CORDUM_GATEWAY_URL", "http://localhost:8081"),
 		APIKey:        envOr("CORDUM_API_KEY", ""),
@@ -56,6 +61,13 @@ func loadConfig() bridge.Config {
 		PackID:        envOr("CORDUM_MCP_PACK_ID", "mcp-bridge"),
 		ServerName:    envOr("CORDUM_MCP_SERVER_NAME", "cordum-mcp-bridge"),
 		ServerVersion: envOr("CORDUM_MCP_SERVER_VERSION", "0.2.1"),
+	}
+	if raw := strings.TrimSpace(os.Getenv("CORDUM_MCP_ALLOW_UNSIGNED")); raw != "" {
+		allowUnsigned, err := strconv.ParseBool(raw)
+		if err != nil {
+			return bridge.Config{}, fmt.Errorf("CORDUM_MCP_ALLOW_UNSIGNED must be a boolean")
+		}
+		cfg.AllowUnsigned = allowUnsigned
 	}
 
 	if raw := strings.TrimSpace(os.Getenv("CORDUM_MCP_SUBJECTS")); raw != "" {
@@ -81,7 +93,7 @@ func loadConfig() bridge.Config {
 		}
 	}
 
-	return cfg
+	return cfg, nil
 }
 
 func envOr(key, fallback string) string {

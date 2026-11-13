@@ -1,0 +1,5 @@
+topics:
+  job.mcp-bridge.tool: mcp-bridge
+pools:
+  mcp-bridge:
+    requires: [network:egress]

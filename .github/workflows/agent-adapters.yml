@@ -91,9 +91,32 @@ jobs:
       - name: Run unit tests
         run: pytest tests/ -m 'not integration' -v
 
+  langgraph:
+    name: LangGraph demo (${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    strategy:
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install tested demo dependencies
+        run: |
+          python -m pip install -r examples/langgraph-requirements.txt
+          python -m pip install -e .
+      - name: Run graph and adapter unit tests
+        run: python -m pytest tests -m 'not integration' --timeout=30 -q
+
   build:
     name: Build sdist + wheel
-    needs: test
+    needs: [test, langgraph]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
