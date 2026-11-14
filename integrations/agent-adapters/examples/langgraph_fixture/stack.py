@@ -131,6 +131,8 @@ def serve(source: Path, revision: str) -> None:
                     if response.status == 200:
                         break
             except (URLError, TimeoutError):
+                # The gateway is not accepting connections yet; keep polling
+                # until the deadline below.
                 pass
             if time.monotonic() > deadline:
                 raise RuntimeError("Gateway not ready within 60 seconds")
@@ -186,4 +188,7 @@ if __name__ == "__main__":
     try:
         main()
     except KeyboardInterrupt:
+        # Ctrl-C is the normal way to stop the fixture. By now the finally
+        # blocks in serve() and main() have stopped the services and removed
+        # the runtime and lock files.
         pass
