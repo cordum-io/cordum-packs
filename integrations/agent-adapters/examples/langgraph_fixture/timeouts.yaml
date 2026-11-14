@@ -1,0 +1,8 @@
+topics:
+  job.mcp-bridge.tool:
+    timeout_seconds: 120
+    max_retries: 0
+reconciler:
+  dispatch_timeout_seconds: 30
+  running_timeout_seconds: 120
+  scan_interval_seconds: 2
