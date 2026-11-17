@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Added
+- Optional signed catalog builds with verification before catalog generation; publishing requires `PACKS_SIGNING_KEY` matching the human-provisioned `cordum-packs-1` public key at `keys/cordum-packs-1.pub`. Document gateway trust via `CORDUM_GATEWAY_PACK_TRUSTED_KEY_CORDUM_PACKS_1=<public_key_b64>` and add ephemeral-key PR validation. This does not qualify the live catalog or policy-store activation.
+
 ## [v0.6.5] - 2026-01-31
 
 ### Changed

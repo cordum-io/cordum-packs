@@ -107,6 +107,47 @@ Output:
 - `public/catalog.json`
 - `public/packs/<id>/<version>/pack.tgz`
 
+## Signing and verification
+
+The publish build uses `cordumctl pack sign` to sign each pack's manifest and
+declared resource hashes with an Ed25519 publisher key. Each bundle contains
+`pack.yaml.sig` at its root. Before writing `catalog.json`, the build extracts
+every bundle and verifies its signature against the pinned public key; catalog
+SHA-256 values cover the resulting signed bundle bytes. A verification failure
+names the failing packs and prevents catalog generation and artifact upload.
+
+The publisher key id is `cordum-packs-1`. Its public YAML belongs at
+`keys/cordum-packs-1.pub`, copied from the human-provisioned publisher key.
+Publishing requires the matching private YAML in the repository's Actions
+secret `PACKS_SIGNING_KEY`; the job fails if that secret is absent and runs an
+`always()` cleanup step for its temporary private-key file. Never put private
+keys in this repo or inside a pack directory. PR validation uses a disposable
+key, not that secret.
+
+Set this environment variable on the gateway, replacing the placeholder with
+the `public_key_b64` value from the pinned public file:
+
+```text
+CORDUM_GATEWAY_PACK_TRUSTED_KEY_CORDUM_PACKS_1=<public_key_b64>
+```
+
+To check an extracted bundle against that public key:
+
+```bash
+cordumctl pack verify-signature /path/to/extracted-pack --key keys/cordum-packs-1.pub
+```
+
+For a local signed build, keep the private key outside the packs directory:
+
+```bash
+python tools/build.py --signing-key /secure/publisher.key \
+  --trusted-key keys/cordum-packs-1.pub --cordumctl /path/to/cordumctl
+```
+
+Without `--signing-key`, local builds remain unsigned. These pipeline checks
+do not establish that the currently published catalog is signed, or activate
+policy fragments under a deployment's separate policy trust store.
+
 ## Pack tooling
 
 Scaffold a new pack bundle:
