@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+# Subprocess is needed for cordumctl; commands use argument lists, never a shell.
 import argparse
 import gzip
 import hashlib
 import json
 import os
+import subprocess  # nosec B404
 import sys
 import tarfile
+import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -70,7 +73,9 @@ def is_sidecar_only(pack_dir: Path) -> bool:
     return visible_entries == {"sidecar"} and (pack_dir / "sidecar").is_dir()
 
 
-def build_bundle(pack_root: Path, pack_id: str, version: str, public_dir: Path) -> Path:
+def build_bundle(
+    pack_root: Path, pack_id: str, version: str, public_dir: Path, signature: Path | None = None
+) -> Path:
     out_dir = public_dir / "packs" / pack_id / version
     out_dir.mkdir(parents=True, exist_ok=True)
     bundle_path = out_dir / "pack.tgz"
@@ -79,8 +84,12 @@ def build_bundle(pack_root: Path, pack_id: str, version: str, public_dir: Path) 
     with bundle_path.open("wb") as raw_bundle, gzip.GzipFile(
         filename="", mode="wb", fileobj=raw_bundle, mtime=0
     ) as gz_bundle, tarfile.open(fileobj=gz_bundle, mode="w") as tar:
-        for path in iter_bundle_files(pack_root):
-            arcname = path.relative_to(pack_root).as_posix()
+        paths = iter_bundle_files(pack_root)
+        if signature is not None:
+            paths = [path for path in paths if not path.name.startswith("pack.yaml.sig")]
+            paths.append(signature)
+        for path in paths:
+            arcname = "pack.yaml.sig" if path == signature else path.relative_to(pack_root).as_posix()
             tarinfo = tar.gettarinfo(str(path), arcname=arcname)
             tarinfo.uid = 0
             tarinfo.gid = 0
@@ -111,6 +120,26 @@ def verify_catalog_digests(entries: list, public_dir: Path) -> None:
         version = str(entry["version"])
         bundle_path = public_dir / "packs" / pack_id / version / "pack.tgz"
         verify_bundle_digest(bundle_path, str(entry["sha256"]))
+
+
+def run_cordumctl(cordumctl: str, *args: str) -> None:
+    # Operator-selected executable; no shell. Capture output so key errors cannot leak material.
+    subprocess.run([cordumctl, "pack", *args], check=True, capture_output=True)  # nosec B603
+
+
+def verify_catalog_signatures(entries: list, public_dir: Path, trusted_key: Path, cordumctl: str) -> None:
+    failures = []
+    for entry in entries:
+        pack_id, version = str(entry["id"]), str(entry["version"])
+        bundle = public_dir / "packs" / pack_id / version / "pack.tgz"
+        try:
+            with tempfile.TemporaryDirectory() as target, tarfile.open(bundle) as archive:
+                archive.extractall(target, filter="data")
+                run_cordumctl(cordumctl, "verify-signature", target, "--key", str(trusted_key))
+        except (OSError, subprocess.CalledProcessError, tarfile.TarError, ValueError):
+            failures.append(f"{pack_id}@{version}")
+    if failures:
+        raise ValueError("pack signature verification failed: " + ", ".join(failures))
 
 
 def iter_bundle_files(pack_root: Path) -> list[Path]:
@@ -178,7 +207,10 @@ def build_catalog_entry(manifest: dict, bundle_path: Path, base_url: str) -> dic
     }
 
 
-def build_catalog(packs_dir: Path, base_url: str, public_dir: Path) -> list:
+def build_catalog(
+    packs_dir: Path, base_url: str, public_dir: Path,
+    signing_key: Path | None = None, cordumctl: str = "cordumctl",
+) -> list:
     entries = []
     for pack_dir in sorted(packs_dir.iterdir()):
         if pack_dir.is_symlink():
@@ -204,7 +236,17 @@ def build_catalog(packs_dir: Path, base_url: str, public_dir: Path) -> list:
         version = str(metadata.get("version") or "").strip()
         if not pack_id or not version:
             raise ValueError(f"pack metadata.id/version required in {pack_dir}")
-        bundle_path = build_bundle(pack_root, pack_id, version, public_dir)
+        if signing_key is not None:
+            with tempfile.TemporaryDirectory() as temp_dir:
+                signature = Path(temp_dir) / "pack.yaml.sig"
+                try:
+                    run_cordumctl(cordumctl, "sign", str(pack_root), "--key", str(signing_key),
+                                  "--out", str(signature))
+                except (OSError, subprocess.CalledProcessError):
+                    raise ValueError(f"pack signing failed: {pack_id}@{version}") from None
+                bundle_path = build_bundle(pack_root, pack_id, version, public_dir, signature)
+        else:
+            bundle_path = build_bundle(pack_root, pack_id, version, public_dir)
         entries.append(build_catalog_entry(manifest, bundle_path, base_url))
     entries.sort(key=lambda item: item["id"])
     return entries
@@ -233,15 +275,28 @@ def write_stats_page(public_dir: Path, pack_count: int, updated_at: str, catalog
     target.write_text(rendered, encoding="utf-8")
 
 
-def main() -> int:
+def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Build Cordum pack bundles and catalog.")
     parser.add_argument("--packs-dir", default=str(PACKS_DIR), help="Directory containing pack folders.")
     parser.add_argument("--public-dir", default=str(PUBLIC_DIR), help="Output directory for bundles + catalog.")
     parser.add_argument("--base-url", default=os.environ.get("PACKS_BASE_URL") or DEFAULT_PACKS_BASE_URL)
     parser.add_argument("--domain", default=os.environ.get("PACKS_DOMAIN") or "packs.cordum.io")
     parser.add_argument("--clean", action="store_true", help="Remove existing public output before building.")
+    parser.add_argument("--signing-key", type=Path, help="Private pack signing key (outside the packs directory).")
+    parser.add_argument("--trusted-key", type=Path, help="Public key required for a signed build.")
+    parser.add_argument("--cordumctl", default="cordumctl", help="Path to cordumctl for signing and verification.")
     args = parser.parse_args()
+    if args.signing_key is not None:
+        (Path(args.public_dir) / "catalog.json").unlink(missing_ok=True)
+        if args.trusted_key is None:
+            parser.error("--trusted-key is required with --signing-key")
+        if args.signing_key.resolve().is_relative_to(Path(args.packs_dir).resolve()):
+            parser.error("--signing-key must be outside --packs-dir")
+    return args
 
+
+def main() -> int:
+    args = parse_args()
     packs_dir = Path(args.packs_dir)
     public_dir = Path(args.public_dir)
     base_url = resolve_base_url(args.base_url)
@@ -260,8 +315,10 @@ def main() -> int:
             else:
                 child.unlink()
 
-    entries = build_catalog(packs_dir, base_url, public_dir)
+    entries = build_catalog(packs_dir, base_url, public_dir, args.signing_key, args.cordumctl)
     verify_catalog_digests(entries, public_dir)
+    if args.signing_key is not None:
+        verify_catalog_signatures(entries, public_dir, args.trusted_key, args.cordumctl)
     public_dir.mkdir(parents=True, exist_ok=True)
     catalog_path = public_dir / "catalog.json"
     write_catalog(entries, catalog_path)
