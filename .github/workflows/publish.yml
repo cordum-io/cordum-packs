@@ -6,6 +6,7 @@ on:
     paths:
       - "packs/**"
       - "tools/**"
+      - "keys/**"
       - ".github/workflows/publish.yml"
   workflow_dispatch: {}
 
@@ -133,6 +134,27 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
+      - name: Checkout Cordum signing tool
+        uses: actions/checkout@v7
+        with:
+          repository: cordum-io/cordum
+          # Pin by full SHA because this job handles the publisher signing key.
+          ref: b9e4646cf75ae600733365bd870543489ff5b36b
+          path: .deps/cordum
+          fetch-depth: 1
+
+      - name: Set up Go
+        uses: actions/setup-go@v7
+        with:
+          go-version: "1.25.8"
+          cache-dependency-path: .deps/cordum/go.sum
+
+      - name: Fix Go env
+        run: echo "GOTOOLCHAIN=auto" >> "$GITHUB_ENV"
+
+      - name: Build cordumctl
+        run: cd .deps/cordum && go build -o "$RUNNER_TEMP/cordumctl" ./cmd/cordumctl
+
       - name: Set up Python
         uses: actions/setup-python@v7
         with:
@@ -141,8 +163,26 @@ jobs:
       - name: Install dependencies
         run: pip install -r tools/requirements.txt
 
+      - name: Prepare signing key
+        env:
+          PACKS_SIGNING_KEY: ${{ secrets.PACKS_SIGNING_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "${PACKS_SIGNING_KEY:-}" ]; then
+            echo "PACKS_SIGNING_KEY secret is required" >&2
+            exit 1
+          fi
+          umask 077
+          printf '%s\n' "$PACKS_SIGNING_KEY" > "$RUNNER_TEMP/packs-signing.key"
+
       - name: Build catalog + bundles
-        run: python tools/build.py
+        run: |
+          python tools/build.py --signing-key "$RUNNER_TEMP/packs-signing.key" \
+            --trusted-key keys/cordum-packs-1.pub --cordumctl "$RUNNER_TEMP/cordumctl"
+
+      - name: Remove signing key
+        if: always()
+        run: rm -f -- "$RUNNER_TEMP/packs-signing.key"
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v5
