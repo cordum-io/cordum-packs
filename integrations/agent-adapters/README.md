@@ -116,16 +116,18 @@ async for event in tee_events(result, logger):
 Full walkthrough with scripted-model E2E test + policy-deny handling:
 [../../docs/tutorials/openai_agents.md](../../docs/tutorials/openai_agents.md).
 
-## LangChain — 15-minute tutorial
+## LangChain and LangGraph - governed tools with operator review
 
 ```python
 from cordum_agent_adapters.langchain import build_langchain_tools
 tools = build_langchain_tools(client)            # list[BaseTool]
-# Pass into create_react_agent / create_openai_tools_agent / …
+# Invoke these native tools from a graph node.
 ```
 
-The LangChain adapter is a thin wrapper; a dedicated tutorial is
-tracked for a future release.
+[Run the LangGraph tutorial](docs/tutorials/langgraph.md) for a checkpointed
+application, disposable real Cordum stack, policy allow/deny, separate operator
+approval, and same-job observation after resume. The example uses no model
+provider or cloud account; it documents input-binding and TLS limitations.
 
 ## FAQ
 

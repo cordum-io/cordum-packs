@@ -39,6 +39,9 @@ This adds the pool mapping, timeouts, and a policy fragment that requires approv
 cd path/to/cordum-packs/packs/mcp-bridge
 
 CORDUM_GATEWAY_URL=http://localhost:8081 \
+CORDUM_ENV=development \
+CORDUM_CAP_PROFILE=compat \
+CORDUM_MCP_ALLOW_UNSIGNED=true \
 CORDUM_API_KEY=super-secret-key \
 CORDUM_TENANT_ID=default \
 CORDUM_NATS_URL=nats://localhost:4222 \
@@ -48,6 +51,10 @@ go run ./cmd/cordum-mcp-bridge
 ```
 
 The bridge runs as a stdio MCP server (reads JSON‑RPC from stdin, writes to stdout).
+This example uses explicit unsigned legacy CAP transport for a disposable local
+development stack. The gateway, NATS, and Redis URLs must all use loopback IPs
+or `localhost`. Supply a temporary API key for that stack. This mode does not
+implement signed packet transport or CAP-PRODUCTION admission.
 
 ## Environment
 
@@ -66,6 +73,20 @@ The bridge runs as a stdio MCP server (reads JSON‑RPC from stdin, writes to st
 - `CORDUM_MCP_CALL_TIMEOUT` (default `30s`)
 - `CORDUM_MCP_POLL_INTERVAL` (default `750ms`)
 - `CORDUM_MCP_MAX_PARALLEL` (default `0` = unlimited)
+- `CORDUM_MCP_ALLOW_UNSIGNED` (default `false`): explicit local legacy CAP mode;
+  requires `CORDUM_ENV=development`, `CORDUM_CAP_PROFILE=compat` (or its empty
+  default), and loopback gateway/NATS/Redis URLs. Refused when
+  `CORDUM_PRODUCTION` is true, the profile is production/unknown, or a URL is
+  remote. Gateway HTTP redirects are rejected in this mode so credentials and
+  requests cannot escape the configured loopback endpoint. Invalid boolean
+  values fail startup.
+
+CAP 2.17 requires signing keys unless unsigned legacy mode is explicitly
+selected. The bridge does not currently expose CAP signing-key or production
+admission configuration, so the default remains fail-closed at worker startup.
+Use the bounded development mode only for local fixtures; TLS/authentication
+remain independent requirements. A local legacy fixture does not establish
+production compatibility.
 
 ## MCP tools (v0.2.1)
 

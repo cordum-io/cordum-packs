@@ -1,0 +1,10 @@
+# Tested demo and test runner. The published adapter stays separately installed.
+langgraph==1.2.18
+langchain-core==1.7.0
+pydantic==2.14.1
+httpx==0.28.1
+pytest==9.2.0
+pytest-asyncio==1.4.1
+pytest-mock==3.17.0
+pytest-timeout==2.4.0
+redis==8.1.0
